@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { X, Music, UserCheck, Sun, Moon, Minus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const TitleBar: React.FC = () => {
-  const [isDarkTheme, setIsDarkTheme] = useState(true);
+  const { themeType, toggleTheme } = useTheme();
   const [isMuted, setIsMuted] = useState(false);
   const [appVersion, setAppVersion] = useState('');
   const [iconPath, setIconPath] = useState('/xdllogo.ico');
@@ -82,12 +83,6 @@ const TitleBar: React.FC = () => {
     }
   };
 
-  // 主题切换
-  const toggleTheme = () => {
-    setIsDarkTheme(!isDarkTheme);
-    // 这里可以添加实际的主题切换逻辑
-  };
-
   // 音效切换
   const toggleMute = () => {
     setIsMuted(!isMuted);
@@ -95,19 +90,17 @@ const TitleBar: React.FC = () => {
   };
 
   return (
-    <div className="text-white flex items-center justify-between select-none drag" style={{
-      height: '38px',
-      background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95))',
-      borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
-      backdropFilter: 'blur(10px)'
-    }}>
+    <div className="flex items-center justify-between select-none drag h-[38px]
+                    bg-slate-100 dark:bg-slate-800
+                    border-b border-slate-300 dark:border-slate-600
+                    text-slate-800 dark:text-white
+                    transition-all duration-300">
       {/* 应用标题 */}
-      <div className="font-medium flex items-center" style={{ padding: '0 10px', fontSize: '15px' }}>
+      <div className="font-medium flex items-center px-2.5 text-[15px]">
         <img
           src={iconPath}
           alt="小斗笠直播助手"
-          className="flex-shrink-0"
-          style={{ width: '20px', height: '20px', marginRight: '6px' }}
+          className="flex-shrink-0 w-5 h-5 mr-1.5"
           onLoad={() => {
             console.log('图标加载成功:', iconPath);
           }}
@@ -119,8 +112,8 @@ const TitleBar: React.FC = () => {
             }
           }}
         />
-        <span style={{ color: 'white' }}>小斗笠直播助手</span>
-        <span style={{ marginLeft: '6px', fontSize: '11px', color: '#9ca3af' }}>v{appVersion}</span>
+        <span className="text-slate-800 dark:text-white">小斗笠直播助手</span>
+        <span className="ml-1.5 text-[11px] text-slate-500 dark:text-slate-400">v{appVersion}</span>
       </div>
 
       {/* 拖动区域 - 大部分标题栏区域可用于拖动窗口 */}
@@ -131,134 +124,67 @@ const TitleBar: React.FC = () => {
         {/* 音乐按钮 */}
         <button
           onClick={() => navigate('/app/audio-settings')}
-          className="flex items-center justify-center"
-          style={{
-            padding: '0 10px',
-            height: '30px',
-            borderRadius: '5px',
-            transition: 'all 0.3s ease',
-            border: '1px solid transparent',
-            backgroundColor: 'transparent',
-            outline: 'none'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
-            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.borderColor = 'transparent';
-          }}
+          className="flex items-center justify-center px-2.5 h-[30px] rounded-md
+                     border border-transparent bg-transparent
+                     hover:bg-blue-500/20 hover:border-blue-500/30
+                     transition-all duration-300 outline-none"
           title={isMuted ? "打开音效" : "关闭音效"}
         >
-          <Music size={16} color={isMuted ? "#6b7280" : "#60a5fa"} />
+          <Music
+            size={16}
+            className={isMuted ? "text-gray-500" : "text-blue-400"}
+          />
         </button>
 
         {/* 会员按钮 */}
         <button
           onClick={() => navigate('/app/membership')}
-          className="flex items-center justify-center"
-          style={{
-            padding: '0 10px',
-            height: '30px',
-            borderRadius: '5px',
-            transition: 'all 0.3s ease',
-            border: '1px solid transparent',
-            backgroundColor: 'transparent',
-            outline: 'none'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(245, 158, 11, 0.2)';
-            e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.borderColor = 'transparent';
-          }}
+          className="flex items-center justify-center px-2.5 h-[30px] rounded-md
+                     border border-transparent bg-transparent
+                     hover:bg-amber-500/20 hover:border-amber-500/30
+                     transition-all duration-300 outline-none"
           title="会员中心"
         >
-          <UserCheck size={16} color="#fbbf24" />
+          <UserCheck size={16} className="text-amber-400" />
         </button>
 
         {/* 主题切换按钮 */}
         <button
           onClick={toggleTheme}
-          className="flex items-center justify-center"
-          style={{
-            padding: '0 10px',
-            height: '30px',
-            borderRadius: '5px',
-            transition: 'all 0.3s ease',
-            border: '1px solid transparent',
-            backgroundColor: 'transparent',
-            outline: 'none'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.2)';
-            e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.borderColor = 'transparent';
-          }}
-          title={isDarkTheme ? "切换到亮色主题" : "切换到暗色主题"}
+          className="flex items-center justify-center px-2.5 h-[30px] rounded-md
+                     border border-transparent bg-transparent
+                     hover:bg-purple-500/20 hover:border-purple-500/30
+                     transition-all duration-300 outline-none"
+          title={themeType === 'dark' ? "切换到亮色主题" : "切换到暗色主题"}
         >
-          {isDarkTheme ?
-            <Sun size={16} color="#fde047" /> :
-            <Moon size={16} color="#93c5fd" />
+          {themeType === 'dark' ?
+            <Sun size={16} className="text-yellow-300" /> :
+            <Moon size={16} className="text-blue-300" />
           }
         </button>
 
         {/* 最小化按钮 */}
         <button
           onClick={handleMinimize}
-          className="flex items-center justify-center"
-          style={{
-            padding: '0 10px',
-            height: '30px',
-            borderRadius: '5px',
-            transition: 'all 0.3s ease',
-            border: '1px solid transparent',
-            backgroundColor: 'transparent',
-            outline: 'none'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(107, 114, 128, 0.2)';
-            e.currentTarget.style.borderColor = 'rgba(107, 114, 128, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.borderColor = 'transparent';
-          }}
+          className="flex items-center justify-center px-2.5 h-[30px] rounded-md
+                     border border-transparent bg-transparent
+                     hover:bg-gray-500/20 hover:border-gray-500/30
+                     transition-all duration-300 outline-none"
           title="最小化"
         >
-          <Minus size={16} color="#d1d5db" />
+          <Minus size={16} className="text-gray-300" />
         </button>
 
         {/* 关闭按钮 */}
         <button
           onClick={handleClose}
-          className="flex items-center justify-center"
-          style={{
-            padding: '0 12px',
-            height: '30px',
-            borderRadius: '5px',
-            transition: 'all 0.3s ease',
-            border: '1px solid transparent',
-            backgroundColor: 'transparent',
-            outline: 'none'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
-            e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-            e.currentTarget.style.borderColor = 'transparent';
-          }}
+          className="flex items-center justify-center px-3 h-[30px] rounded-md
+                     border border-transparent bg-transparent
+                     hover:bg-red-500/20 hover:border-red-500/30
+                     transition-all duration-300 outline-none"
           title="关闭应用"
         >
-          <X size={16} color="#f87171" />
+          <X size={16} className="text-red-400" />
         </button>
       </div>
     </div>

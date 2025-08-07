@@ -1,6 +1,29 @@
-﻿@tailwind base;
-@tailwind components;
-@tailwind utilities;
+﻿@import "tailwindcss";
+
+/* 手动添加暗色模式样式 - 确保主题切换生效 */
+.dark .bg-white {
+  background-color: rgb(30 41 59) !important;
+}
+
+.dark .text-slate-800 {
+  color: rgb(255 255 255) !important;
+}
+
+.dark .bg-blue-50 {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+.dark .border-blue-500\/20 {
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+.dark .bg-slate-100 {
+  background-color: rgb(30 41 59) !important;
+}
+
+.dark .border-slate-300 {
+  border-color: rgb(71 85 105) !important;
+}
 
 /* 系统必需样式 */
 .drag { -webkit-app-region: drag; }
@@ -57,11 +80,9 @@ html, body, #root {
   overflow: hidden;
 }
 
-/* 页面布局 */
+/* 页面布局 - 基础结构 */
 .home-page-container {
   min-height: 100%;
-  background-color: #0f172a;
-  color: white;
   padding: 0.5rem;
   display: flex;
   flex-direction: column;
@@ -76,15 +97,23 @@ html, body, #root {
 
 .stream-section {
   width: 66.666667%;
-  height: 11.25rem;
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+  height: 11rem;
   border-radius: 1rem;
   padding: 1.5rem;
   border: 1px solid rgba(59, 130, 246, 0.2);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
   overflow: auto;
   position: relative;
   backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.95), rgba(241, 245, 249, 0.95));
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+  color: #1e293b;
+}
+
+.dark .stream-section {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  color: #ffffff;
 }
 
 .stream-header {
@@ -134,13 +163,20 @@ html, body, #root {
 .ad-section {
   width: 100%;
   margin: 0.5rem 0;
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
   border-radius: 1rem;
   border: 2px solid rgba(59, 130, 246, 0.3);
-  box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.1), 0 10px 10px -5px rgba(59, 130, 246, 0.05);
   overflow: hidden;
   position: relative;
   backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(99, 102, 241, 0.05));
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  color: #1e293b;
+}
+
+.dark .ad-section {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
+  color: #ffffff;
 }
 
 .ad-content {
@@ -150,13 +186,21 @@ html, body, #root {
 
 .recommendations-section {
   flex: 1;
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
   border-radius: 1rem;
   padding: 1.5rem;
   border: 1px solid rgba(59, 130, 246, 0.2);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
   overflow: auto;
   backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.95), rgba(241, 245, 249, 0.95));
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+  color: #1e293b;
+}
+
+.dark .recommendations-section {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+  color: #ffffff;
 }
 
 .recommendations-header {

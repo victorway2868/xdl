@@ -1,0 +1,175 @@
+/* 基于Tailwind的主题样式 - 使用Tailwind的暗色模式功能 */
+
+/* 平滑过渡动画 */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* 自定义渐变背景 - Tailwind无法直接实现的复杂渐变 */
+.gradient-dark-card {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+}
+
+.gradient-light-card {
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.95), rgba(241, 245, 249, 0.95));
+}
+
+.gradient-dark-ad {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
+}
+
+.gradient-light-ad {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(99, 102, 241, 0.05));
+}
+
+/* 标题栏渐变 */
+.gradient-dark-titlebar {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+}
+
+.gradient-light-titlebar {
+  background: linear-gradient(135deg, rgba(248, 250, 252, 0.95), rgba(241, 245, 249, 0.95));
+}
+
+/* 滚动条样式 */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.3);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.5);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(248, 250, 252, 0.8);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.4);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.6);
+}
+
+/* 主题相关的通用样式类 */
+.theme-bg-primary {
+  background-color: var(--color-bg-primary);
+}
+
+.theme-bg-secondary {
+  background: var(--color-bg-secondary);
+}
+
+.theme-bg-tertiary {
+  background-color: var(--color-bg-tertiary);
+}
+
+.theme-text-primary {
+  color: var(--color-text-primary);
+}
+
+.theme-text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.theme-text-muted {
+  color: var(--color-text-muted);
+}
+
+.theme-border-primary {
+  border-color: var(--color-border-primary);
+}
+
+.theme-border-secondary {
+  border-color: var(--color-border-secondary);
+}
+
+.theme-card {
+  background: var(--color-card-bg);
+  border: 1px solid var(--color-card-border);
+  box-shadow: var(--color-card-shadow);
+  backdrop-filter: blur(10px);
+}
+
+/* 主题过渡动画 */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* 特殊元素的主题样式 */
+.home-page-container {
+  background-color: var(--color-bg-primary) !important;
+  color: var(--color-text-primary) !important;
+}
+
+.stream-section,
+.recommendations-section {
+  background: var(--color-card-bg) !important;
+  border: 1px solid var(--color-card-border) !important;
+  box-shadow: var(--color-card-shadow) !important;
+}
+
+.ad-section {
+  background: var(--color-card-bg) !important;
+  border: 2px solid var(--color-border-secondary) !important;
+}
+
+/* 按钮悬停效果 */
+.theme-button-hover:hover {
+  background-color: var(--color-accent-primary) !important;
+  opacity: 0.2;
+}
+
+/* 滚动条主题 */
+[data-theme="dark"] ::-webkit-scrollbar {
+  width: 8px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 4px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.3);
+  border-radius: 4px;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.5);
+}
+
+[data-theme="light"] ::-webkit-scrollbar {
+  width: 8px;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-track {
+  background: rgba(248, 250, 252, 0.8);
+  border-radius: 4px;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.4);
+  border-radius: 4px;
+}
+
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.6);
+}

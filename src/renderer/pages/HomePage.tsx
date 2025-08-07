@@ -123,7 +123,7 @@ const HomePage = () => {
       {/* 上部区域：直播设置 */}
       <div className="top-section">
         {/* 左侧功能区域 - 自动推流组件 */}
-        <div className="stream-section">
+        <div className="w-2/3 h-44 rounded-2xl p-6 border border-blue-500/20 overflow-auto relative backdrop-blur-sm transition-all duration-300 bg-white dark:bg-slate-800 shadow-xl text-slate-800 dark:text-white">
           {/* 顶部控制区域 */}
           <div className="stream-header">
             <div className="version-info">
@@ -542,7 +542,7 @@ const HomePage = () => {
       </div>
 
       {/*中间区域：广告位置*/}
-      <div className="ad-section">
+      <div className="w-full my-2 rounded-2xl border-2 border-blue-500/30 overflow-hidden relative backdrop-blur-sm transition-all duration-300 bg-blue-50 dark:bg-blue-900/20 shadow-lg text-slate-800 dark:text-white">
         {/* 广告容器 - 固定宽高比例 */}
         <div className="ad-content">
           {advertisements.length > 0 ? (
@@ -650,7 +650,7 @@ const HomePage = () => {
       </div>
 
       {/* 下部区域：主页热门推荐 */}
-      <div className="recommendations-section">
+      <div className="flex-1 rounded-2xl p-6 border border-blue-500/20 overflow-auto backdrop-blur-sm transition-all duration-300 bg-white dark:bg-slate-800 shadow-xl text-slate-800 dark:text-white">
         {/* 导航栏 */}
         <div className="recommendations-header">
           <h2>热门推荐</h2>
