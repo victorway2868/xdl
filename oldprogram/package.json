@@ -1,0 +1,76 @@
+{
+  "name": "xiaodouli",
+  "version": "2.0.0",
+  "description": "提升您的直播体验",
+  "main": "electron/main.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "electron:dev": "concurrently -k \"vite --port 5176\" \"wait-on http://localhost:5176 && electron .\"",
+    "electron:build": "node build/check-resources.js && vite build && node build/build.js && node build/verify-build.js",
+    "check-resources": "node build/check-resources.js",
+    "verify-build": "node build/verify-build.js",
+    "generate-version": "node build/generate-latest-yml.js"
+  },
+  "keywords": [
+    "electron",
+    "react",
+    "tailwindcss",
+    "vite"
+  ],
+  "author": "",
+  "license": "MIT",
+  "build": {
+    "appId": "com.xdlwebcast.app",
+    "productName": "小斗笠直播助手",
+    "executableName": "小斗笠直播助手",
+    "electronDownload": {
+      "mirror": "https://npmmirror.com/mirrors/electron/"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "public/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": ["nsis"],
+      "icon": "public/icons/icon-256x256.png"
+    }
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.806.0",
+    "@aws-sdk/lib-storage": "^3.806.0",
+    "@aws-sdk/s3-request-presigner": "^3.806.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "archiver": "^7.0.1",
+    "autoprefixer": "^10.4.21",
+    "axios": "^1.7.9",
+    "extract-zip": "^2.0.1",
+    "form-data": "^4.0.2",
+    "fs-extra": "^11.3.0",
+    "lucide-react": "^0.487.0",
+    "node-fetch": "^3.3.2",
+    "obs-websocket-js": "^5.0.6",
+    "pako": "^2.1.0",
+    "postcss": "^8.5.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.22.3",
+    "react-window": "^1.8.8",
+    "react-window-infinite-loader": "^1.0.9",
+    "sqlite3": "^5.1.7",
+    "systeminformation": "^5.25.11",
+    "tailwindcss": "^3.4.1",
+    "win32-api": "^26.1.2",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "electron": "^35.2.1",
+    "electron-builder": "^26.0.12",
+    "vite": "^6.2.6",
+    "wait-on": "^8.0.3"
+  }
+}

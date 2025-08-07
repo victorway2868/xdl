@@ -1,9 +1,9 @@
 
 import React from 'react';
-import { User } from 'lucide-react';
-import '../styles/App.css';
+import { User, Check, AlertCircle, Link, Key, Copy } from 'lucide-react';
+import './HomePageUI.css';
 
-export const Home: React.FC = () => {
+const HomePageUI = () => {
   return (
     <div className="home-page-container">
       {/* Login Modal Placeholder */}
@@ -115,3 +115,5 @@ export const Home: React.FC = () => {
     </div>
   );
 };
+
+export default HomePageUI;
