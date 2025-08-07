@@ -1,6 +1,10 @@
 // 主进程入口文件
 import { app, BrowserWindow } from 'electron';
 import * as path from 'path';
+import { registerAllHandlers } from './handlers';
+
+declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
+declare const MAIN_WINDOW_VITE_NAME: string;
 
 // 全局错误处理
 process.on('uncaughtException', (error) => {
@@ -22,66 +26,32 @@ const createWindow = (): void => {
       width: 1200,
       height: 800,
       webPreferences: {
+        preload: path.join(__dirname, 'preload.js'),
         nodeIntegration: false,
         contextIsolation: true,
-        // 暂时不使用 preload 脚本
-        // preload: path.join(__dirname, 'preload.js'),
+        webSecurity: true,
       },
       show: false,
     });
 
-    // 加载一个简单的 HTML 内容先测试
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Electron Framework App</title>
-        <style>
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
-            padding: 40px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            text-align: center;
-          }
-          .container {
-            max-width: 600px;
-            margin: 0 auto;
-          }
-          h1 {
-            font-size: 2.5em;
-            margin-bottom: 20px;
-          }
-          p {
-            font-size: 1.2em;
-            line-height: 1.6;
-          }
-          .status {
-            background: rgba(255,255,255,0.1);
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <h1>🚀 Electron Framework App</h1>
-          <p>应用已成功启动！</p>
-          <div class="status">
-            <h3>系统状态</h3>
-            <p>✅ 主进程运行正常</p>
-            <p>✅ 窗口创建成功</p>
-            <p>⏳ 正在初始化服务...</p>
-          </div>
-          <p>这是一个基于现代 Electron 架构的应用程序</p>
-        </div>
-      </body>
-      </html>
-    `;
+    // and load the index.html of the app.
+    // Vite DEV server URL
+    mainWindow.webContents.openDevTools();
 
-    mainWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
+    if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+      console.log(`Attempting to load URL: ${MAIN_WINDOW_VITE_DEV_SERVER_URL}`);
+      const loadWithRetries = (retries = 20) => {
+        mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL).catch(err => {
+          console.error('Failed to load dev server URL, retrying...', err);
+          if (retries > 0) {
+            setTimeout(() => loadWithRetries(retries - 1), 1000); // wait 1s before retrying
+          }
+        });
+      };
+      loadWithRetries(); // 实际调用函数
+    } else {
+      mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
+    }
 
     // 窗口准备好后显示
     mainWindow.once('ready-to-show', () => {
@@ -104,6 +74,10 @@ const createWindow = (): void => {
 // 应用准备就绪时创建窗口
 app.whenReady().then(() => {
   console.log('App ready, creating window...');
+
+  // 注册所有 IPC 处理器
+  registerAllHandlers();
+
   createWindow();
 
   app.on('activate', () => {

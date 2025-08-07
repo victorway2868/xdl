@@ -1,6 +1,6 @@
 // 日志服务
 import log from 'electron-log';
-import { LogEntry } from '@shared/types';
+import { LogEntry } from '../../shared/types';
 
 export class LoggerService {
   private logs: LogEntry[] = [];

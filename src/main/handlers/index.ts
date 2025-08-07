@@ -2,6 +2,7 @@
 import { registerLoggerHandlers } from './logger';
 import { registerSettingsHandlers } from './settings';
 import { registerPluginsHandlers } from './plugins';
+import { registerWindowHandlers } from './window';
 import { loggerService } from '../services/logger';
 
 export function registerAllHandlers(): void {
@@ -9,7 +10,8 @@ export function registerAllHandlers(): void {
     registerLoggerHandlers();
     registerSettingsHandlers();
     registerPluginsHandlers();
-    
+    registerWindowHandlers();
+
     loggerService.addLog('info', 'All IPC handlers registered successfully', 'main');
   } catch (error) {
     loggerService.addLog('error', `Failed to register IPC handlers: ${error}`, 'main');

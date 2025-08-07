@@ -8,8 +8,7 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "eslint --ext .ts,.tsx .",
-    "test": "jest"
+    "lint": "eslint --ext .ts,.tsx ."
   },
   "keywords": [
     "electron",
@@ -49,6 +48,7 @@
     "@reduxjs/toolkit": "^2.0.1",
     "antd": "^5.12.8",
     "electron-log": "^5.0.1",
+    "lucide-react": "^0.537.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-redux": "^9.0.4",

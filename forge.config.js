@@ -34,7 +34,7 @@ module.exports = {
       build: [
         {
           // `entry` is just an alias for `build.lib.entry` in the corresponding file of `config`.
-          entry: 'src/main/index-minimal.ts',
+          entry: 'src/main/index.ts',
           config: 'vite.main.config.ts',
         },
         {

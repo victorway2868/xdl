@@ -9,6 +9,7 @@ import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { Settings } from './pages/Settings';
 import { Plugins } from './pages/Plugins';
+import './styles/App.css';
 
 const App: React.FC = () => {
   return (

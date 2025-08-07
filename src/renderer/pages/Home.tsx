@@ -1,114 +1,117 @@
-// 首页组件
-import React, { useEffect } from 'react';
-import { Card, Row, Col, Statistic, Typography, Space, Button } from 'antd';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState, AppDispatch } from '../store/store';
-import { loadSettings } from '../store/features/settings/settingsSlice';
-import { loadPlugins } from '../store/features/plugins/pluginsSlice';
-import { useLogger } from '../hooks/useLogger';
 
-const { Title, Paragraph } = Typography;
+import React from 'react';
+import { User } from 'lucide-react';
+import '../styles/App.css';
 
 export const Home: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const { settings } = useSelector((state: RootState) => state.settings);
-  const { plugins } = useSelector((state: RootState) => state.plugins);
-  const logger = useLogger();
-  
-  useEffect(() => {
-    // 加载初始数据
-    dispatch(loadSettings());
-    dispatch(loadPlugins());
-    
-    logger.info('Home page loaded');
-  }, [dispatch, logger]);
-  
-  const enabledPlugins = plugins.filter(p => p.enabled);
-  const disabledPlugins = plugins.filter(p => !p.enabled);
-  
-  const handleTestLog = () => {
-    logger.info('Test log message from Home page', { timestamp: Date.now() });
-  };
-  
   return (
-    <div>
-      <Title level={2}>欢迎使用 Electron Framework App</Title>
-      
-      <Paragraph>
-        这是一个基于现代 Electron 架构的应用程序，采用了分层设计和插件化架构。
-      </Paragraph>
-      
-      <Row gutter={16} style={{ marginTop: 24 }}>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="当前主题"
-              value={settings.theme === 'light' ? '浅色' : '深色'}
-            />
-          </Card>
-        </Col>
-        
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="语言设置"
-              value={settings.language}
-            />
-          </Card>
-        </Col>
-        
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="已启用插件"
-              value={enabledPlugins.length}
-              suffix={`/ ${plugins.length}`}
-            />
-          </Card>
-        </Col>
-        
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title="已禁用插件"
-              value={disabledPlugins.length}
-            />
-          </Card>
-        </Col>
-      </Row>
-      
-      <Card title="系统信息" style={{ marginTop: 24 }}>
-        <Row gutter={16}>
-          <Col span={12}>
-            <Paragraph>
-              <strong>窗口尺寸:</strong> {settings.windowBounds.width} x {settings.windowBounds.height}
-            </Paragraph>
-            <Paragraph>
-              <strong>自动启动:</strong> {settings.autoStart ? '已启用' : '已禁用'}
-            </Paragraph>
-          </Col>
-          
-          <Col span={12}>
-            <Paragraph>
-              <strong>插件总数:</strong> {plugins.length}
-            </Paragraph>
-            <Paragraph>
-              <strong>运行状态:</strong> 正常
-            </Paragraph>
-          </Col>
-        </Row>
-      </Card>
-      
-      <Card title="快速操作" style={{ marginTop: 24 }}>
-        <Space>
-          <Button type="primary" onClick={handleTestLog}>
-            测试日志记录
-          </Button>
-          <Button onClick={() => window.location.reload()}>
-            刷新页面
-          </Button>
-        </Space>
-      </Card>
+    <div className="home-page-container">
+      {/* Login Modal Placeholder */}
+      {/* <LoginModal isOpen={false} onClose={() => {}} onWebLogin={() => {}} onCompanionLogin={() => {}} /> */}
+
+      {/* Auth Notification Placeholder */}
+      {/* <AuthNotification message="" isVisible={false} onClose={() => {}} /> */}
+
+      {/* Status Prompt Placeholder */}
+      {/* <StatusPrompt message="" isVisible={false} onClose={() => {}} type="info" /> */}
+
+      <div className="top-section">
+        <div className="stream-section">
+          <div className="stream-header">
+            <div className="version-info">
+              <span>OBS：</span>
+              <span className="version-number">检测中</span>
+            </div>
+            <div className="version-info">
+              <span>伴侣：</span>
+              <span className="version-number">检测中</span>
+            </div>
+            <div className="toggle-switch">
+              <input type="checkbox" className="sr-only" />
+              <div className="toggle-bg"></div>
+            </div>
+          </div>
+          <div className="stream-control">
+            <button className="stream-button">
+              开始直播
+            </button>
+          </div>
+          <div className="stream-footer">
+            <button className="footer-button" onClick={() => window.alert('Navigate to OBS config')}>
+              OBS一键配置
+            </button>
+            <button className="footer-button" onClick={() => window.alert('Navigate to Danmu')}>
+              打开弹幕
+            </button>
+          </div>
+        </div>
+
+        <div className="settings-section">
+          <div className="settings-content">
+            <div className="platform-selection">
+              <div className="platform-header">
+                <label>选择平台</label>
+                <button className="login-button">登录平台</button>
+              </div>
+              <select className="platform-select">
+                <option>抖音</option>
+                <option>Bilibili</option>
+              </select>
+              <div>
+                <label>直播方式</label>
+                <select className="platform-select">
+                  <option>直播伴侣</option>
+                  <option>手机开播</option>
+                </select>
+              </div>
+            </div>
+            <div className="user-info-section">
+              <div className="user-info-content">
+                <div className="user-avatar-placeholder">
+                  <User size={32} />
+                </div>
+                <p className="login-prompt">请先登录</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="ad-section">
+        <div className="ad-content">
+          <div className="ad-loading">
+            <div className="spinner"></div>
+            <span>加载广告中...</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="recommendations-section">
+        <div className="recommendations-header">
+          <h2>热门推荐</h2>
+          <nav>
+            <button>插件</button>
+            <button>设备推荐</button>
+            <button>直播教程</button>
+            <button>更多</button>
+          </nav>
+        </div>
+        <div className="recommendations-loading">
+          <div className="spinner"></div>
+          <span>正在加载热门推荐...</span>
+        </div>
+        <div className="recommendations-grid">
+          {/* Placeholder for WorkCard components */}
+        </div>
+      </div>
+
+      {/* OBS Settings Modal Placeholder */}
+      {/* <div className="modal-backdrop">
+        <div className="modal-content">
+          <h2>参数设置</h2>
+          ...
+        </div>
+      </div> */}
     </div>
   );
 };
