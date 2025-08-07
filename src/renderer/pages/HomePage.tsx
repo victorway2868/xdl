@@ -24,17 +24,23 @@ const HomePage = () => {
   const [advertisements, setAdvertisements] = useState<{
     id: string;
     type: string;
-    url: string;
+    url?: string;
     title: string;
     description: string;
     clickUrl?: string;
+    backgroundColor?: string;
+    textColor?: string;
+    brandName?: string;
   }[]>([
     {
-      id: 'test-ad-1',
-      type: 'image',
-      url: 'https://fastly.picsum.photos/id/537/200/300.jpg?hmac=LG3kZs5AdrMmsgeVOdrfP0C5KT3WmP-q5TauEZdR4vk',
-      title: '图片广告',
-      description: '测试图片广告'
+      id: 'baidu-ad-1',
+      type: 'banner',
+      title: '百度',
+      description: '百度广告',
+      backgroundColor: '#4285f4',
+      textColor: 'white',
+      brandName: '百度',
+      clickUrl: 'https://www.baidu.com'
     }
   ]);
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
@@ -134,21 +140,29 @@ const HomePage = () => {
               </span>
             </div>
 
-            <div className="toggle-switch" onClick={toggleMode}>
-              <div className="toggle-bg" style={{ backgroundColor: autoMode ? '#3b82f6' : '#475569' }}>
-                <div
-                  style={{
-                    width: '16px',
-                    height: '16px',
-                    backgroundColor: 'white',
-                    borderRadius: '50%',
-                    transition: 'transform 0.3s',
-                    transform: autoMode ? 'translateX(24px)' : 'translateX(0px)',
-                    position: 'absolute',
-                    top: '0px',
-                    left: '2px'
-                  }}
-                ></div>
+            <div
+              style={{ cursor: 'pointer', display: 'inline-block' }}
+              onClick={toggleMode}
+            >
+              <div style={{
+                width: '44px',
+                height: '20px',
+                borderRadius: '9999px',
+                position: 'relative',
+                transition: 'background-color 0.3s ease',
+                backgroundColor: autoMode ? '#3b82f6' : '#475569'
+              }}>
+                <div style={{
+                  width: '16px',
+                  height: '16px',
+                  backgroundColor: 'white',
+                  borderRadius: '50%',
+                  transition: 'transform 0.3s ease',
+                  position: 'absolute',
+                  top: '2px',
+                  left: '2px',
+                  transform: autoMode ? 'translateX(24px)' : 'translateX(0)'
+                }}></div>
               </div>
             </div>
           </div>
@@ -158,10 +172,43 @@ const HomePage = () => {
             {autoMode ? (
               <button
                 onClick={startAutoStreaming}
-                className="stream-button"
+                disabled={isLoading}
                 style={{
-                  backgroundColor: isStreaming ? '#b91c1c' : isLoading ? '#2563eb' : '',
-                  color: '#e2e8f0'
+                  pointerEvents: 'auto',
+                  width: '320px',
+                  padding: '16px 32px',
+                  borderRadius: '12px',
+                  fontWeight: 'bold',
+                  fontSize: '20px',
+                  transition: 'all 0.3s ease',
+                  marginBottom: '40px',
+                  background: isStreaming
+                    ? 'linear-gradient(to right, #ef4444, #dc2626)'
+                    : 'linear-gradient(to right, #3b82f6, #4f46e5)',
+                  color: 'white',
+                  border: 'none',
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  opacity: isLoading ? 0.7 : 1,
+                  outline: 'none',
+                  position: 'relative'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isLoading) {
+                    e.currentTarget.style.background = isStreaming
+                      ? 'linear-gradient(to right, #dc2626, #b91c1c)'
+                      : 'linear-gradient(to right, #2563eb, #4338ca)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 20px 25px -5px rgba(0, 0, 0, 0.4)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isLoading) {
+                    e.currentTarget.style.background = isStreaming
+                      ? 'linear-gradient(to right, #ef4444, #dc2626)'
+                      : 'linear-gradient(to right, #3b82f6, #4f46e5)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }
                 }}
               >
                 {isLoading ? '获取中...' : isStreaming ? '停止直播' : '开始直播'}
@@ -241,7 +288,17 @@ const HomePage = () => {
                   />
                   <button
                     onClick={() => copyToClipboard(streamKey)}
-                    style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer' }}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#9ca3af',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      outline: 'none'
+                    }}
                     title="复制推流密钥"
                   >
                     <Copy size={14} />
@@ -251,18 +308,32 @@ const HomePage = () => {
                 {/* 获取推流码按钮 */}
                 <button
                   onClick={getStreamInfo}
+                  disabled={isLoading}
                   style={{
                     width: '100%',
-                    paddingTop: '6px',
-                    paddingBottom: '6px',
-                    borderRadius: '6px',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    backgroundColor: isLoading ? '#3b82f6' : '#2563eb',
+                    padding: '12px 24px',
+                    borderRadius: '12px',
+                    fontWeight: '600',
+                    background: 'linear-gradient(to right, #3b82f6, #4f46e5)',
                     color: 'white',
                     border: 'none',
-                    cursor: 'pointer',
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.3s ease',
+                    opacity: isLoading ? 0.7 : 1,
+                    outline: 'none',
                     position: 'relative'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isLoading) {
+                      e.currentTarget.style.background = 'linear-gradient(to right, #2563eb, #4338ca)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isLoading) {
+                      e.currentTarget.style.background = 'linear-gradient(to right, #3b82f6, #4f46e5)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }
                   }}
                 >
                   {isLoading ? '获取中...' : '获取推流码'}
@@ -294,15 +365,53 @@ const HomePage = () => {
           {/* 底部控制区域 */}
           <div className="stream-footer">
             <button
-              className="footer-button"
               onClick={() => navigate('/app/obs-config')}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: 'rgba(30, 41, 59, 0.8)',
+                color: 'white',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                outline: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
+                e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(30, 41, 59, 0.8)';
+                e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+              }}
             >
               OBS一键配置
             </button>
 
             <button
-              className="footer-button"
               onClick={() => navigate('/app/danmu')}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: 'rgba(30, 41, 59, 0.8)',
+                color: 'white',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: '500',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                outline: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
+                e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(30, 41, 59, 0.8)';
+                e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+              }}
             >
               打开弹幕
             </button>
@@ -322,10 +431,23 @@ const HomePage = () => {
                     {(platform === '抖音' && (streamMethod === '手机开播' || streamMethod === '自动开播')) && (
                       <button
                         onClick={handleLoginClick}
-                        className="login-button"
                         style={{
                           backgroundColor: isLoggedIn ? '#dc2626' : '#2563eb',
-                          color: 'white'
+                          color: 'white',
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          border: 'none',
+                          fontSize: '12px',
+                          fontWeight: '500',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          outline: 'none'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = isLoggedIn ? '#b91c1c' : '#1d4ed8';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = isLoggedIn ? '#dc2626' : '#2563eb';
                         }}
                       >
                         <span>{isLoggedIn ? '退出登录' : '登录平台'}</span>
@@ -439,7 +561,24 @@ const HomePage = () => {
                     transition: 'opacity 1s'
                   }}
                 >
-                  {ad.type === 'video' ? (
+                  {ad.type === 'banner' ? (
+                    <div
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        backgroundColor: ad.backgroundColor || '#4285f4',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: ad.textColor || 'white',
+                        fontSize: '24px',
+                        fontWeight: 'bold',
+                        fontFamily: 'Arial, sans-serif'
+                      }}
+                    >
+                      {ad.brandName || ad.title}
+                    </div>
+                  ) : ad.type === 'video' ? (
                     <video
                       src={ad.url}
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -515,11 +654,111 @@ const HomePage = () => {
         {/* 导航栏 */}
         <div className="recommendations-header">
           <h2>热门推荐</h2>
-          <nav>
-            <button onClick={() => navigate('/app/plugins')}>插件</button>
-            <button onClick={() => navigate('/app/devices')}>设备推荐</button>
-            <button onClick={() => navigate('/app/tutorials')}>直播教程</button>
-            <button onClick={() => navigate('/app/more')}>更多</button>
+          <nav style={{ display: 'flex', gap: '16px' }}>
+            <button
+              onClick={() => navigate('/app/plugins')}
+              style={{
+                fontSize: '14px',
+                color: '#d1d5db',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                transition: 'all 0.3s ease',
+                border: '1px solid transparent',
+                backgroundColor: 'transparent',
+                cursor: 'pointer',
+                outline: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'white';
+                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
+                e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#d1d5db';
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.borderColor = 'transparent';
+              }}
+            >
+              插件
+            </button>
+            <button
+              onClick={() => navigate('/app/devices')}
+              style={{
+                fontSize: '14px',
+                color: '#d1d5db',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                transition: 'all 0.3s ease',
+                border: '1px solid transparent',
+                backgroundColor: 'transparent',
+                cursor: 'pointer',
+                outline: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'white';
+                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
+                e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#d1d5db';
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.borderColor = 'transparent';
+              }}
+            >
+              设备推荐
+            </button>
+            <button
+              onClick={() => navigate('/app/tutorials')}
+              style={{
+                fontSize: '14px',
+                color: '#d1d5db',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                transition: 'all 0.3s ease',
+                border: '1px solid transparent',
+                backgroundColor: 'transparent',
+                cursor: 'pointer',
+                outline: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'white';
+                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
+                e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#d1d5db';
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.borderColor = 'transparent';
+              }}
+            >
+              直播教程
+            </button>
+            <button
+              onClick={() => navigate('/app/more')}
+              style={{
+                fontSize: '14px',
+                color: '#d1d5db',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                transition: 'all 0.3s ease',
+                border: '1px solid transparent',
+                backgroundColor: 'transparent',
+                cursor: 'pointer',
+                outline: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'white';
+                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
+                e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#d1d5db';
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.borderColor = 'transparent';
+              }}
+            >
+              更多
+            </button>
           </nav>
         </div>
 
@@ -535,23 +774,36 @@ const HomePage = () => {
         {!hotDataLoading && (
           <>
             {recommendedWorks.length === 0 ? (
-              <div style={{ textAlign: 'center', color: '#9ca3af', paddingTop: '32px', paddingBottom: '32px' }}>
+              <div style={{
+                textAlign: 'center',
+                color: '#9ca3af',
+                padding: '32px 0'
+              }}>
                 <div style={{ fontSize: '24px', marginBottom: '8px' }}>🔥</div>
                 <p>暂无热门推荐</p>
                 <button
                   onClick={() => setHotDataLoading(true)}
                   style={{
                     marginTop: '16px',
-                    backgroundColor: '#4f46e5',
-                    color: 'white',
-                    padding: '8px 16px',
-                    borderRadius: '6px',
-                    border: 'none',
+                    padding: '8px 24px',
+                    borderRadius: '12px',
+                    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+                    color: '#e2e8f0',
+                    border: '1px solid rgba(71, 85, 105, 0.5)',
                     cursor: 'pointer',
-                    transition: 'background-color 0.3s'
+                    transition: 'all 0.3s ease',
+                    outline: 'none'
                   }}
-                  onMouseOver={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#4338ca'}
-                  onMouseOut={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#4f46e5'}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(to right, #3b82f6, #4f46e5)';
+                    e.currentTarget.style.color = 'white';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(30, 41, 59, 0.8)';
+                    e.currentTarget.style.color = '#e2e8f0';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
                 >
                   刷新数据
                 </button>
@@ -562,25 +814,34 @@ const HomePage = () => {
                   <div
                     key={index}
                     style={{
-                      backgroundColor: 'rgba(71, 85, 105, 0.5)',
+                      backgroundColor: 'rgba(30, 41, 59, 0.5)',
                       borderRadius: '8px',
                       padding: '12px',
                       border: '1px solid rgba(71, 85, 105, 0.5)',
-                      transition: 'border-color 0.3s'
+                      transition: 'all 0.3s ease',
+                      cursor: 'pointer'
                     }}
-                    onMouseOver={(e) => e.currentTarget.style.borderColor = '#64748b'}
-                    onMouseOut={(e) => e.currentTarget.style.borderColor = 'rgba(71, 85, 105, 0.5)'}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(59, 130, 246, 0.2)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'rgba(71, 85, 105, 0.5)';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = 'none';
+                    }}
                   >
                     <div style={{
                       aspectRatio: '16/9',
-                      backgroundColor: '#475569',
-                      borderRadius: '6px',
+                      backgroundColor: '#374151',
+                      borderRadius: '4px',
                       marginBottom: '8px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center'
                     }}>
-                      <span style={{ color: '#94a3b8', fontSize: '12px' }}>预览图</span>
+                      <span style={{ color: '#9ca3af', fontSize: '12px' }}>预览图</span>
                     </div>
                     <h3 style={{
                       fontSize: '14px',
@@ -594,7 +855,7 @@ const HomePage = () => {
                     </h3>
                     <p style={{
                       fontSize: '12px',
-                      color: '#94a3b8',
+                      color: '#9ca3af',
                       marginTop: '4px',
                       display: '-webkit-box',
                       WebkitLineClamp: 2,

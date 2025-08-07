@@ -21,7 +21,9 @@ export class MainWindow {
         contextIsolation: true,
         preload: path.join(__dirname, '../preload.js'),
       },
-      titleBarStyle: 'default',
+      frame: false, // 移除默认窗口边框
+      titleBarStyle: 'hidden', // 隐藏标题栏
+      resizable: false, // 禁止调整窗口大小
       show: false, // 先不显示，等加载完成后再显示
     });
     

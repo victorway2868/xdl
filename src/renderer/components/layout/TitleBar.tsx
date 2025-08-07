@@ -95,17 +95,23 @@ const TitleBar: React.FC = () => {
   };
 
   return (
-    <div className="bg-slate-800 text-white h-10 flex items-center justify-between select-none drag">
+    <div className="text-white flex items-center justify-between select-none drag" style={{
+      height: '38px',
+      background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95))',
+      borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
+      backdropFilter: 'blur(10px)'
+    }}>
       {/* 应用标题 */}
-      <div className="px-3 font-medium text-base flex items-center">
+      <div className="font-medium flex items-center" style={{ padding: '0 10px', fontSize: '15px' }}>
         <img
           src={iconPath}
           alt="小斗笠直播助手"
-          className="w-6 h-6 mr-3 flex-shrink-0"
+          className="flex-shrink-0"
+          style={{ width: '20px', height: '20px', marginRight: '6px' }}
           onLoad={() => {
             console.log('图标加载成功:', iconPath);
           }}
-          onError={(e) => {
+          onError={() => {
             console.error('图标加载失败:', iconPath);
             // 如果加载失败，尝试使用备用图标
             if (iconPath !== '/favicon.ico') {
@@ -113,61 +119,146 @@ const TitleBar: React.FC = () => {
             }
           }}
         />
-        <span>小斗笠直播助手</span>
-        <span className="ml-2 text-xs text-gray-400">v{appVersion}</span>
+        <span style={{ color: 'white' }}>小斗笠直播助手</span>
+        <span style={{ marginLeft: '6px', fontSize: '11px', color: '#9ca3af' }}>v{appVersion}</span>
       </div>
 
       {/* 拖动区域 - 大部分标题栏区域可用于拖动窗口 */}
       <div className="flex-grow drag"></div>
 
       {/* 功能按钮 */}
-      <div className="flex no-drag">
+      <div className="flex items-center no-drag">
         {/* 音乐按钮 */}
         <button
           onClick={() => navigate('/app/audio-settings')}
-          className="hover:bg-slate-700 focus:outline-none px-3 h-10 flex items-center justify-center"
+          className="flex items-center justify-center"
+          style={{
+            padding: '0 10px',
+            height: '30px',
+            borderRadius: '5px',
+            transition: 'all 0.3s ease',
+            border: '1px solid transparent',
+            backgroundColor: 'transparent',
+            outline: 'none'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
+            e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.borderColor = 'transparent';
+          }}
           title={isMuted ? "打开音效" : "关闭音效"}
         >
-          <Music size={18} className={isMuted ? "text-gray-500" : "text-blue-400"} />
+          <Music size={16} color={isMuted ? "#6b7280" : "#60a5fa"} />
         </button>
 
         {/* 会员按钮 */}
         <button
           onClick={() => navigate('/app/membership')}
-          className="hover:bg-slate-700 focus:outline-none px-3 h-10 flex items-center justify-center"
+          className="flex items-center justify-center"
+          style={{
+            padding: '0 10px',
+            height: '30px',
+            borderRadius: '5px',
+            transition: 'all 0.3s ease',
+            border: '1px solid transparent',
+            backgroundColor: 'transparent',
+            outline: 'none'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(245, 158, 11, 0.2)';
+            e.currentTarget.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.borderColor = 'transparent';
+          }}
           title="会员中心"
         >
-          <UserCheck size={18} className="text-yellow-400" />
+          <UserCheck size={16} color="#fbbf24" />
         </button>
 
         {/* 主题切换按钮 */}
         <button
           onClick={toggleTheme}
-          className="hover:bg-slate-700 focus:outline-none px-3 h-10 flex items-center justify-center"
+          className="flex items-center justify-center"
+          style={{
+            padding: '0 10px',
+            height: '30px',
+            borderRadius: '5px',
+            transition: 'all 0.3s ease',
+            border: '1px solid transparent',
+            backgroundColor: 'transparent',
+            outline: 'none'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(168, 85, 247, 0.2)';
+            e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.borderColor = 'transparent';
+          }}
           title={isDarkTheme ? "切换到亮色主题" : "切换到暗色主题"}
         >
           {isDarkTheme ?
-            <Sun size={18} className="text-yellow-300" /> :
-            <Moon size={18} className="text-blue-300" />
+            <Sun size={16} color="#fde047" /> :
+            <Moon size={16} color="#93c5fd" />
           }
         </button>
 
         {/* 最小化按钮 */}
         <button
           onClick={handleMinimize}
-          className="hover:bg-slate-700 focus:outline-none px-3 h-10 flex items-center justify-center"
+          className="flex items-center justify-center"
+          style={{
+            padding: '0 10px',
+            height: '30px',
+            borderRadius: '5px',
+            transition: 'all 0.3s ease',
+            border: '1px solid transparent',
+            backgroundColor: 'transparent',
+            outline: 'none'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(107, 114, 128, 0.2)';
+            e.currentTarget.style.borderColor = 'rgba(107, 114, 128, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.borderColor = 'transparent';
+          }}
           title="最小化"
         >
-          <Minus size={18} />
+          <Minus size={16} color="#d1d5db" />
         </button>
 
         {/* 关闭按钮 */}
         <button
           onClick={handleClose}
-          className="hover:bg-red-600 focus:outline-none px-4 h-10 flex items-center justify-center"
+          className="flex items-center justify-center"
+          style={{
+            padding: '0 12px',
+            height: '30px',
+            borderRadius: '5px',
+            transition: 'all 0.3s ease',
+            border: '1px solid transparent',
+            backgroundColor: 'transparent',
+            outline: 'none'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
+            e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+            e.currentTarget.style.borderColor = 'transparent';
+          }}
           title="关闭应用"
         >
-          <X size={18} />
+          <X size={16} color="#f87171" />
         </button>
       </div>
     </div>

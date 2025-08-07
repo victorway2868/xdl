@@ -31,6 +31,9 @@ const createWindow = (): void => {
         contextIsolation: true,
         webSecurity: true,
       },
+      frame: false, // 移除默认窗口边框
+      titleBarStyle: 'hidden', // 隐藏标题栏
+      resizable: false, // 禁止调整窗口大小
       show: false,
     });
 
