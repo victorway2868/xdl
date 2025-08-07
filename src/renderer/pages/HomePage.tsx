@@ -366,52 +366,14 @@ const HomePage = () => {
           <div className="stream-footer">
             <button
               onClick={() => navigate('/app/obs-config')}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: 'rgba(30, 41, 59, 0.8)',
-                color: 'white',
-                border: '1px solid rgba(59, 130, 246, 0.3)',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                outline: 'none'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
-                e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(30, 41, 59, 0.8)';
-                e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
-              }}
+              className="btn-base btn-ghost"
             >
               OBS一键配置
             </button>
 
             <button
               onClick={() => navigate('/app/danmu')}
-              style={{
-                padding: '8px 16px',
-                backgroundColor: 'rgba(30, 41, 59, 0.8)',
-                color: 'white',
-                border: '1px solid rgba(59, 130, 246, 0.3)',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: '500',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-                outline: 'none'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
-                e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.5)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(30, 41, 59, 0.8)';
-                e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
-              }}
+              className="btn-base btn-ghost"
             >
               打开弹幕
             </button>
@@ -783,27 +745,8 @@ const HomePage = () => {
                 <p>暂无热门推荐</p>
                 <button
                   onClick={() => setHotDataLoading(true)}
-                  style={{
-                    marginTop: '16px',
-                    padding: '8px 24px',
-                    borderRadius: '12px',
-                    backgroundColor: 'rgba(30, 41, 59, 0.8)',
-                    color: '#e2e8f0',
-                    border: '1px solid rgba(71, 85, 105, 0.5)',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    outline: 'none'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'linear-gradient(to right, #3b82f6, #4f46e5)';
-                    e.currentTarget.style.color = 'white';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(30, 41, 59, 0.8)';
-                    e.currentTarget.style.color = '#e2e8f0';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
+                  className="btn-base btn-refresh"
+                  style={{ marginTop: '16px' }}
                 >
                   刷新数据
                 </button>
@@ -813,55 +756,15 @@ const HomePage = () => {
                 {recommendedWorks.slice(0, 7).map((work, index) => (
                   <div
                     key={index}
-                    style={{
-                      backgroundColor: 'rgba(30, 41, 59, 0.5)',
-                      borderRadius: '8px',
-                      padding: '12px',
-                      border: '1px solid rgba(71, 85, 105, 0.5)',
-                      transition: 'all 0.3s ease',
-                      cursor: 'pointer'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(59, 130, 246, 0.2)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.borderColor = 'rgba(71, 85, 105, 0.5)';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
+                    className="recommendation-card"
                   >
-                    <div style={{
-                      aspectRatio: '16/9',
-                      backgroundColor: '#374151',
-                      borderRadius: '4px',
-                      marginBottom: '8px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <span style={{ color: '#9ca3af', fontSize: '12px' }}>预览图</span>
+                    <div className="card-thumbnail">
+                      <span className="card-thumbnail-text">预览图</span>
                     </div>
-                    <h3 style={{
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      color: 'white',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
+                    <h3 className="card-title">
                       {work.title || '推荐内容'}
                     </h3>
-                    <p style={{
-                      fontSize: '12px',
-                      color: '#9ca3af',
-                      marginTop: '4px',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden'
-                    }}>
+                    <p className="card-description">
                       {work.description || '暂无描述'}
                     </p>
                   </div>
