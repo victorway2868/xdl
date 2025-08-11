@@ -618,6 +618,64 @@ const HomePage = () => {
           <h2>热门推荐</h2>
           <nav style={{ display: 'flex', gap: '16px' }}>
             <button
+              onClick={() => navigate('/danmu')}
+              style={{
+                fontSize: '14px',
+                color: '#d1d5db',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                transition: 'all 0.3s ease',
+                border: '1px solid transparent',
+                backgroundColor: 'transparent',
+                cursor: 'pointer',
+                outline: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'white';
+                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
+                e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#d1d5db';
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.borderColor = 'transparent';
+              }}
+            >
+              💬 弹幕助手
+            </button>
+            <button
+              onClick={() => navigate('/scene-editor')}
+              style={{
+                fontSize: '14px',
+                color: '#d1d5db',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                transition: 'all 0.3s ease',
+                border: '1px solid transparent',
+                backgroundColor: 'transparent',
+                cursor: 'pointer',
+                outline: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'white';
+                e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.2)';
+                e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#d1d5db';
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.borderColor = 'transparent';
+              }}
+            >
+              📺 场景编辑器
+            </button>
+            <button
               onClick={() => navigate('/app/plugins')}
               style={{
                 fontSize: '14px',

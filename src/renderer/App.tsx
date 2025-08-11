@@ -8,6 +8,8 @@ import { store } from './store/store';
 import { ThemeProvider } from './contexts/ThemeContext';
 import MainLayout from './components/layout/MainLayout';
 import HomePage from './pages/HomePage';
+import DanmuPage from './pages/Danmu';
+import SceneEditorPage from './pages/SceneEditor';
 import './styles/App.css';
 
 const App: React.FC = () => {
@@ -24,6 +26,12 @@ const App: React.FC = () => {
               <Route path="/app" element={<MainLayout />}>
                 <Route index element={<HomePage />} />
               </Route>
+
+              {/* 弹幕页面 - 独立全屏页面 */}
+              <Route path="/danmu" element={<DanmuPage />} />
+
+              {/* 场景编辑器页面 - 独立全屏页面 */}
+              <Route path="/scene-editor" element={<SceneEditorPage />} />
             </Routes>
           </Router>
         </ConfigProvider>
