@@ -1,17 +1,20 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-// 定义状态的接口
-interface SoftwareState {
-  versions: Record<string, string | null>;
+// 为单个软件检查定义状态接口
+interface SoftwareCheck {
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
-  error: string | null;
+  version: string | null;
+  error?: string | null;
+}
+
+// 整个Slice的状态接口
+interface SoftwareState {
+  checks: Record<string, SoftwareCheck>;
 }
 
 // 初始状态
 const initialState: SoftwareState = {
-  versions: {},
-  status: 'idle',
-  error: null,
+  checks: {},
 };
 
 // 异步Thunk，用于获取软件版本
@@ -22,18 +25,15 @@ export const fetchSoftwareVersion = createAsyncThunk(
       const version = await window.electronAPI.getSoftwareVersion(softwareName);
       return { softwareName, version };
     } catch (error: any) {
-      return rejectWithValue(error.message);
+      return rejectWithValue({ softwareName, message: error.message });
     }
   },
   {
     condition: (softwareName, { getState }) => {
-      const { software } = getState() as { software: SoftwareState };
-      // 如果该软件的版本正在获取，或已成功获取，则阻止新的请求
-      const existingVersion = software.versions[softwareName];
-      if (software.status === 'loading' && !existingVersion) {
-        return false;
-      }
-      if (software.status === 'succeeded' && existingVersion) {
+      const state = getState() as { software: SoftwareState };
+      const check = state.software.checks[softwareName];
+      // 如果该软件正在被检查，或已成功获取，则阻止发起新的请求
+      if (check && (check.status === 'loading' || check.status === 'succeeded')) {
         return false;
       }
       return true;
@@ -48,16 +48,29 @@ const softwareSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(fetchSoftwareVersion.pending, (state) => {
-        state.status = 'loading';
+      .addCase(fetchSoftwareVersion.pending, (state, action) => {
+        const softwareName = action.meta.arg;
+        state.checks[softwareName] = {
+          status: 'loading',
+          version: null,
+          error: null,
+        };
       })
       .addCase(fetchSoftwareVersion.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        state.versions[action.payload.softwareName] = action.payload.version;
+        const { softwareName, version } = action.payload;
+        state.checks[softwareName] = {
+          status: 'succeeded',
+          version: version,
+          error: null,
+        };
       })
       .addCase(fetchSoftwareVersion.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload as string;
+        const { softwareName, message } = action.payload as { softwareName: string; message: string };
+        state.checks[softwareName] = {
+          status: 'failed',
+          version: null,
+          error: message,
+        };
       });
   },
 });

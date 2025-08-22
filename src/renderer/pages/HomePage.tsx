@@ -15,20 +15,22 @@ const HomePage = () => {
   const [streamUrl, setStreamUrl] = useState('');
   const [streamKey, setStreamKey] = useState('');
   const dispatch = useDispatch<AppDispatch>();
-  const { versions } = useSelector((state: RootState) => state.software);
+  const { checks } = useSelector((state: RootState) => state.software);
+
+  const initialized = React.useRef(false);
 
   useEffect(() => {
-    // 仅当版本信息不存在时才获取
-    if (!versions['OBS Studio']) {
+    // 使用 ref 确保此 effect 仅在首次挂载时运行一次
+    if (!initialized.current) {
+      initialized.current = true;
       dispatch(fetchSoftwareVersion('OBS Studio'));
-    }
-    if (!versions['直播伴侣']) {
       dispatch(fetchSoftwareVersion('直播伴侣'));
     }
-  }, [dispatch, versions]);
+  }, [dispatch]);
 
-  const obsVersion = versions['OBS Studio'] || '未检测到';
-  const companionVersion = versions['直播伴侣'] || '未检测到';
+  // 从新的、独立的状态结构中安全地获取版本信息
+  const obsVersion = checks['OBS Studio']?.version || '未检测到';
+  const companionVersion = checks['直播伴侣']?.version || '未检测到';
   const [isStreaming, setIsStreaming] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [streamInfoSuccess, setStreamInfoSuccess] = useState(false);
