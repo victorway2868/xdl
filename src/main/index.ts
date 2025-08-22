@@ -1,11 +1,26 @@
 import { loggerService } from './services/logger';
 
+import { ipcMain } from 'electron';
+import { getSoftwareVersion } from './utils/findSoftwarePaths';
+
 
 // 全局错误捕获
 process.on('uncaughtException', (error) => {
   loggerService.addLog('error', `Uncaught Exception: ${error.message}`, 'main', { stack: error.stack });
   // 建议在此处添加额外的错误处理逻辑，例如优雅地退出应用
 });
+
+// IPC通信，用于获取软件版本
+ipcMain.handle('get-software-version', async (event, softwareName) => {
+  try {
+    const version = await getSoftwareVersion(softwareName);
+    return version;
+  } catch (error) {
+    loggerService.addLog('error', `Failed to get software version for ${softwareName}: ${error.message}`, 'main');
+    return null;
+  }
+});
+
 
 
 process.on('unhandledRejection', (reason) => {

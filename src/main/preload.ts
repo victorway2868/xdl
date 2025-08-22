@@ -5,6 +5,8 @@ import { IPC_CHANNELS } from '../shared/constants';
 
 // 创建安全的 API 对象
 const electronAPI: IpcApi = {
+  // Software Version API
+  getSoftwareVersion: (softwareName: string) => ipcRenderer.invoke('get-software-version', softwareName),
   // Logger APIs
   log: (entry: Omit<LogEntry, 'source' | 'timestamp'>) =>
     ipcRenderer.send('log', { ...entry, source: 'renderer' }),

@@ -1,4 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState, AppDispatch } from '../store/store';
+import { fetchSoftwareVersion } from '../store/features/softwareSlice';
 import { User, Check, AlertCircle, Link, Key, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -11,8 +14,21 @@ const HomePage = () => {
   const [streamMethod, setStreamMethod] = useState('直播伴侣');
   const [streamUrl, setStreamUrl] = useState('');
   const [streamKey, setStreamKey] = useState('');
-  const [obsVersion, setObsVersion] = useState('31.0.3');
-  const [companionVersion, setCompanionVersion] = useState('10.1.4');
+  const dispatch = useDispatch<AppDispatch>();
+  const { versions } = useSelector((state: RootState) => state.software);
+
+  useEffect(() => {
+    // 仅当版本信息不存在时才获取
+    if (!versions['OBS Studio']) {
+      dispatch(fetchSoftwareVersion('OBS Studio'));
+    }
+    if (!versions['直播伴侣']) {
+      dispatch(fetchSoftwareVersion('直播伴侣'));
+    }
+  }, [dispatch, versions]);
+
+  const obsVersion = versions['OBS Studio'] || '未检测到';
+  const companionVersion = versions['直播伴侣'] || '未检测到';
   const [isStreaming, setIsStreaming] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [streamInfoSuccess, setStreamInfoSuccess] = useState(false);
