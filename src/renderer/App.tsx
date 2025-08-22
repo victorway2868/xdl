@@ -8,6 +8,7 @@ import { store } from './store/store';
 import { ThemeProvider } from './contexts/ThemeContext';
 import MainLayout from './components/layout/MainLayout';
 import HomePage from './pages/HomePage';
+import DanmuPage from './pages/DanmuPage';
 import './styles/App.css';
 
 const App: React.FC = () => {
@@ -24,6 +25,9 @@ const App: React.FC = () => {
               <Route path="/app" element={<MainLayout />}>
                 <Route index element={<HomePage />} />
               </Route>
+
+              {/* 弹幕功能路由 */}
+              <Route path="/danmu" element={<DanmuPage />} />
             </Routes>
           </Router>
         </ConfigProvider>

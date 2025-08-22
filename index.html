@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <title>Electron Framework App</title>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:* ws://localhost:*; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' http://localhost:* ws://localhost:*;" />
+    <script src="/mssdk.js"></script>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:*; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.douyin.com; font-src 'self' data:; connect-src 'self' http://localhost:* ws://localhost:* https://*.douyin.com wss://*.douyin.com;" />
     <style>
       body {
         margin: 0;
@@ -14,7 +15,7 @@
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
       }
-      
+
       #root {
         height: 100vh;
       }

@@ -8,40 +8,41 @@ const electronAPI: IpcApi = {
   // Logger APIs
   log: (entry: Omit<LogEntry, 'source' | 'timestamp'>) =>
     ipcRenderer.send('log', { ...entry, source: 'renderer' }),
-  
+
   getLogs: () =>
     ipcRenderer.invoke(IPC_CHANNELS.GET_LOGS),
-  
+
+
   // Settings APIs
   getSettings: () =>
     ipcRenderer.invoke(IPC_CHANNELS.GET_SETTINGS),
-  
+
   saveSettings: (settings) =>
     ipcRenderer.invoke(IPC_CHANNELS.SAVE_SETTINGS, settings),
-  
+
   resetSettings: () =>
     ipcRenderer.invoke(IPC_CHANNELS.RESET_SETTINGS),
-  
+
   // Plugin APIs
   getPlugins: () =>
     ipcRenderer.invoke(IPC_CHANNELS.GET_PLUGINS),
-  
+
   enablePlugin: (pluginId: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.ENABLE_PLUGIN, pluginId),
-  
+
   disablePlugin: (pluginId: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.DISABLE_PLUGIN, pluginId),
-  
+
   reloadPlugin: (pluginId: string) =>
     ipcRenderer.invoke(IPC_CHANNELS.RELOAD_PLUGIN, pluginId),
-  
+
   // Window APIs
   minimizeWindow: () =>
     ipcRenderer.invoke(IPC_CHANNELS.MINIMIZE_WINDOW),
-  
+
   maximizeWindow: () =>
     ipcRenderer.invoke(IPC_CHANNELS.MAXIMIZE_WINDOW),
-  
+
   closeWindow: () =>
     ipcRenderer.invoke(IPC_CHANNELS.CLOSE_WINDOW),
 };

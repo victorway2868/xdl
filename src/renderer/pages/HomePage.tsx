@@ -372,7 +372,7 @@ const HomePage = () => {
             </button>
 
             <button
-              onClick={() => navigate('/app/danmu')}
+              onClick={() => navigate('/danmu')}
               className="btn-base btn-ghost"
             >
               打开弹幕

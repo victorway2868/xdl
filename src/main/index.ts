@@ -14,7 +14,7 @@ process.on('unhandledRejection', (reason) => {
 });
 
 // 主进程入口文件
-import { app, BrowserWindow, crashReporter, ipcMain } from 'electron';
+import { app, BrowserWindow, crashReporter, ipcMain, session } from 'electron';
 import { LogEntry } from '../shared/types';
 import * as path from 'path';
 import { registerAllHandlers } from './handlers';
@@ -109,6 +109,9 @@ const createWindow = (): void => {
 app.whenReady().then(() => {
   loggerService.addLog('info', 'Application starting', 'main');
   console.log('App ready, creating window...');
+
+
+
 
   // 注册所有 IPC 处理器
   registerAllHandlers();
