@@ -1,7 +1,38 @@
+import { loggerService } from './services/logger';
+
+
+// 全局错误捕获
+process.on('uncaughtException', (error) => {
+  loggerService.addLog('error', `Uncaught Exception: ${error.message}`, 'main', { stack: error.stack });
+  // 建议在此处添加额外的错误处理逻辑，例如优雅地退出应用
+});
+
+
+process.on('unhandledRejection', (reason) => {
+  const error = reason as Error;
+  loggerService.addLog('error', `Unhandled Rejection: ${error.message || reason}`, 'main', { stack: error.stack });
+});
+
 // 主进程入口文件
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, crashReporter, ipcMain } from 'electron';
+import { LogEntry } from '../shared/types';
 import * as path from 'path';
 import { registerAllHandlers } from './handlers';
+
+
+// 配置崩溃报告
+crashReporter.start({
+  productName: 'ElectronFrameworkApp',
+  companyName: 'MyCompany',
+  submitURL: '', // 替换为您的崩溃报告服务器地址
+  uploadToServer: false, // 设置为 true 以自动上传崩溃报告
+});
+
+// 监听渲染器进程的日志
+ipcMain.on('log', (event, entry: Omit<LogEntry, 'source'>) => {
+  loggerService.addLog(entry.level, entry.message, 'renderer', entry.metadata);
+});
+
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
@@ -20,7 +51,7 @@ console.log('Main process starting...');
 // 创建窗口函数
 const createWindow = (): void => {
   console.log('Creating main window...');
-  
+
   try {
     const mainWindow = new BrowserWindow({
       width: 1000,
@@ -66,9 +97,9 @@ const createWindow = (): void => {
     mainWindow.on('closed', () => {
       console.log('Main window closed');
     });
-    
+
     console.log('Main window created successfully');
-    
+
   } catch (error) {
     console.error('Error creating window:', error);
   }
@@ -76,6 +107,7 @@ const createWindow = (): void => {
 
 // 应用准备就绪时创建窗口
 app.whenReady().then(() => {
+  loggerService.addLog('info', 'Application starting', 'main');
   console.log('App ready, creating window...');
 
   // 注册所有 IPC 处理器
@@ -92,6 +124,7 @@ app.whenReady().then(() => {
 
 // 所有窗口关闭时退出应用
 app.on('window-all-closed', () => {
+  loggerService.addLog('info', 'Application shutting down', 'main');
   console.log('All windows closed');
   if (process.platform !== 'darwin') {
     app.quit();

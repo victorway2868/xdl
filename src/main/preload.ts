@@ -6,8 +6,8 @@ import { IPC_CHANNELS } from '../shared/constants';
 // 创建安全的 API 对象
 const electronAPI: IpcApi = {
   // Logger APIs
-  log: (level: string, message: string, metadata?: Record<string, any>) =>
-    ipcRenderer.invoke(IPC_CHANNELS.LOG, level, message, metadata),
+  log: (entry: Omit<LogEntry, 'source' | 'timestamp'>) =>
+    ipcRenderer.send('log', { ...entry, source: 'renderer' }),
   
   getLogs: () =>
     ipcRenderer.invoke(IPC_CHANNELS.GET_LOGS),

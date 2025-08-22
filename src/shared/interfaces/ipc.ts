@@ -3,7 +3,7 @@ import { AppSettings, LogEntry, PluginInfo } from '../types';
 
 export interface IpcApi {
   // Logger APIs
-  log: (level: string, message: string, metadata?: Record<string, any>) => Promise<void>;
+  log: (entry: Omit<LogEntry, 'source' | 'timestamp'>) => void;
   getLogs: () => Promise<LogEntry[]>;
   
   // Settings APIs
