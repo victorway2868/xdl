@@ -27,7 +27,7 @@
 
 最初的迁移步骤如下：
 
-1.  **文件复制**: 将弹幕功能相关的目录 (`core/danmaku` 、`public/mssdk.js` 和 `pages/DanmuPage.tsx`) 从旧项目复制到新项目。
+1.  **文件复制**: 将弹幕功能相关的目录 (`core/danmaku` 和 `pages/DanmuPage.tsx`) 从旧项目复制到新项目。
 2.  **路由集成**: 在 `App.tsx` 中为 `DanmuPage` 组件添加路由规则。
 3.  **添加入口**: 在 `HomePage.tsx` 中添加一个按钮，用于导航到弹幕页面。
 
