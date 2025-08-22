@@ -123,9 +123,7 @@ function getPathFromRegistry(shortwareName, processName) {
  * @returns {Promise<string|null>} 软件路径或null
  */
 async function getSoftwarePath(softwareName, processName = null) {
-  if (!processName) {
-    processName = `${softwareName}.exe`;
-  }
+  processName = (softwareName === 'OBS Studio') ? 'obs64.exe' : `${softwareName}.exe`;
 
   console.log(`正在查找 ${softwareName} 的路径...`);
 
