@@ -9,7 +9,6 @@
   "include": [
     "vite.config.ts",
     "vite.main.config.ts",
-    "vite.preload.config.ts",
     "vite.renderer.config.ts",
     "forge.config.js"
   ]

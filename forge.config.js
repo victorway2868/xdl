@@ -8,6 +8,10 @@ module.exports = {
     win32metadata: {
       'requested-execution-level': 'requireAdministrator',
     },
+    // 将运行时需要的主进程资源打到 resources/assets 目录
+    extraResources: [
+      { from: 'public/icons', to: 'assets/icons' },
+    ],
   },
   rebuildConfig: {},
   makers: [
@@ -46,6 +50,7 @@ module.exports = {
           config: 'vite.main.config.ts',
         },
         {
+          name: 'preload',
           entry: 'src/main/preload.ts',
           config: 'vite.preload.config.ts',
         },

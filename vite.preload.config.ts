@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite';
-import path from 'path';
+// vite.preload.config.ts
+import { defineConfig } from 'vite'
+import path from 'path'
 
-// https://vitejs.dev/config
 export default defineConfig({
   resolve: {
     alias: {
@@ -12,8 +12,16 @@ export default defineConfig({
     },
   },
   build: {
+    lib: {
+      entry: path.resolve(__dirname, 'src/main/preload.ts'), // preload入口
+      formats: ['cjs'], // preload必须CJS
+      fileName: () => 'preload.js',
+    },
+    outDir: path.resolve(__dirname, '.vite/preload'), // 输出目录
+    emptyOutDir: true,
     rollupOptions: {
-      external: ['electron'],
+      external: ['electron'], // Electron内置模块不要打包
     },
   },
-});
+  publicDir: false, // 不要复制 publicDir 的内容
+})

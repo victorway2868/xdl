@@ -77,9 +77,11 @@ ipcMain.on('log', (event, entry: Omit<LogEntry, 'source'>) => {
 });
 
 
-declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
-declare const MAIN_WINDOW_VITE_NAME: string;
-declare const MAIN_WINDOW_PRELOAD_VITE_URL: string;
+// These may be injected by Vite only in dev. Use typeof checks at runtime.
+// Provide ambient declarations so TypeScript can compile.
+declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string | undefined;
+declare const MAIN_WINDOW_VITE_NAME: string | undefined;
+declare const MAIN_WINDOW_PRELOAD_VITE_URL: string | undefined;
 
 // 全局错误处理
 process.on('uncaughtException', (error) => {
@@ -97,14 +99,18 @@ const createWindow = (): void => {
   console.log('Creating main window...');
 
   try {
+        // Use resourcesPath in production to load icon from extraResources
+        const iconPath = app.isPackaged
+          ? path.join(process.resourcesPath, 'assets', 'icons', 'icon-128x128.ico')
+          : path.join(__dirname, '../../public/icons/icon-128x128.ico');
         const mainWindow = new BrowserWindow({
-      icon: path.join(__dirname, '../../public/icons/icon-128x128.ico'),
+      icon: iconPath,
       width: 1000,
       height: 760,
       webPreferences: {
-                        preload: typeof MAIN_WINDOW_PRELOAD_VITE_URL !== 'undefined'
-          ? MAIN_WINDOW_PRELOAD_VITE_URL
-          : path.join(__dirname, `../renderer/main_window/preload.js`),
+        // In dev, Vite plugin injects MAIN_WINDOW_PRELOAD_VITE_URL. In prod, use built file at .vite/preload/preload.js
+        preload: (typeof MAIN_WINDOW_PRELOAD_VITE_URL !== 'undefined' && MAIN_WINDOW_PRELOAD_VITE_URL) || path.join(__dirname, '../preload/preload.js'),
+
         nodeIntegration: false,
         contextIsolation: true,
         webSecurity: true,
@@ -119,10 +125,11 @@ const createWindow = (): void => {
     // Vite DEV server URL
     mainWindow.webContents.openDevTools();
 
-    if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-      console.log(`Attempting to load URL: ${MAIN_WINDOW_VITE_DEV_SERVER_URL}`);
+    const DEV_SERVER_URL = (typeof MAIN_WINDOW_VITE_DEV_SERVER_URL !== 'undefined' && MAIN_WINDOW_VITE_DEV_SERVER_URL) || '';
+    if (DEV_SERVER_URL) {
+      console.log(`Attempting to load URL: ${DEV_SERVER_URL}`);
       const loadWithRetries = (retries = 20) => {
-        mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL).catch(err => {
+        mainWindow.loadURL(DEV_SERVER_URL).catch(err => {
           console.error('Failed to load dev server URL, retrying...', err);
           if (retries > 0) {
             setTimeout(() => loadWithRetries(retries - 1), 1000); // wait 1s before retrying
@@ -131,7 +138,8 @@ const createWindow = (): void => {
       };
       loadWithRetries(); // 实际调用函数
     } else {
-      mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
+      // In production, load the built renderer index.html (renderer name is 'main_window' per forge.config)
+      mainWindow.loadFile(path.join(__dirname, '../renderer/main_window/index.html'));
     }
 
     // 窗口准备好后显示
