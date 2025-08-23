@@ -96,39 +96,17 @@ jobs:
             echo "File hash: $HASH"
           fi
           
-      - name: Install Wrangler
-        run: npm install -g wrangler
-        
-      - name: Upload installer to R2
+      - name: Upload Artifacts to R2
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
         run: |
-          # 上传安装包到 R2
-          wrangler r2 object put "${{ secrets.R2_BUCKET }}/releases/${{ env.platform }}/${{ env.installer_name }}" --file="${{ env.installer_file }}" --remote
-          
-      - name: Create and upload version metadata
-        shell: bash
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-        run: |
-          # 创建版本元数据文件
-          cat > latest-${{ env.platform }}.json << EOF
-          {
-            "version": "${{ steps.version.outputs.version }}",
-            "url": "https://${{ secrets.R2_ENDPOINT }}/releases/${{ env.platform }}/${{ env.installer_name }}",
-            "releaseDate": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "sha512": "${{ env.file_hash }}",
-            "platform": "${{ env.platform }}",
-            "fileName": "${{ env.installer_name }}"
-          }
-          EOF
-          
-          # 上传元数据文件
-          wrangler r2 object put "${{ secrets.R2_BUCKET }}/updates/latest-${{ env.platform }}.json" --file="latest-${{ env.platform }}.json" --remote
-          
-          echo "Uploaded version metadata for ${{ env.platform }}"
-          cat latest-${{ env.platform }}.json
+          node scripts/upload-to-r2.mjs \
+            --installerPath="${{ env.installer_file }}" \
+            --platform="${{ env.platform }}" \
+            --version="${{ steps.version.outputs.version }}" \
+            --sha512="${{ env.file_hash }}" \
+            --fileName="${{ env.installer_name }}"
