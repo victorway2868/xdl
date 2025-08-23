@@ -11,6 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-latest, macos-latest]
         
@@ -29,6 +30,8 @@ jobs:
         
       - name: Build application
         run: npm run make
+        env:
+          CI: true
         
       - name: Get version from tag
         id: version
