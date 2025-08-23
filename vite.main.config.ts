@@ -3,29 +3,30 @@ import { builtinModules } from 'module';
 
 // https://vitejs.dev/config
 export default defineConfig({
-  publicDir: false, // Do not copy the public directory to the main process output
+  // Required to work with Electron Forge
+  root: __dirname,
+  publicDir: false,
   build: {
+    // The output directory for the build
     outDir: '.vite/build',
-    // Configure Rollup to build the main process entry file
+    // Build for a CJS target, suitable for the Electron main process
+    ssr: true,
     rollupOptions: {
       // The entry point for the main process
       input: 'src/main/index.ts',
       output: {
-        // Output format should be CommonJS
         format: 'cjs',
-        // The name of the output file
         entryFileNames: 'main.js',
       },
       // Do not bundle Electron or Node.js built-in modules
       external: [
         'electron',
-        // List all Node.js built-in modules
+        'electron-log',
+        'electron-squirrel-startup',
         ...builtinModules,
-        // Also include modules with the 'node:' prefix
         ...builtinModules.map((m) => `node:${m}`),
       ],
     },
-    // Disable minification for better debugging
     minify: false,
   },
 });

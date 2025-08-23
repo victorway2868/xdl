@@ -1,6 +1,25 @@
 // 日志服务
-import log from 'electron-log';
 import { LogEntry } from '../../shared/types';
+
+// Safely import electron-log
+let log: any;
+try {
+  log = require('electron-log');
+} catch (error) {
+  console.error('Failed to load electron-log:', error);
+  // Fallback to console logging
+  log = {
+    transports: {
+      file: { level: 'info', maxSize: 0 },
+      console: { level: 'debug' }
+    },
+    log: console.log,
+    debug: console.debug,
+    info: console.info,
+    warn: console.warn,
+    error: console.error
+  };
+}
 
 export class LoggerService {
   private logs: LogEntry[] = [];

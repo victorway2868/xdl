@@ -6,10 +6,14 @@ import { getSoftwareVersion } from './utils/findSoftwarePaths';
 
 // Handle Squirrel.Windows events to create Desktop and Start Menu shortcuts on install/update
 if (process.platform === 'win32') {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const squirrelStartup = require('electron-squirrel-startup');
-  if (squirrelStartup) {
-    app.quit();
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const squirrelStartup = require('electron-squirrel-startup');
+    if (squirrelStartup) {
+      app.quit();
+    }
+  } catch (error) {
+    console.error('Failed to load electron-squirrel-startup:', error);
   }
 }
 
