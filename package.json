@@ -6,8 +6,8 @@
   "scripts": {
     "start": "npm run build:all && electron .",
     "build:all": "vite build -c vite.renderer.config.mts && vite build -c vite.main.config.mts && vite build -c vite.preload.config.mts",
-    "build:win": "npm run build:all && electron-builder --win nsis",
-    "build:mac": "npm run build:all && electron-builder --mac dmg",
+    "build:win": "npm run build:all && electron-builder --win nsis --publish never",
+    "build:mac": "npm run build:all && electron-builder --mac dmg --publish never",
     "lint": "eslint --ext .ts,.tsx ."
   },
   "keywords": [
@@ -57,6 +57,7 @@
   "build": {
     "appId": "com.xiaodouli.liveassistant",
     "productName": "小斗笠直播助手",
+    "artifactName": "xiaodouli-setup-v${version}.${ext}",
     "asar": true,
     "extraResources": [
       { "from": "public/icons", "to": "assets/icons" }
@@ -70,6 +71,7 @@
         { "target": "nsis", "arch": ["x64"] }
       ],
       "requestedExecutionLevel": "requireAdministrator"
+      
     },
     "nsis": {
       "oneClick": true,
