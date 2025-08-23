@@ -12,7 +12,12 @@ export default defineConfig({
     },
     outDir: '.vite/build',
     rollupOptions: {
-      external: ['electron'], // 不要打包 electron 内置模块
+      // Prevent bundling of certain imported packages and instead retrieve them from node_modules.
+      // This is particularly important for keeping the 'electron' module external.
+      external: ['electron', ...Object.keys(require('./package.json').dependencies || {})].filter(
+        // We want to bundle 'electron-squirrel-startup' so it's available at runtime.
+        (dep) => dep !== 'electron-squirrel-startup'
+      ),
     },
   },
 });
