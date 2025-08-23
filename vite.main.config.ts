@@ -1,23 +1,31 @@
 import { defineConfig } from 'vite';
-import path from 'path';
+import { builtinModules } from 'module';
 
 // https://vitejs.dev/config
 export default defineConfig({
-  publicDir: false, // 不要复制 public 到主进程输出目录
+  publicDir: false, // Do not copy the public directory to the main process output
   build: {
-    lib: {
-      entry: 'src/main/index.ts', // 主进程入口
-      fileName: 'main', // 输出文件名
-      formats: ['cjs'] // 主进程需要 CommonJS
-    },
     outDir: '.vite/build',
+    // Configure Rollup to build the main process entry file
     rollupOptions: {
-      // Prevent bundling of certain imported packages and instead retrieve them from node_modules.
-      // This is particularly important for keeping the 'electron' module external.
-      external: ['electron', ...Object.keys(require('./package.json').dependencies || {})].filter(
-        // We want to bundle 'electron-squirrel-startup' so it's available at runtime.
-        (dep) => dep !== 'electron-squirrel-startup'
-      ),
+      // The entry point for the main process
+      input: 'src/main/index.ts',
+      output: {
+        // Output format should be CommonJS
+        format: 'cjs',
+        // The name of the output file
+        entryFileNames: 'main.js',
+      },
+      // Do not bundle Electron or Node.js built-in modules
+      external: [
+        'electron',
+        // List all Node.js built-in modules
+        ...builtinModules,
+        // Also include modules with the 'node:' prefix
+        ...builtinModules.map((m) => `node:${m}`),
+      ],
     },
+    // Disable minification for better debugging
+    minify: false,
   },
 });
