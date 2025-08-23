@@ -105,7 +105,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
         run: |
           # 上传安装包到 R2
-          wrangler r2 object put ${{ secrets.R2_BUCKET }}/releases/${{ env.platform }}/${{ env.installer_name }} --file="${{ env.installer_file }}"
+          wrangler r2 object put "${{ secrets.R2_BUCKET }}/releases/${{ env.platform }}/${{ env.installer_name }}" --file="${{ env.installer_file }}"
           
       - name: Create and upload version metadata
         shell: bash
