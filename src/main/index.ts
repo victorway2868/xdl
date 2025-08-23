@@ -172,8 +172,18 @@ app.whenReady().then(() => {
   if (updaterConfig.enabled) {
     globalUpdater = new AutoUpdater(updaterConfig.updateServerUrl);
 
-    // 启动定期更新检查
-    globalUpdater.startPeriodicCheck(updaterConfig.checkIntervalHours);
+    // 应用启动时立即检查更新（无延迟）
+    if (updaterConfig.checkOnStartup) {
+      globalUpdater.checkForUpdates().catch(err => {
+        loggerService.addLog('error', `Startup update check failed: ${err.message}`, 'main');
+      });
+    }
+
+    // 可选：启用定时检查
+    if (updaterConfig.periodicCheckEnabled && updaterConfig.checkIntervalHours && updaterConfig.checkIntervalHours > 0) {
+      const initialDelay = updaterConfig.initialDelayMs ?? 0;
+      globalUpdater.startPeriodicCheck(updaterConfig.checkIntervalHours, initialDelay);
+    }
 
     loggerService.addLog('info', `Auto updater initialized with server: ${updaterConfig.updateServerUrl}`, 'main');
   } else {

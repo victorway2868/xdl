@@ -7,4 +7,10 @@ declare global {
   }
 }
 
+
+declare module '*.ico' {
+  const value: string;
+  export default value;
+}
+
 export {};

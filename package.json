@@ -1,5 +1,5 @@
 {
-  "name": "xiaodouli-live-assistant",
+  "name": "xiaodouli",
   "version": "1.0.4",
   "description": "小斗笠直播助手",
   "main": ".vite/build/main.js",

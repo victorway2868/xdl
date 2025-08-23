@@ -21,9 +21,10 @@ export class MainWindow {
         contextIsolation: true,
         preload: path.join(__dirname, '../preload.js'),
       },
+      icon: path.join(__dirname, '../../../public/icons/icon-256x256.png'), // 设置窗口图标
       frame: false, // 移除默认窗口边框
       titleBarStyle: 'hidden', // 隐藏标题栏
-      resizable: false, // 禁止调整窗口大小
+      resizable: true, // 允许调整窗口大小
       show: false, // 先不显示，等加载完成后再显示
     });
     

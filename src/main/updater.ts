@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as crypto from 'crypto';
 import * as os from 'os';
+import { loggerService } from './services/logger';
 
 interface UpdateInfo {
   version: string;
@@ -42,18 +43,27 @@ class AutoUpdater {
 
       // 验证更新信息的完整性
       if (!this.validateUpdateInfo(updateInfo)) {
-        throw new Error('Invalid update information received');
+        throw new Error('[UPDATE_FETCH] Invalid update information received');
       }
+
+      // 显示版本对比信息（控制台和日志）
+      console.log(`Update check result -> Current: ${this.currentVersion}, Remote: ${updateInfo.version}`);
+      loggerService.addLog('info', `更新检查：当前版本 ${this.currentVersion}，服务器版本 ${updateInfo.version}`,'main');
 
       if (this.isNewerVersion(updateInfo.version, this.currentVersion)) {
         console.log(`New version available: ${updateInfo.version}`);
+        loggerService.addLog('info', `检测到新版本 ${updateInfo.version}，开始下载并安装`,'main');
         await this.downloadAndInstallUpdate(updateInfo);
       } else {
         console.log('Application is up to date');
+        loggerService.addLog('info', '已是最新版本，无需更新','main');
       }
     } catch (error) {
-      console.error('Failed to check for updates:', error);
-      this.handleUpdateError(error as Error);
+      const err = error as Error;
+      console.error('Failed to check for updates:', err);
+      loggerService.addLog('error', `检查更新失败：${err.message}`,'main');
+      // 按需求：无法连接服务器或下载失败时，提示并退出应用
+      this.showBlockingErrorAndExit('无法完成更新检查', err.message);
     } finally {
       this.isChecking = false;
     }
@@ -125,7 +135,9 @@ class AutoUpdater {
       await this.installUpdate(downloadPath, updateInfo.platform);
 
     } catch (error) {
-      console.error('Failed to download and install update:', error);
+      const err = error as Error;
+      console.error('Failed to download and install update:', err);
+      loggerService.addLog('error', `下载/安装更新失败：${err.message}`, 'main');
 
       // 清理临时文件
       if (downloadPath) {
@@ -133,7 +145,11 @@ class AutoUpdater {
       }
 
       this.downloadInProgress = false;
-      throw error;
+
+      // 按需求：下载失败则提示并退出
+      this.showBlockingErrorAndExit('无法下载或安装更新', err.message);
+
+      throw err;
     }
   }
 
@@ -254,17 +270,39 @@ class AutoUpdater {
   }
 
   /**
-   * 处理更新错误
+   * 显示阻塞性错误并退出应用。
+   * 无法连接服务器或无法下载时，提示原因，提供“访问官网”按钮，随后退出软件。
    */
-  private handleUpdateError(error: Error): void {
-    console.error('Update error details:', {
-      message: error.message,
-      stack: error.stack,
-      timestamp: new Date().toISOString()
-    });
+  private showBlockingErrorAndExit(title: string, reason?: string): void {
+    const siteUrl = 'https://streamassist.xiaodouli.dpdns.org/';
+    const fullMessage = `${title}${reason ? `\n\n原因：${reason}` : ''}\n\n您可以点击“访问官网”获取帮助。`;
 
-    // 可以在这里添加错误报告逻辑
-    // 例如发送到错误监控服务
+    console.error(`[Update Fatal] ${title}${reason ? `: ${reason}` : ''}`);
+    loggerService.addLog('error', `${title}${reason ? `：${reason}` : ''}`, 'main');
+
+    try {
+      const result = dialog.showMessageBoxSync({
+        type: 'error',
+        title: '更新检查失败',
+        message: fullMessage,
+        buttons: ['访问官网', '退出'],
+        defaultId: 0,
+        cancelId: 1,
+        noLink: true,
+      });
+
+      if (result === 0) {
+        // 打开官网，再退出
+        try { shell.openExternal(siteUrl); } catch {}
+        setTimeout(() => app.quit(), 300);
+        return;
+      }
+    } catch (e) {
+      // 如果弹窗失败，直接退出
+      console.error('Failed to show error dialog:', e);
+    }
+
+    app.quit();
   }
 
   /**
@@ -283,17 +321,21 @@ class AutoUpdater {
 
   /**
    * 启动定期检查更新
+   * @param intervalHours 检查间隔（小时）
+   * @param initialDelayMs 首次检查延迟（毫秒）。为 0 或未提供时立即检查一次
    */
-  startPeriodicCheck(intervalHours: number = 4): void {
-    // 应用启动后延迟30秒开始第一次检查
-    setTimeout(() => {
-      this.checkForUpdates();
-    }, 30000);
+  startPeriodicCheck(intervalHours: number = 4, initialDelayMs: number = 0): void {
+    const doCheck = () => this.checkForUpdates();
+
+    if (initialDelayMs && initialDelayMs > 0) {
+      setTimeout(doCheck, initialDelayMs);
+    } else {
+      // 立即检查一次
+      doCheck();
+    }
 
     // 设置定期检查
-    setInterval(() => {
-      this.checkForUpdates();
-    }, intervalHours * 60 * 60 * 1000);
+    setInterval(doCheck, intervalHours * 60 * 60 * 1000);
   }
 
   /**
@@ -310,4 +352,5 @@ class AutoUpdater {
   }
 }
 
-export { AutoUpdater, UpdateInfo };
+export { AutoUpdater };
+export type { UpdateInfo };

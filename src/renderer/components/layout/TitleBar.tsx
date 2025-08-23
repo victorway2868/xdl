@@ -1,92 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import { X, Music, UserCheck, Sun, Moon, Minus } from 'lucide-react';
+import { X, Music, UserCheck, Sun, Moon, Minus, Square } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
+import appIcon from '/icons/icon-32x32.ico';
 
 const TitleBar: React.FC = () => {
   const { themeType, toggleTheme } = useTheme();
   const [isMuted, setIsMuted] = useState(false);
   const [appVersion, setAppVersion] = useState('');
-  const [iconPath, setIconPath] = useState('/xdllogo.ico');
-  const [isProduction, setIsProduction] = useState(false);
   const navigate = useNavigate();
 
-  // 检查 electron 对象是否可用并获取应用版本和图标路径
+  // Get app version from main process
   useEffect(() => {
-    console.log('Window.electron:', (window as any).electron);
-    if (!(window as any).electron) {
-      console.warn('Electron API 不可用，窗口控制功能将不起作用');
-      // 从package.json获取版本号作为备用
-      setAppVersion('1.3.5');
-    } else {
-      console.log('Electron API 可用');
-
-      // 获取应用版本
-      (window as any).electron.getAppVersion()
-        .then((version: string) => {
-          console.log('应用版本:', version);
-          setAppVersion(version);
+    if (window.electronAPI) {
+      window.electronAPI.getAppVersion()
+        .then((result: { version: string; name: string; }) => {
+          if (result && result.version) {
+            setAppVersion(result.version);
+          } else {
+             setAppVersion('N/A');
+          }
         })
         .catch((error: any) => {
           console.error('获取应用版本时出错:', error);
-          setAppVersion('1.3.5');
+          setAppVersion('N/A');
         });
-
-      // 检查是否为生产环境（打包后的应用）
-      if ((window as any).electron && (window as any).electron.getIconPath) {
-        setIsProduction(true);
-        // 在生产环境中，获取图标的绝对路径
-        (window as any).electron.getIconPath()
-          .then((path: string) => {
-            console.log('生产环境图标路径:', path);
-            setIconPath(path);
-          })
-          .catch((error: any) => {
-            console.error('获取生产环境图标路径失败:', error);
-            // 保持默认路径
-          });
-      } else {
-        // 开发环境，使用相对路径
-        console.log('开发环境，使用相对路径');
-      }
+    } else {
+        // Fallback for browser environment
+        setAppVersion('2.0.0'); // Or get from package.json if possible
     }
   }, []);
 
-  // 处理窗口最小化
+  // Window control handlers
   const handleMinimize = () => {
-    console.log('点击了最小化按钮');
-    if ((window as any).electron) {
-      console.log('调用 electron.minimizeWindow()');
-      try {
-        (window as any).electron.minimizeWindow();
-      } catch (error) {
-        console.error('最小化窗口时出错:', error);
-      }
-    } else {
-      console.warn('electron 对象不可用，无法最小化窗口');
-    }
+    window.electronAPI?.minimizeWindow();
   };
 
-  // 处理窗口关闭
+  const handleMaximize = () => {
+    window.electronAPI?.maximizeWindow();
+  };
+
   const handleClose = () => {
-    console.log('点击了关闭按钮');
-    if ((window as any).electron) {
-      console.log('调用 electron.closeWindow()');
-      try {
-        (window as any).electron.closeWindow();
-      } catch (error) {
-        console.error('关闭窗口时出错:', error);
-      }
-    } else {
-      console.warn('electron 对象不可用，无法关闭窗口');
-      window.close();
-    }
-  };
-
-  // 音效切换
-  const toggleMute = () => {
-    setIsMuted(!isMuted);
-    // 这里可以添加实际的音效控制逻辑
+    window.electronAPI?.closeWindow();
   };
 
   return (
@@ -95,33 +50,23 @@ const TitleBar: React.FC = () => {
                     border-b border-slate-300 dark:border-slate-600
                     text-slate-800 dark:text-white
                     transition-all duration-300">
-      {/* 应用标题 */}
+      {/* App Title */}
       <div className="font-medium flex items-center px-2.5 text-[15px]">
         <img
-          src={iconPath}
+          src={appIcon} // Use imported icon
           alt="小斗笠直播助手"
           className="flex-shrink-0 w-5 h-5 mr-1.5"
-          onLoad={() => {
-            console.log('图标加载成功:', iconPath);
-          }}
-          onError={() => {
-            console.error('图标加载失败:', iconPath);
-            // 如果加载失败，尝试使用备用图标
-            if (iconPath !== '/favicon.ico') {
-              setIconPath('/favicon.ico');
-            }
-          }}
         />
         <span className="text-slate-800 dark:text-white">小斗笠直播助手</span>
         <span className="ml-1.5 text-[11px] text-slate-500 dark:text-slate-400">v{appVersion}</span>
       </div>
 
-      {/* 拖动区域 - 大部分标题栏区域可用于拖动窗口 */}
+      {/* Drag Region */}
       <div className="flex-grow drag"></div>
 
-      {/* 功能按钮 */}
+      {/* Action Buttons */}
       <div className="flex items-center no-drag">
-        {/* 音乐按钮 */}
+        {/* Music Button */}
         <button
           onClick={() => navigate('/app/audio-settings')}
           className="flex items-center justify-center px-2.5 h-[30px] rounded-md
@@ -136,7 +81,7 @@ const TitleBar: React.FC = () => {
           />
         </button>
 
-        {/* 会员按钮 */}
+        {/* Membership Button */}
         <button
           onClick={() => navigate('/app/membership')}
           className="flex items-center justify-center px-2.5 h-[30px] rounded-md
@@ -148,7 +93,7 @@ const TitleBar: React.FC = () => {
           <UserCheck size={16} className="text-amber-400" />
         </button>
 
-        {/* 主题切换按钮 */}
+        {/* Theme Toggle Button */}
         <button
           onClick={toggleTheme}
           className="flex items-center justify-center px-2.5 h-[30px] rounded-md
@@ -163,7 +108,7 @@ const TitleBar: React.FC = () => {
           }
         </button>
 
-        {/* 最小化按钮 */}
+        {/* Minimize Button */}
         <button
           onClick={handleMinimize}
           className="flex items-center justify-center px-2.5 h-[30px] rounded-md
@@ -175,7 +120,19 @@ const TitleBar: React.FC = () => {
           <Minus size={16} className="text-gray-300" />
         </button>
 
-        {/* 关闭按钮 */}
+        {/* Maximize Button */}
+        <button
+          onClick={handleMaximize}
+          className="flex items-center justify-center px-2.5 h-[30px] rounded-md
+                     border border-transparent bg-transparent
+                     hover:bg-gray-500/20 hover:border-gray-500/30
+                     transition-all duration-300 outline-none"
+          title="最大化"
+        >
+          <Square size={14} className="text-gray-300" />
+        </button>
+
+        {/* Close Button */}
         <button
           onClick={handleClose}
           className="flex items-center justify-center px-3 h-[30px] rounded-md

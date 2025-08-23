@@ -25,7 +25,7 @@ const getArg = (name) => {
 };
 
 let installerPath, platform, version, sha512, fileName;
-
+const R2_DOMAIN = 'https://xiaodouli.openclouds.dpdns.org';
 try {
   installerPath = getArg('installerPath');
   platform = getArg('platform');
@@ -93,7 +93,7 @@ async function main() {
   // 1. Create metadata content
   const metadata = {
     version,
-    url: `https://${R2_ENDPOINT}/${R2_BUCKET}/releases/${platform}/${fileName}`,
+    url: `https://${R2_DOMAIN}/releases/${platform}/${fileName}`,
     releaseDate: new Date().toISOString(),
     sha512,
     platform,
