@@ -96,17 +96,29 @@ jobs:
             echo "File hash: $HASH"
           fi
           
-      - name: Upload Artifacts to R2
-        env:
-          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          R2_BUCKET: ${{ secrets.R2_BUCKET }}
-          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+      - name: Create Version Metadata
+        id: create_metadata
+        shell: bash
         run: |
-          node scripts/upload-to-r2.mjs \
-            --installerPath="${{ env.installer_file }}" \
-            --platform="${{ env.platform }}" \
-            --version="${{ steps.version.outputs.version }}" \
-            --sha512="${{ env.file_hash }}" \
-            --fileName="${{ env.installer_name }}"
+          # Create version metadata file
+          cat > latest-${{ env.platform }}.json << EOF
+          {
+            "version": "${{ steps.version.outputs.version }}",
+            "url": "https://${{ secrets.R2_ENDPOINT }}/releases/${{ env.platform }}/${{ env.installer_name }}",
+            "releaseDate": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "sha512": "${{ env.file_hash }}",
+            "platform": "${{ env.platform }}",
+            "fileName": "${{ env.installer_name }}"
+          }
+          EOF
+          echo "Created version metadata for ${{ env.platform }}"
+          cat latest-${{ env.platform }}.json
+
+      - name: Upload to R2
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: |
+            r2 object put "${{ secrets.R2_BUCKET }}/releases/${{ env.platform }}/${{ env.installer_name }}" --file="${{ env.installer_file }}"
+            r2 object put "${{ secrets.R2_BUCKET }}/updates/latest-${{ env.platform }}.json" --file="latest-${{ env.platform }}.json"
