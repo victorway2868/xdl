@@ -8,9 +8,9 @@ import { makeUrlParams, parseLiveHtml } from './util';
  */
 export const fetchLiveInfo = async function (id: string) {
   try {
-    // 始终使用代理路径，由 Vite 开发服务器处理
-    const url = `/dylive/${id}`;
-    console.log('fetchLiveInfo - using proxy url:', url);
+    // 开发环境走本地代理，生产环境直连抖音
+    const url = location.protocol === 'file:' ? `https://live.douyin.com/${id}` : `/dylive/${id}`;
+    console.log('fetchLiveInfo - request url:', url);
     const html = await fetch(url).then(res => res.text());
     return html;
   } catch (err) {

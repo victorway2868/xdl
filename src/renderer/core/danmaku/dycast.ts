@@ -305,11 +305,17 @@ enum PayloadType {
 }
 
 /** API */
-// To ensure the proxy is always used, we will construct a relative path for the WebSocket.
-const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-const host = location.hostname;
-const port = location.port;
-const BASE_URL = `${protocol}//${host}:${port}/socket/webcast/im/push/v2/`;
+// 开发环境(vite dev server)通过代理转发，生产环境(file://)直连抖音服务器
+let BASE_URL: string;
+if (location.protocol === 'file:') {
+  // Electron 打包后，使用真实的抖音 WebSocket 服务地址
+  BASE_URL = 'wss://webcast5-ws-web-lf.douyin.com/webcast/im/push/v2/';
+} else {
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const host = location.hostname;
+  const port = location.port ? `:${location.port}` : '';
+  BASE_URL = `${protocol}//${host}${port}/socket/webcast/im/push/v2/`;
+}
 console.log('Using BASE_URL:', BASE_URL);
 
 /** SDK 版本 */
