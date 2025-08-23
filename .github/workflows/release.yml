@@ -1,0 +1,129 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # 触发条件：推送版本标签，如 v1.0.0
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  build-and-release:
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build application
+        run: npm run make
+        
+      - name: Get version from tag
+        id: version
+        shell: bash
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/v}
+          else
+            VERSION=$(node -p "require('./package.json').version")
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+          
+      - name: Prepare release files
+        shell: bash
+        run: |
+          mkdir -p release-files
+
+          # 根据操作系统和forge配置查找对应的安装包
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            # Windows: Squirrel生成的Setup.exe文件
+            find out/make/squirrel.windows -name "*Setup.exe" -exec cp {} release-files/ \; 2>/dev/null || true
+            find out/make -name "*Setup.exe" -exec cp {} release-files/ \; 2>/dev/null || true
+            INSTALLER_FILE=$(find release-files -name "*Setup.exe" | head -1)
+            if [[ -z "$INSTALLER_FILE" ]]; then
+              echo "Error: No Windows installer found"
+              ls -la out/make/
+              exit 1
+            fi
+            INSTALLER_NAME=$(basename "$INSTALLER_FILE")
+            echo "installer_file=$INSTALLER_FILE" >> $GITHUB_ENV
+            echo "installer_name=$INSTALLER_NAME" >> $GITHUB_ENV
+            echo "platform=windows" >> $GITHUB_ENV
+          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            # macOS: ZIP文件
+            find out/make/zip/darwin -name "*.zip" -exec cp {} release-files/ \; 2>/dev/null || true
+            find out/make -name "*.zip" -exec cp {} release-files/ \; 2>/dev/null || true
+            INSTALLER_FILE=$(find release-files -name "*.zip" | head -1)
+            if [[ -z "$INSTALLER_FILE" ]]; then
+              echo "Error: No macOS installer found"
+              ls -la out/make/
+              exit 1
+            fi
+            INSTALLER_NAME=$(basename "$INSTALLER_FILE")
+            echo "installer_file=$INSTALLER_FILE" >> $GITHUB_ENV
+            echo "installer_name=$INSTALLER_NAME" >> $GITHUB_ENV
+            echo "platform=macos" >> $GITHUB_ENV
+          fi
+
+          echo "Found installer: $INSTALLER_FILE"
+          
+      - name: Calculate file hash
+        shell: bash
+        run: |
+          if [[ -f "${{ env.installer_file }}" ]]; then
+            if command -v sha512sum &> /dev/null; then
+              HASH=$(sha512sum "${{ env.installer_file }}" | cut -d' ' -f1)
+            else
+              HASH=$(shasum -a 512 "${{ env.installer_file }}" | cut -d' ' -f1)
+            fi
+            echo "file_hash=$HASH" >> $GITHUB_ENV
+            echo "File hash: $HASH"
+          fi
+          
+      - name: Install Wrangler
+        run: npm install -g wrangler
+        
+      - name: Upload installer to R2
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+        run: |
+          # 上传安装包到 R2
+          wrangler r2 object put ${{ secrets.R2_BUCKET }}/releases/${{ env.platform }}/${{ env.installer_name }} --file="${{ env.installer_file }}"
+          
+      - name: Create and upload version metadata
+        shell: bash
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+        run: |
+          # 创建版本元数据文件
+          cat > latest-${{ env.platform }}.json << EOF
+          {
+            "version": "${{ steps.version.outputs.version }}",
+            "url": "https://${{ secrets.R2_ENDPOINT }}/releases/${{ env.platform }}/${{ env.installer_name }}",
+            "releaseDate": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "sha512": "${{ env.file_hash }}",
+            "platform": "${{ env.platform }}",
+            "fileName": "${{ env.installer_name }}"
+          }
+          EOF
+          
+          # 上传元数据文件
+          wrangler r2 object put ${{ secrets.R2_BUCKET }}/updates/latest-${{ env.platform }}.json --file="latest-${{ env.platform }}.json"
+          
+          echo "Uploaded version metadata for ${{ env.platform }}"
+          cat latest-${{ env.platform }}.json

@@ -1,4 +1,6 @@
 import { loggerService } from './services/logger';
+import { AutoUpdater } from './updater';
+import { updaterConfig } from './config/updater.config';
 
 import { ipcMain } from 'electron';
 import { getSoftwareVersion } from './utils/findSoftwarePaths';
@@ -10,6 +12,9 @@ process.on('uncaughtException', (error) => {
   // 建议在此处添加额外的错误处理逻辑，例如优雅地退出应用
 });
 
+// 全局更新器实例
+let globalUpdater: AutoUpdater | null = null;
+
 // IPC通信，用于获取软件版本
 ipcMain.handle('get-software-version', async (event, softwareName) => {
   try {
@@ -19,6 +24,29 @@ ipcMain.handle('get-software-version', async (event, softwareName) => {
     loggerService.addLog('error', `Failed to get software version for ${softwareName}: ${error.message}`, 'main');
     return null;
   }
+});
+
+// IPC通信，用于手动检查更新
+ipcMain.handle('check-for-updates', async () => {
+  if (!globalUpdater) {
+    return { success: false, message: 'Updater not initialized' };
+  }
+
+  try {
+    const result = await globalUpdater.manualCheckForUpdates();
+    return { success: result, message: result ? 'Update check completed' : 'Update check failed' };
+  } catch (error) {
+    loggerService.addLog('error', `Manual update check failed: ${error.message}`, 'main');
+    return { success: false, message: error.message };
+  }
+});
+
+// IPC通信，获取当前版本信息
+ipcMain.handle('get-app-version', () => {
+  return {
+    version: app.getVersion(),
+    name: app.getName()
+  };
 });
 
 
@@ -125,13 +153,22 @@ app.whenReady().then(() => {
   loggerService.addLog('info', 'Application starting', 'main');
   console.log('App ready, creating window...');
 
-
-
-
   // 注册所有 IPC 处理器
   registerAllHandlers();
 
   createWindow();
+
+  // 初始化自动更新器
+  if (updaterConfig.enabled) {
+    globalUpdater = new AutoUpdater(updaterConfig.updateServerUrl);
+
+    // 启动定期更新检查
+    globalUpdater.startPeriodicCheck(updaterConfig.checkIntervalHours);
+
+    loggerService.addLog('info', `Auto updater initialized with server: ${updaterConfig.updateServerUrl}`, 'main');
+  } else {
+    loggerService.addLog('info', 'Auto updater disabled', 'main');
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

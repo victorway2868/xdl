@@ -47,6 +47,13 @@ const electronAPI: IpcApi = {
 
   closeWindow: () =>
     ipcRenderer.invoke(IPC_CHANNELS.CLOSE_WINDOW),
+
+  // Auto Update APIs
+  checkForUpdates: () =>
+    ipcRenderer.invoke('check-for-updates'),
+
+  getAppVersion: () =>
+    ipcRenderer.invoke('get-app-version'),
 };
 
 // 通过 contextBridge 安全地暴露 API
