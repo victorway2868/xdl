@@ -1,9 +1,17 @@
+import { app, BrowserWindow, crashReporter, ipcMain, session } from 'electron';
 import { loggerService } from './services/logger';
 import { AutoUpdater } from './updater';
 import { updaterConfig } from './config/updater.config';
-
-import { ipcMain } from 'electron';
 import { getSoftwareVersion } from './utils/findSoftwarePaths';
+
+// Handle Squirrel.Windows events to create Desktop and Start Menu shortcuts on install/update
+if (process.platform === 'win32') {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const squirrelStartup = require('electron-squirrel-startup');
+  if (squirrelStartup) {
+    app.quit();
+  }
+}
 
 
 // 全局错误捕获
@@ -57,7 +65,6 @@ process.on('unhandledRejection', (reason) => {
 });
 
 // 主进程入口文件
-import { app, BrowserWindow, crashReporter, ipcMain, session } from 'electron';
 import { LogEntry } from '../shared/types';
 import * as path from 'path';
 import { registerAllHandlers } from './handlers';

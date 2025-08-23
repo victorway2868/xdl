@@ -56,6 +56,7 @@
     "antd": "^5.12.8",
     "electron-fetch": "^1.9.1",
     "electron-log": "^5.0.1",
+    "electron-squirrel-startup": "^1.0.0",
     "lucide-react": "^0.537.0",
     "pako": "^2.1.0",
     "react": "^18.2.0",

@@ -20,6 +20,7 @@ module.exports = {
       config: {
         name: 'xiaodouli',
         setupIcon: 'public/icons/icon-128x128.ico',
+        createDesktopShortcut: true, // <-- 添加此行以创建桌面快捷方式
       },
     },
     {
