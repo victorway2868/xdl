@@ -7,6 +7,9 @@
 # Electron Forge build output
 /out
 
+#oldfile
+/oldprogram
+
 # Logs
 logs
 *.log

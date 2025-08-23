@@ -1,7 +1,7 @@
 {
-  "name": "electron-framework-app",
+  "name": "xiaodouli-live-assistant",
   "version": "1.0.0",
-  "description": "A modern Electron application with layered architecture and plugin system",
+  "description": "小斗笠直播助手",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",
@@ -17,7 +17,7 @@
     "redux",
     "plugins"
   ],
-  "author": "Your Name",
+  "author": "Xiaodouli",
   "license": "MIT",
   "config": {
     "forge": "./forge.config.js"

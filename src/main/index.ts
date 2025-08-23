@@ -96,7 +96,8 @@ const createWindow = (): void => {
   console.log('Creating main window...');
 
   try {
-    const mainWindow = new BrowserWindow({
+        const mainWindow = new BrowserWindow({
+      icon: path.join(__dirname, '../../public/icons/icon-128x128.ico'),
       width: 1000,
       height: 760,
       webPreferences: {

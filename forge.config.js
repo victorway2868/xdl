@@ -3,12 +3,20 @@ const { VitePlugin } = require('@electron-forge/plugin-vite');
 module.exports = {
   packagerConfig: {
     asar: true,
+    icon: 'public/icons/icon-128x128.ico',
+    productName: '小斗笠直播助手',
+    win32metadata: {
+      'requested-execution-level': 'requireAdministrator',
+    },
   },
   rebuildConfig: {},
   makers: [
     {
       name: '@electron-forge/maker-squirrel',
-      config: {},
+      config: {
+        name: 'xiaodouli',
+        setupIcon: 'public/icons/icon-128x128.ico',
+      },
     },
     {
       name: '@electron-forge/maker-zip',

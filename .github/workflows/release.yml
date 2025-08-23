@@ -46,6 +46,7 @@ jobs:
           echo "Version: $VERSION"
           
       - name: Prepare release files
+        id: prepare_files
         shell: bash
         run: |
           mkdir -p release-files
@@ -55,44 +56,49 @@ jobs:
             # Windows: Squirrel生成的Setup.exe文件
             find out/make/squirrel.windows -name "*Setup.exe" -exec cp {} release-files/ \; 2>/dev/null || true
             find out/make -name "*Setup.exe" -exec cp {} release-files/ \; 2>/dev/null || true
-            INSTALLER_FILE=$(find release-files -name "*Setup.exe" | head -1)
-            if [[ -z "$INSTALLER_FILE" ]]; then
+            ORIGINAL_INSTALLER=$(find release-files -name "*Setup.exe" | head -1)
+            if [[ -z "$ORIGINAL_INSTALLER" ]]; then
               echo "Error: No Windows installer found"
               ls -la out/make/
               exit 1
             fi
-            INSTALLER_NAME=$(basename "$INSTALLER_FILE")
-            echo "installer_file=$INSTALLER_FILE" >> $GITHUB_ENV
-            echo "installer_name=$INSTALLER_NAME" >> $GITHUB_ENV
-            echo "platform=windows" >> $GITHUB_ENV
+            NEW_INSTALLER_NAME="xiaodouli-Setup-V${{ steps.version.outputs.version }}.exe"
+            mv "$ORIGINAL_INSTALLER" "release-files/$NEW_INSTALLER_NAME"
+            INSTALLER_FILE="release-files/$NEW_INSTALLER_NAME"
+            echo "installer_file=$INSTALLER_FILE" >> $GITHUB_OUTPUT
+            echo "installer_name=$NEW_INSTALLER_NAME" >> $GITHUB_OUTPUT
+            echo "platform=windows" >> $GITHUB_OUTPUT
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
             # macOS: ZIP文件
             find out/make/zip/darwin -name "*.zip" -exec cp {} release-files/ \; 2>/dev/null || true
             find out/make -name "*.zip" -exec cp {} release-files/ \; 2>/dev/null || true
-            INSTALLER_FILE=$(find release-files -name "*.zip" | head -1)
-            if [[ -z "$INSTALLER_FILE" ]]; then
+            ORIGINAL_INSTALLER=$(find release-files -name "*.zip" | head -1)
+            if [[ -z "$ORIGINAL_INSTALLER" ]]; then
               echo "Error: No macOS installer found"
               ls -la out/make/
               exit 1
             fi
-            INSTALLER_NAME=$(basename "$INSTALLER_FILE")
-            echo "installer_file=$INSTALLER_FILE" >> $GITHUB_ENV
-            echo "installer_name=$INSTALLER_NAME" >> $GITHUB_ENV
-            echo "platform=macos" >> $GITHUB_ENV
+            NEW_INSTALLER_NAME="xiaodouli-V${{ steps.version.outputs.version }}.zip"
+            mv "$ORIGINAL_INSTALLER" "release-files/$NEW_INSTALLER_NAME"
+            INSTALLER_FILE="release-files/$NEW_INSTALLER_NAME"
+            echo "installer_file=$INSTALLER_FILE" >> $GITHUB_OUTPUT
+            echo "installer_name=$NEW_INSTALLER_NAME" >> $GITHUB_OUTPUT
+            echo "platform=macos" >> $GITHUB_OUTPUT
           fi
 
           echo "Found installer: $INSTALLER_FILE"
           
       - name: Calculate file hash
+        id: hash
         shell: bash
         run: |
-          if [[ -f "${{ env.installer_file }}" ]]; then
+          if [[ -f "${{ steps.prepare_files.outputs.installer_file }}" ]]; then
             if command -v sha512sum &> /dev/null; then
-              HASH=$(sha512sum "${{ env.installer_file }}" | cut -d' ' -f1)
+              HASH=$(sha512sum "${{ steps.prepare_files.outputs.installer_file }}" | cut -d' ' -f1)
             else
-              HASH=$(shasum -a 512 "${{ env.installer_file }}" | cut -d' ' -f1)
+              HASH=$(shasum -a 512 "${{ steps.prepare_files.outputs.installer_file }}" | cut -d' ' -f1)
             fi
-            echo "file_hash=$HASH" >> $GITHUB_ENV
+            echo "file_hash=$HASH" >> $GITHUB_OUTPUT
             echo "File hash: $HASH"
           fi
           
@@ -105,11 +111,11 @@ jobs:
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
         run: >
           node scripts/upload-to-r2.mjs
-          --installerPath="${{ env.installer_file }}"
-          --platform="${{ env.platform }}"
+          --installerPath="${{ steps.prepare_files.outputs.installer_file }}"
+          --platform="${{ steps.prepare_files.outputs.platform }}"
           --version="${{ steps.version.outputs.version }}"
-          --sha512="${{ env.file_hash }}"
-          --fileName="${{ env.installer_name }}"
-          
-          echo "Uploaded version metadata for ${{ env.platform }}"
-          cat latest-${{ env.platform }}.json
+          --sha512="${{ steps.hash.outputs.file_hash }}"
+          --fileName="${{ steps.prepare_files.outputs.installer_name }}"
+
+          echo "Uploaded version metadata for ${{ steps.prepare_files.outputs.platform }}"
+          cat latest-${{ steps.prepare_files.outputs.platform }}.json
