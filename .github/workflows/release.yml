@@ -96,31 +96,20 @@ jobs:
             echo "File hash: $HASH"
           fi
           
-      - name: Install Wrangler
-        run: npm install -g wrangler
-
       - name: Upload Artifacts to R2
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        shell: bash
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
         run: |
-          # Create version metadata file
-          cat > latest-${{ env.platform }}.json << EOF
-          {
-            "version": "${{ steps.version.outputs.version }}",
-            "url": "https://${{ secrets.R2_ENDPOINT }}/releases/${{ env.platform }}/${{ env.installer_name }}",
-            "releaseDate": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "sha512": "${{ env.file_hash }}",
-            "platform": "${{ env.platform }}",
-            "fileName": "${{ env.installer_name }}"
-          }
-          EOF
-          echo "Created version metadata for ${{ env.platform }}"
-          cat latest-${{ env.platform }}.json
-
-          # Upload installer and metadata
-          wrangler r2 object put "${{ secrets.R2_BUCKET }}/releases/${{ env.platform }}/${{ env.installer_name }}" --file="${{ env.installer_file }}" --remote
-          wrangler r2 object put "${{ secrets.R2_BUCKET }}/updates/latest-${{ env.platform }}.json" --file="latest-${{ env.platform }}.json" --remote
+          node scripts/upload-to-r2.mjs \
+            --installerPath="${{ env.installer_file }}" \
+            --platform="${{ env.platform }}" \
+            --version="${{ steps.version.outputs.version }}" \
+            --sha512="${{ env.file_hash }}" \
+            --fileName="${{ env.installer_name }}"
           
           echo "Uploaded version metadata for ${{ env.platform }}"
           cat latest-${{ env.platform }}.json
