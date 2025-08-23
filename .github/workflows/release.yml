@@ -52,18 +52,34 @@ jobs:
 
           # 根据操作系统和forge配置查找对应的安装包
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            # Windows: Squirrel生成的Setup.exe文件
-            find out/make/squirrel.windows -name "*Setup.exe" -exec cp {} release-files/ \; 2>/dev/null || true
-            find out/make -name "*Setup.exe" -exec cp {} release-files/ \; 2>/dev/null || true
-            INSTALLER_FILE=$(find release-files -name "*Setup.exe" | head -1)
-            if [[ -z "$INSTALLER_FILE" ]]; then
+            # Windows: 查找特定格式的安装包 xiaodouli-Setup-x.x.x.exe
+            VERSION="${{ steps.version.outputs.version }}"
+            EXPECTED_NAME="xiaodouli-Setup-${VERSION}.exe"
+
+            # 首先尝试查找预期的文件名
+            find out/make/squirrel.windows -name "$EXPECTED_NAME" -exec cp {} release-files/ \; 2>/dev/null || true
+            find out/make -name "$EXPECTED_NAME" -exec cp {} release-files/ \; 2>/dev/null || true
+
+            # 如果没找到预期文件名，查找任何Setup.exe文件并重命名
+            if [[ ! -f "release-files/$EXPECTED_NAME" ]]; then
+              FOUND_FILE=$(find out/make -name "*Setup*.exe" | head -1)
+              if [[ -n "$FOUND_FILE" ]]; then
+                cp "$FOUND_FILE" "release-files/$EXPECTED_NAME"
+                echo "Renamed installer from $(basename "$FOUND_FILE") to $EXPECTED_NAME"
+              fi
+            fi
+
+            INSTALLER_FILE="$(pwd)/release-files/$EXPECTED_NAME"
+            if [[ ! -f "$INSTALLER_FILE" ]]; then
               echo "Error: No Windows installer found"
-              ls -la out/make/
+              echo "Expected: $EXPECTED_NAME"
+              echo "Available files:"
+              find out/make -name "*.exe" -o -name "*Setup*" | head -10
               exit 1
             fi
-            INSTALLER_NAME=$(basename "$INSTALLER_FILE")
+
             echo "installer_file=$INSTALLER_FILE" >> $GITHUB_ENV
-            echo "installer_name=$INSTALLER_NAME" >> $GITHUB_ENV
+            echo "installer_name=$EXPECTED_NAME" >> $GITHUB_ENV
             echo "platform=windows" >> $GITHUB_ENV
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
             # macOS: ZIP文件

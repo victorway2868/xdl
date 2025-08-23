@@ -57,16 +57,36 @@ process.on('unhandledRejection', (reason) => {
 });
 
 // 主进程入口文件
-import { app, BrowserWindow, crashReporter, ipcMain, session } from 'electron';
+import { app, BrowserWindow, crashReporter, ipcMain, session, dialog } from 'electron';
 import { LogEntry } from '../shared/types';
 import * as path from 'path';
 import { registerAllHandlers } from './handlers';
 
+// 检查管理员权限
+const checkAdminPrivileges = (): boolean => {
+  if (process.platform === 'win32') {
+    try {
+      // 在Windows上检查是否以管理员身份运行
+      const { execSync } = require('child_process');
+      const result = execSync('net session', { encoding: 'utf8', stdio: 'pipe' });
+      return true; // 如果命令成功执行，说明有管理员权限
+    } catch (error) {
+      return false; // 命令失败，说明没有管理员权限
+    }
+  }
+  return true; // 非Windows系统暂时返回true
+};
+
+// 检查是否为生产环境
+const isProduction = (): boolean => {
+  return process.env.NODE_ENV === 'production' || !process.defaultApp;
+};
+
 
 // 配置崩溃报告
 crashReporter.start({
-  productName: 'ElectronFrameworkApp',
-  companyName: 'MyCompany',
+  productName: '小斗笠直播助手',
+  companyName: '小斗笠工作室',
   submitURL: '', // 替换为您的崩溃报告服务器地址
   uploadToServer: false, // 设置为 true 以自动上传崩溃报告
 });
@@ -152,6 +172,47 @@ const createWindow = (): void => {
 app.whenReady().then(() => {
   loggerService.addLog('info', 'Application starting', 'main');
   console.log('App ready, creating window...');
+
+  // 检查管理员权限 - 生产环境强制要求
+  const hasAdminPrivileges = checkAdminPrivileges();
+  const productionMode = isProduction();
+
+  if (!hasAdminPrivileges) {
+    loggerService.addLog('warning', `Application not running with administrator privileges (Production: ${productionMode})`, 'main');
+
+    if (productionMode) {
+      // 生产环境：强制退出，不允许继续运行
+      dialog.showMessageBoxSync({
+        type: 'error',
+        title: '小斗笠直播助手',
+        message: '权限不足 - 无法启动',
+        detail: '生产环境下，此应用程序必须以管理员权限运行。\n\n请右键点击应用程序图标，选择"以管理员身份运行"。\n\n应用程序将立即退出。',
+        buttons: ['确定']
+      });
+
+      loggerService.addLog('error', 'Application terminated due to insufficient privileges in production', 'main');
+      app.quit();
+      return;
+    } else {
+      // 开发环境：显示警告但允许继续
+      dialog.showMessageBox({
+        type: 'warning',
+        title: '小斗笠直播助手 - 开发模式',
+        message: '权限不足',
+        detail: '此应用程序建议以管理员权限运行以获得完整功能。\n\n开发模式下允许继续运行，但某些功能可能受限。',
+        buttons: ['继续运行', '退出应用'],
+        defaultId: 0,
+        cancelId: 1
+      }).then((result) => {
+        if (result.response === 1) {
+          app.quit();
+          return;
+        }
+      });
+    }
+  } else {
+    loggerService.addLog('info', `Application running with administrator privileges (Production: ${productionMode})`, 'main');
+  }
 
   // 注册所有 IPC 处理器
   registerAllHandlers();

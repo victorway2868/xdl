@@ -27,13 +27,15 @@ export class MainWindow {
       show: false, // 先不显示，等加载完成后再显示
     });
     
+    // Vite plugin must be defined in main process
+    declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
+    declare const MAIN_WINDOW_VITE_NAME: string;
+
     // 加载应用
-    if (process.env.NODE_ENV === 'development') {
-      // 开发模式下加载 Vite 开发服务器
-      this.window.loadURL('http://localhost:5173');
+    if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+      this.window.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
     } else {
-      // 生产模式下加载打包后的文件
-      this.window.loadFile(path.join(__dirname, '../renderer/main_window/index.html'));
+      this.window.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
     }
     
     // 窗口准备好后显示

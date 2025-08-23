@@ -1,7 +1,8 @@
 {
-  "name": "electron-framework-app",
+  "name": "xiaodouli",
+  "productName": "小斗笠直播助手",
   "version": "1.0.0",
-  "description": "A modern Electron application with layered architecture and plugin system",
+  "description": "小斗笠直播助手 - 专业的直播辅助工具",
   "main": ".vite/build/main.js",
   "scripts": {
     "start": "electron-forge start",
