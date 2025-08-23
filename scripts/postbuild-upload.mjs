@@ -12,6 +12,7 @@ if (!fs.existsSync(distDir)) {
   process.exit(1);
 }
 
+
 function findLatestFileByExt(dir, ext) {
   const files = fs.readdirSync(dir)
     .filter(f => f.toLowerCase().endsWith(ext))
