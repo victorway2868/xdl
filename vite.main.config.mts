@@ -1,9 +1,13 @@
 import { defineConfig } from 'vite';
 import { builtinModules } from 'module';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // https://vitejs.dev/config
 export default defineConfig({
-  // Required to work with Electron Forge
+  // Required to work with Electron
   root: __dirname,
   publicDir: false,
   build: {
@@ -22,7 +26,6 @@ export default defineConfig({
       external: [
         'electron',
         'electron-log',
-        'electron-squirrel-startup',
         ...builtinModules,
         ...builtinModules.map((m) => `node:${m}`),
       ],
@@ -30,3 +33,4 @@ export default defineConfig({
     minify: false,
   },
 });
+

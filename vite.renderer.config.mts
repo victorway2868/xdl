@@ -1,10 +1,13 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // https://vitejs.dev/config
 export default defineConfig({
-  root: '.',
+  root: __dirname,
   base: './',
   publicDir: 'public',
   server: {
@@ -28,12 +31,10 @@ export default defineConfig({
             proxyReq.setHeader('Referer', 'https://live.douyin.com/');
           });
         },
-        // This is the missing piece. We need to handle cookies.
         cookieDomainRewrite: {
-          "*": ""
+          '*': ''
         }
       },
-
       '/socket': {
         target: 'wss://webcast5-ws-web-lf.douyin.com',
         changeOrigin: true,
@@ -58,3 +59,4 @@ export default defineConfig({
     },
   },
 });
+

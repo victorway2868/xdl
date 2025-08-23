@@ -28,94 +28,32 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
-      - name: Build application
-        run: npm run make
+      - name: Build application (Windows)
+        if: matrix.os == 'windows-latest'
+        run: npm run build:win
         env:
           CI: true
-        
-      - name: Get version from tag
-        id: version
-        shell: bash
-        run: |
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            VERSION=${GITHUB_REF#refs/tags/v}
-          else
-            VERSION=$(node -p "require('./package.json').version")
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Version: $VERSION"
-          
-      - name: Prepare release files
-        id: prepare_files
-        shell: bash
-        run: |
-          mkdir -p release-files
 
-          # 根据操作系统和forge配置查找对应的安装包
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            # Windows: Squirrel生成的Setup.exe文件
-            find out/make/squirrel.windows -name "*Setup.exe" -exec cp {} release-files/ \; 2>/dev/null || true
-            find out/make -name "*Setup.exe" -exec cp {} release-files/ \; 2>/dev/null || true
-            ORIGINAL_INSTALLER=$(find release-files -name "*Setup.exe" | head -1)
-            if [[ -z "$ORIGINAL_INSTALLER" ]]; then
-              echo "Error: No Windows installer found"
-              ls -la out/make/
-              exit 1
-            fi
-            NEW_INSTALLER_NAME="xiaodouli-Setup-V${{ steps.version.outputs.version }}.exe"
-            mv "$ORIGINAL_INSTALLER" "release-files/$NEW_INSTALLER_NAME"
-            INSTALLER_FILE="release-files/$NEW_INSTALLER_NAME"
-            echo "installer_file=$INSTALLER_FILE" >> $GITHUB_OUTPUT
-            echo "installer_name=$NEW_INSTALLER_NAME" >> $GITHUB_OUTPUT
-            echo "platform=windows" >> $GITHUB_OUTPUT
-          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            # macOS: ZIP文件
-            find out/make/zip/darwin -name "*.zip" -exec cp {} release-files/ \; 2>/dev/null || true
-            find out/make -name "*.zip" -exec cp {} release-files/ \; 2>/dev/null || true
-            ORIGINAL_INSTALLER=$(find release-files -name "*.zip" | head -1)
-            if [[ -z "$ORIGINAL_INSTALLER" ]]; then
-              echo "Error: No macOS installer found"
-              ls -la out/make/
-              exit 1
-            fi
-            NEW_INSTALLER_NAME="xiaodouli-V${{ steps.version.outputs.version }}.zip"
-            mv "$ORIGINAL_INSTALLER" "release-files/$NEW_INSTALLER_NAME"
-            INSTALLER_FILE="release-files/$NEW_INSTALLER_NAME"
-            echo "installer_file=$INSTALLER_FILE" >> $GITHUB_OUTPUT
-            echo "installer_name=$NEW_INSTALLER_NAME" >> $GITHUB_OUTPUT
-            echo "platform=macos" >> $GITHUB_OUTPUT
-          fi
+      - name: Build application (macOS)
+        if: matrix.os == 'macos-latest'
+        run: npm run build:mac
 
-          echo "Found installer: $INSTALLER_FILE"
-          
-      - name: Calculate file hash
-        id: hash
-        shell: bash
-        run: |
-          if [[ -f "${{ steps.prepare_files.outputs.installer_file }}" ]]; then
-            if command -v sha512sum &> /dev/null; then
-              HASH=$(sha512sum "${{ steps.prepare_files.outputs.installer_file }}" | cut -d' ' -f1)
-            else
-              HASH=$(shasum -a 512 "${{ steps.prepare_files.outputs.installer_file }}" | cut -d' ' -f1)
-            fi
-            echo "file_hash=$HASH" >> $GITHUB_OUTPUT
-            echo "File hash: $HASH"
-          fi
-          
-      - name: Upload Artifacts to R2
+      - name: Upload Artifacts to R2 (Windows)
+        if: matrix.os == 'windows-latest'
         env:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_BUCKET: ${{ secrets.R2_BUCKET }}
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
-        run: >
-          node scripts/upload-to-r2.mjs
-          --installerPath="${{ steps.prepare_files.outputs.installer_file }}"
-          --platform="${{ steps.prepare_files.outputs.platform }}"
-          --version="${{ steps.version.outputs.version }}"
-          --sha512="${{ steps.hash.outputs.file_hash }}"
-          --fileName="${{ steps.prepare_files.outputs.installer_name }}"
+        run: node scripts/postbuild-upload.mjs windows
 
-          echo "Uploaded version metadata for ${{ steps.prepare_files.outputs.platform }}"
-          cat latest-${{ steps.prepare_files.outputs.platform }}.json
+      - name: Upload Artifacts to R2 (macOS)
+        if: matrix.os == 'macos-latest'
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+        run: node scripts/postbuild-upload.mjs macos
