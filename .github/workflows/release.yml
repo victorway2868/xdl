@@ -105,7 +105,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
         run: |
           # 上传安装包到 R2
-          wrangler r2 object put "${{ secrets.R2_BUCKET }}/releases/${{ env.platform }}/${{ env.installer_name }}" --file="${{ env.installer_file }}"
+          wrangler r2 object put "${{ secrets.R2_BUCKET }}/releases/${{ env.platform }}/${{ env.installer_name }}" --file="${{ env.installer_file }}" --remote
           
       - name: Create and upload version metadata
         shell: bash
@@ -126,7 +126,7 @@ jobs:
           EOF
           
           # 上传元数据文件
-          wrangler r2 object put ${{ secrets.R2_BUCKET }}/updates/latest-${{ env.platform }}.json --file="latest-${{ env.platform }}.json"
+          wrangler r2 object put "${{ secrets.R2_BUCKET }}/updates/latest-${{ env.platform }}.json" --file="latest-${{ env.platform }}.json" --remote
           
           echo "Uploaded version metadata for ${{ env.platform }}"
           cat latest-${{ env.platform }}.json
