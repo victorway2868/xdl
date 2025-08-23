@@ -52,21 +52,18 @@ jobs:
 
           # 根据操作系统和forge配置查找对应的安装包
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            # Windows: 查找特定格式的安装包 xiaodouli-Setup-x.x.x.exe
+            # Windows: 查找NSIS生成的安装包
             VERSION="${{ steps.version.outputs.version }}"
             EXPECTED_NAME="xiaodouli-Setup-${VERSION}.exe"
 
-            # 首先尝试查找预期的文件名
-            find out/make/squirrel.windows -name "$EXPECTED_NAME" -exec cp {} release-files/ \; 2>/dev/null || true
-            find out/make -name "$EXPECTED_NAME" -exec cp {} release-files/ \; 2>/dev/null || true
+            # 查找NSIS生成的安装包
+            find out/make -name "*.exe" -exec cp {} release-files/ \; 2>/dev/null || true
 
-            # 如果没找到预期文件名，查找任何Setup.exe文件并重命名
-            if [[ ! -f "release-files/$EXPECTED_NAME" ]]; then
-              FOUND_FILE=$(find out/make -name "*Setup*.exe" | head -1)
-              if [[ -n "$FOUND_FILE" ]]; then
-                cp "$FOUND_FILE" "release-files/$EXPECTED_NAME"
-                echo "Renamed installer from $(basename "$FOUND_FILE") to $EXPECTED_NAME"
-              fi
+            # 查找并重命名安装包
+            FOUND_FILE=$(find release-files -name "*.exe" | head -1)
+            if [[ -n "$FOUND_FILE" ]]; then
+              mv "$FOUND_FILE" "release-files/$EXPECTED_NAME"
+              echo "Renamed installer from $(basename "$FOUND_FILE") to $EXPECTED_NAME"
             fi
 
             INSTALLER_FILE="$(pwd)/release-files/$EXPECTED_NAME"

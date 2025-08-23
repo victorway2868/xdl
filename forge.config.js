@@ -23,23 +23,16 @@ module.exports = {
   rebuildConfig: {},
   makers: [
     {
-      name: '@electron-forge/maker-squirrel',
+      name: 'electron-forge-maker-nsis',
       config: {
         name: 'xiaodouli',
+        productName: '小斗笠直播助手',
         setupExe: 'xiaodouli-Setup-${version}.exe',
         setupIcon: path.join(__dirname, 'public/icons/icon-128x128.ico'),
-        // Remove certificate signing for now to fix build issues
-        // certificateFile: process.env.CERTIFICATE_FILE,
-        // certificatePassword: process.env.CERTIFICATE_PASSWORD,
-        // signWithParams: `/f "${process.env.CERTIFICATE_FILE}" /p "${process.env.CERTIFICATE_PASSWORD}" /tr http://timestamp.digicert.com /td sha256 /fd sha256`,
-        remoteReleases: false,
-        noMsi: true,
         authors: '小斗笠工作室',
         description: '小斗笠直播助手安装程序',
-        // Remove duplicate setupIcon and fix iconUrl path
-        iconUrl: path.join(__dirname, 'public/icons/icon-128x128.ico'),
-        // Remove requestedExecutionLevel as it's not a valid Squirrel option
-        // requestedExecutionLevel: 'requireAdministrator',
+        createDesktopShortcut: true,
+        createStartMenuShortcut: true,
       },
     },
     {
