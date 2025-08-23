@@ -1,11 +1,12 @@
 const { VitePlugin } = require('@electron-forge/plugin-vite');
+const path = require('path');
 
 module.exports = {
   packagerConfig: {
     asar: true,
     name: "小斗笠直播助手",
     executableName: "xiaodouli",
-    icon: "./public/icons/icon-256x256.png", // 使用最高分辨率图标
+    icon: path.join(__dirname, 'public/icons/icon-128x128.ico'), // 使用ico格式图标
     win32metadata: {
       CompanyName: "小斗笠工作室",
       FileDescription: "小斗笠直播助手",
@@ -26,29 +27,19 @@ module.exports = {
       config: {
         name: 'xiaodouli',
         setupExe: 'xiaodouli-Setup-${version}.exe',
-        setupIcon: './public/icons/icon-128x128.ico', // 使用128x128图标作为安装程序图标
-        loadingGif: './public/loading.gif', // 可以添加安装加载动画
-        certificateFile: process.env.CERTIFICATE_FILE, // 代码签名证书路径
-        certificatePassword: process.env.CERTIFICATE_PASSWORD, // 证书密码
-        signWithParams: `/f "${process.env.CERTIFICATE_FILE}" /p "${process.env.CERTIFICATE_PASSWORD}" /tr http://timestamp.digicert.com /td sha256 /fd sha256`,
+        setupIcon: path.join(__dirname, 'public/icons/icon-128x128.ico'),
+        // Remove certificate signing for now to fix build issues
+        // certificateFile: process.env.CERTIFICATE_FILE,
+        // certificatePassword: process.env.CERTIFICATE_PASSWORD,
+        // signWithParams: `/f "${process.env.CERTIFICATE_FILE}" /p "${process.env.CERTIFICATE_PASSWORD}" /tr http://timestamp.digicert.com /td sha256 /fd sha256`,
         remoteReleases: false,
         noMsi: true,
-        // 配置安装程序需要管理员权限
-        setupMsi: false,
-        // 添加安装程序的管理员权限要求
         authors: '小斗笠工作室',
         description: '小斗笠直播助手安装程序',
-        // 强制以管理员身份运行安装程序
-        requestedExecutionLevel: 'requireAdministrator',
-        // Squirrel特定的快捷方式配置
-        iconUrl: './public/icons/icon-128x128.ico',
-        // 创建桌面快捷方式
-        setupIcon: './public/icons/icon-128x128.ico',
-        // 配置快捷方式创建
-        createDesktopShortcut: true,
-        createStartMenuShortcut: true,
-        // 添加快捷方式描述
-        shortcutName: '小斗笠直播助手'
+        // Remove duplicate setupIcon and fix iconUrl path
+        iconUrl: path.join(__dirname, 'public/icons/icon-128x128.ico'),
+        // Remove requestedExecutionLevel as it's not a valid Squirrel option
+        // requestedExecutionLevel: 'requireAdministrator',
       },
     },
     {
