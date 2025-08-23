@@ -79,6 +79,7 @@ ipcMain.on('log', (event, entry: Omit<LogEntry, 'source'>) => {
 
 declare const MAIN_WINDOW_VITE_DEV_SERVER_URL: string;
 declare const MAIN_WINDOW_VITE_NAME: string;
+declare const MAIN_WINDOW_PRELOAD_VITE_URL: string;
 
 // 全局错误处理
 process.on('uncaughtException', (error) => {
@@ -101,7 +102,9 @@ const createWindow = (): void => {
       width: 1000,
       height: 760,
       webPreferences: {
-        preload: path.join(__dirname, 'preload.js'),
+                        preload: typeof MAIN_WINDOW_PRELOAD_VITE_URL !== 'undefined'
+          ? MAIN_WINDOW_PRELOAD_VITE_URL
+          : path.join(__dirname, `../renderer/main_window/preload.js`),
         nodeIntegration: false,
         contextIsolation: true,
         webSecurity: true,
