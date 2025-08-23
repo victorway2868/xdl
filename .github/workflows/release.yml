@@ -96,8 +96,12 @@ jobs:
             echo "File hash: $HASH"
           fi
           
-      - name: Create Version Metadata
-        id: create_metadata
+      - name: Install Wrangler
+        run: npm install -g wrangler
+
+      - name: Upload Artifacts to R2
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         shell: bash
         run: |
           # Create version metadata file
@@ -114,12 +118,9 @@ jobs:
           echo "Created version metadata for ${{ env.platform }}"
           cat latest-${{ env.platform }}.json
 
-      - name: Upload to R2
-        uses: cloudflare/wrangler-action@v3
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        with:
-          command: |
-            r2 object put "${{ secrets.R2_BUCKET }}/releases/${{ env.platform }}/${{ env.installer_name }}" --file="${{ env.installer_file }}"
-            r2 object put "${{ secrets.R2_BUCKET }}/updates/latest-${{ env.platform }}.json" --file="latest-${{ env.platform }}.json"
+          # Upload installer and metadata
+          wrangler r2 object put "${{ secrets.R2_BUCKET }}/releases/${{ env.platform }}/${{ env.installer_name }}" --file="${{ env.installer_file }}" --remote
+          wrangler r2 object put "${{ secrets.R2_BUCKET }}/updates/latest-${{ env.platform }}.json" --file="latest-${{ env.platform }}.json" --remote
+          
+          echo "Uploaded version metadata for ${{ env.platform }}"
+          cat latest-${{ env.platform }}.json
