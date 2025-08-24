@@ -163,6 +163,8 @@ app.whenReady().then(() => {
   loggerService.addLog('info', 'Application starting', 'main');
   console.log('App ready, creating window...');
 
+
+
   // 注册所有 IPC 处理器
   registerAllHandlers();
 

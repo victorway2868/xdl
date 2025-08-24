@@ -19,6 +19,15 @@ export interface User {
   avatar?: string;
 }
 
+
+export interface DouyinUserInfo {
+  nickname: string;
+  userId: string;
+  avatarUrl: string;
+  followerCount: number;
+  followingCount: number;
+}
+
 export interface LogEntry {
   level: 'info' | 'warn' | 'error' | 'debug';
   message: string;

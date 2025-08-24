@@ -48,6 +48,13 @@ const electronAPI: IpcApi = {
   closeWindow: () =>
     ipcRenderer.invoke(IPC_CHANNELS.CLOSE_WINDOW),
 
+  // Auth APIs
+  loginDouyinWeb: () => ipcRenderer.invoke('login-douyin-web'),
+  loginDouyinCompanion: () => ipcRenderer.invoke('login-douyin-companion'),
+  getDouyinUserStats: (options?: any) => ipcRenderer.invoke('get-douyin-user-stats', options),
+  getDouyinUserInfo: () => ipcRenderer.invoke('get-douyin-user-info'),
+
+
   // Auto Update APIs
   checkForUpdates: () =>
     ipcRenderer.invoke('check-for-updates'),

@@ -35,6 +35,13 @@ export interface IpcApi {
   // Software Version API
   getSoftwareVersion: (softwareName: string) => Promise<string | null>;
 
+  // Auth APIs
+  loginDouyinWeb: () => Promise<any>;
+  loginDouyinCompanion: () => Promise<any>;
+  getDouyinUserStats: (options?: any) => Promise<any>;
+  getDouyinUserInfo: () => Promise<any>;
+
+
   // Auto Update APIs
   checkForUpdates: () => Promise<UpdateCheckResult>;
   getAppVersion: () => Promise<AppVersionInfo>;
