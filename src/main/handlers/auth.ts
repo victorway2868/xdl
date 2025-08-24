@@ -18,7 +18,12 @@ export function registerAuthHandlers(): void {
   });
 
   ipcMain.handle('get-douyin-user-info', async () => {
-    return await getDouyinUserInfo();
+    try {
+      return await getDouyinUserInfo();
+    } catch (e) {
+      // 当 Cookie 不存在或不可用时，不抛到渲染进程，返回 null 即可
+      return null;
+    }
   });
 }
 

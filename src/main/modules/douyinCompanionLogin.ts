@@ -16,7 +16,7 @@ export async function loginDouyinCompanion(): Promise<DouyinLoginResult> {
       return { success: false, error: '未检测到直播伴侣，请先安装直播伴侣' };
     }
 
-    // 启动直播伴侣（可选）
+    // 命令行启动直播伴侣（可选）
     try {
       const exePath = await getSoftwarePath('直播伴侣');
       if (exePath) {

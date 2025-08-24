@@ -4,7 +4,6 @@ import fs from 'fs';
 
 export interface DouyinLoginResult {
   success: boolean;
-  user?: { id: string; nickname?: string; avatar_url?: string };
   cookies?: Array<{ name: string; value: string }>;
   cookieString?: string;
   error?: string;
@@ -18,7 +17,7 @@ async function clearAllBrowserData() {
       try { await s.cookies.remove(`https://${c.domain}${c.path}`, c.name); } catch {}
     }
     await s.clearStorageData({
-      storages: ['appcache', 'cookies', 'filesystem', 'indexdb', 'localstorage', 'shadercache', 'websql', 'serviceworkers', 'cachestorage', 'sessionstorage']
+      storages: ['cookies', 'filesystem', 'indexdb', 'localstorage', 'shadercache', 'websql', 'serviceworkers', 'cachestorage']
     });
     await s.clearCache();
     await s.clearHostResolverCache();
@@ -70,33 +69,27 @@ export async function loginDouyinWeb(): Promise<DouyinLoginResult> {
           return;
         }
         try {
-          const cookies = await session.defaultSession.cookies.get({ domain: '.douyin.com' });
-          const hasSession = cookies.some(c => c.name.toLowerCase() === 'sessionid' && c.value);
+          const title = (win.getTitle() || '').trim();
+          const logged = title.includes('的抖音 - 抖音');
 
-          let userInfo: { nickname?: string; avatar_url?: string } = {};
-          try {
-            userInfo = await win.webContents.executeJavaScript(`(function(){
-              let nickname='';
-              let avatar=null;
-              const n1=document.querySelector('h1.a34DMvQe');
-              const n2=document.querySelector('.j5WZzJdp');
-              const n3=document.querySelector('.nickname');
-              if(n1) nickname=n1.innerText.trim(); else if(n2) nickname=n2.innerText.trim(); else if(n3) nickname=n3.innerText.trim();
-              const img=document.querySelector('img.RlLOO79h')||document.querySelector('.avatar img')||document.querySelector('.BhdsqJgJ img');
-              if(img) avatar=img.src; return { nickname, avatar_url: avatar }; })();`);
-          } catch {}
-
-          if (hasSession && (userInfo.nickname || userInfo.avatar_url)) {
+          if (logged) {
             clearInterval(timer);
+
+            // 获取并保存 Cookie
+            const cookies = await session.defaultSession.cookies.get({ domain: '.douyin.com' });
             const cookieString = saveCookiesToFile(cookies as any);
-            const sessionId = cookies.find(c => c.name === 'sessionid');
-            const id = sessionId ? `douyin_${sessionId.value.substring(0,8)}` : `douyin_${Date.now()}`;
+
             resolved = true;
-            const out = { success: true, user: { id, nickname: userInfo.nickname, avatar_url: userInfo.avatar_url }, cookies: cookies as any, cookieString };
+            const out: DouyinLoginResult = {
+              success: true,
+              cookies: cookies as any,
+              cookieString
+            };
             try { const w = win; win = null as any; w.close(); } catch {}
             resolve(out);
             return;
           }
+
           if (tries >= maxTries) {
             clearInterval(timer);
             resolved = true;

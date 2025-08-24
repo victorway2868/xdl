@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store/store';
 import { fetchSoftwareVersion } from '../store/features/softwareSlice';
-import { fetchDouyinUserInfo, logout } from '../store/features/user/userSlice';
+import { fetchDouyinUserInfo, logout, loginWithDouyinWeb, loginWithDouyinCompanion } from '../store/features/user/userSlice';
 import { User, Check, AlertCircle, Link, Key, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import LoginModal from '../components/LoginModal';
@@ -106,18 +106,24 @@ const HomePage = () => {
     }
   };
 
-  const handleLoginAttempt = async () => {
-    await dispatch(fetchDouyinUserInfo());
+  const handleWebLogin = async () => {
+    await dispatch(loginWithDouyinWeb());
     setShowLoginModal(false);
   };
+
+  const handleCompanionLogin = async () => {
+    await dispatch(loginWithDouyinCompanion());
+    setShowLoginModal(false);
+  };
+
 
   return (
     <div className="home-page-container">
       <LoginModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
-        onWebLogin={handleLoginAttempt} // Simplified login handler
-        onCompanionLogin={handleLoginAttempt} // Simplified login handler
+        onWebLogin={handleWebLogin}
+        onCompanionLogin={handleCompanionLogin}
       />
       {/* Top Section: Stream Settings */}
       <div className="top-section">
