@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store/store';
 import { fetchSoftwareVersion } from '../store/features/softwareSlice';
 import { fetchDouyinUserInfo, logout, loginWithDouyinWeb, loginWithDouyinCompanion } from '../store/features/user/userSlice';
-import { User, Check, AlertCircle, Link, Key, Copy } from 'lucide-react';
+import { User, Copy, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import LoginModal from '../components/LoginModal';
 
@@ -16,7 +16,7 @@ const HomePage = () => {
   const { douyinUserInfo, isLoggedIn, loading: userLoading, error: userError } = useSelector((state: RootState) => state.user);
 
   // Local component state
-  const [autoMode, setAutoMode] = useState(true);
+
   const [platform, setPlatform] = useState('抖音');
   const [streamMethod, setStreamMethod] = useState('直播伴侣');
   const [streamUrl, setStreamUrl] = useState('');
@@ -26,6 +26,7 @@ const HomePage = () => {
   const [streamInfoSuccess, setStreamInfoSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null); // For stream actions
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [copied, setCopied] = useState(''); // Can be 'url' or 'key'
 
   const initialized = React.useRef(false);
 
@@ -64,39 +65,39 @@ const HomePage = () => {
   const [hotDataLoading, setHotDataLoading] = useState(false);
 
   // Handlers
-  const toggleMode = () => setAutoMode(!autoMode);
+
   const handlePlatformChange = (newPlatform: string) => setPlatform(newPlatform);
   const handleMethodChange = (newMethod: string) => setStreamMethod(newMethod);
 
-  const getStreamInfo = async () => {
+  const handleStartStreaming = async () => {
     setIsLoading(true);
     setError(null);
+    // Simulate API call to get stream info
     setTimeout(() => {
       setStreamUrl('rtmp://push-rtmp-l1.douyincdn.com/live/');
       setStreamKey('stream_123456789');
-      setStreamInfoSuccess(true);
-      setIsLoading(false);
-    }, 2000);
-  };
-
-  const startAutoStreaming = async () => {
-    if (isStreaming) {
-      setIsStreaming(false);
-      setStreamInfoSuccess(false);
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    setTimeout(() => {
       setIsStreaming(true);
       setStreamInfoSuccess(true);
       setIsLoading(false);
     }, 2000);
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).catch(err => console.error('复制失败:', err));
+  const handleStopStreaming = () => {
+    setIsStreaming(false);
+    setStreamInfoSuccess(false);
+    setStreamUrl('');
+    setStreamKey('');
   };
+
+  const copyToClipboard = (text: string, type: 'url' | 'key') => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(type);
+      setTimeout(() => setCopied(''), 2000);
+    }).catch(err => console.error('复制失败:', err));
+  };
+
+
+
 
   const handleLoginClick = () => {
     if (isLoggedIn) {
@@ -128,48 +129,28 @@ const HomePage = () => {
       {/* Top Section: Stream Settings */}
       <div className="top-section">
         {/* Left: Auto-streaming component */}
-        <div className="w-2/3 h-44 rounded-2xl p-6 border border-blue-500/20 overflow-auto relative backdrop-blur-sm transition-all duration-300 bg-white dark:bg-slate-800 shadow-xl text-slate-800 dark:text-white">
-          <div className="stream-header">
+        <div className="w-2/3 rounded-2xl p-6 border border-blue-500/20 overflow-auto relative backdrop-blur-sm transition-all duration-300 bg-white dark:bg-slate-800 shadow-xl text-slate-800 dark:text-white">
+          <div className="stream-header" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+            <button onClick={() => navigate('/app/obs-config')} className="btn-base btn-ghost" style={{ padding: '4px 8px', fontSize: '12px' }}>OBS一键配置</button>
             <div className="version-info">
-              <span>OBS：</span>
-              <span className={`version-number ${obsVersion === '未检测到' ? '' : ''}`} style={{ color: obsVersion === '未检测到' ? '#fca5a5' : '#fbbf24' }}>
+              <span>obs:</span>
+              <span className={`version-number ${obsVersion === '未检测到' ? '' : ''}`} style={{ color: obsVersion === '未检测到' ? '#fca5a5' : '#fbbf24', marginLeft: '4px' }}>
                 {obsVersion}
               </span>
             </div>
             <div className="version-info">
-              <span>伴侣：</span>
-              <span className={`version-number ${companionVersion === '未检测到' ? '' : ''}`} style={{ color: companionVersion === '未检测到' ? '#fca5a5' : '#fbbf24' }}>
+              <span>伴侣:</span>
+              <span className={`version-number ${companionVersion === '未检测到' ? '' : ''}`} style={{ color: companionVersion === '未检测到' ? '#fca5a5' : '#fbbf24', marginLeft: '4px' }}>
                 {companionVersion}
               </span>
             </div>
-            <div style={{ cursor: 'pointer', display: 'inline-block' }} onClick={toggleMode}>
-              <div style={{
-                width: '44px',
-                height: '20px',
-                borderRadius: '9999px',
-                position: 'relative',
-                transition: 'background-color 0.3s ease',
-                backgroundColor: autoMode ? '#3b82f6' : '#475569'
-              }}>
-                <div style={{
-                  width: '16px',
-                  height: '16px',
-                  backgroundColor: 'white',
-                  borderRadius: '50%',
-                  transition: 'transform 0.3s ease',
-                  position: 'absolute',
-                  top: '2px',
-                  left: '2px',
-                  transform: autoMode ? 'translateX(24px)' : 'translateX(0)'
-                }}></div>
-              </div>
-            </div>
+            <button onClick={() => navigate('/danmu')} className="btn-base btn-ghost" style={{ padding: '4px 8px', fontSize: '12px' }}>打开弹幕</button>
           </div>
 
           <div className="stream-control">
-            {autoMode ? (
+            {!isStreaming ? (
               <button
-                onClick={startAutoStreaming}
+                onClick={handleStartStreaming}
                 disabled={isLoading}
                 style={{
                   pointerEvents: 'auto',
@@ -179,8 +160,7 @@ const HomePage = () => {
                   fontWeight: 'bold',
                   fontSize: '20px',
                   transition: 'all 0.3s ease',
-                  marginBottom: '40px',
-                  background: isStreaming ? 'linear-gradient(to right, #ef4444, #dc2626)' : 'linear-gradient(to right, #3b82f6, #4f46e5)',
+                  background: 'linear-gradient(to right, #3b82f6, #4f46e5)',
                   color: 'white',
                   border: 'none',
                   cursor: isLoading ? 'not-allowed' : 'pointer',
@@ -189,53 +169,45 @@ const HomePage = () => {
                   position: 'relative'
                 }}
               >
-                {isLoading ? '获取中...' : isStreaming ? '停止直播' : '开始直播'}
-                {streamInfoSuccess && !isLoading && (
-                  <span style={{ position: 'absolute', top: '-8px', right: '-8px', backgroundColor: '#10b981', borderRadius: '50%', padding: '4px' }}>
-                    <Check size={16} />
-                  </span>
-                )}
-                {isLoading && (
-                  <span style={{ position: 'absolute', top: '4px', right: '4px', display: 'flex' }}>
-                    <span className="spinner" style={{ width: '8px', height: '8px', backgroundColor: '#3b82f6' }}></span>
-                  </span>
-                )}
+                {isLoading ? '获取中...' : '开始直播'}
               </button>
             ) : (
-              <div style={{ pointerEvents: 'auto', width: '340px', display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '140px', marginBottom: '40px' }}>
-                <div style={{ position: 'relative' }}>
-                  <div style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }}><Link size={14} /></div>
-                  <input type="text" value={streamUrl} readOnly placeholder="推流地址" style={{ width: '100%', backgroundColor: 'rgba(30, 41, 59, 0.9)', color: 'white', paddingLeft: '36px', paddingRight: '36px', paddingTop: '6px', paddingBottom: '6px', borderRadius: '6px', border: '1px solid rgba(71, 85, 105, 0.5)', fontSize: '14px', outline: 'none' }} />
-                  <button onClick={() => copyToClipboard(streamUrl)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer' }} title="复制推流地址"><Copy size={14} /></button>
-                </div>
-                <div style={{ position: 'relative' }}>
-                  <div style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }}><Key size={14} /></div>
-                  <input type="text" value={streamKey ? '********' : ''} readOnly placeholder="推流密钥" style={{ width: '100%', backgroundColor: 'rgba(30, 41, 59, 0.9)', color: 'white', paddingLeft: '36px', paddingRight: '36px', paddingTop: '6px', paddingBottom: '6px', borderRadius: '6px', border: '1px solid rgba(71, 85, 105, 0.5)', fontSize: '14px', outline: 'none' }} />
-                  <button onClick={() => copyToClipboard(streamKey)} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', background: 'none', border: 'none', cursor: 'pointer', outline: 'none' }} title="复制推流密钥"><Copy size={14} /></button>
-                </div>
-                <button onClick={getStreamInfo} disabled={isLoading} style={{ width: '100%', padding: '12px 24px', borderRadius: '12px', fontWeight: '600', background: 'linear-gradient(to right, #3b82f6, #4f46e5)', color: 'white', border: 'none', cursor: isLoading ? 'not-allowed' : 'pointer', transition: 'all 0.3s ease', opacity: isLoading ? 0.7 : 1, outline: 'none', position: 'relative' }}>
-                  {isLoading ? '获取中...' : '获取推流码'}
-                  {streamInfoSuccess && !isLoading && (
-                    <span style={{ position: 'absolute', top: '-8px', right: '-8px', backgroundColor: '#10b981', borderRadius: '50%', padding: '4px' }}><Check size={16} /></span>
-                  )}
-                  {isLoading && (
-                    <span style={{ position: 'absolute', top: '50%', right: '16px', transform: 'translateY(-50%)', display: 'flex' }}><span className="spinner" style={{ width: '8px', height: '8px', backgroundColor: 'white' }}></span></span>
-                  )}
-                </button>
-                {error && (
-                  <div style={{ marginTop: '8px', color: '#f87171', fontSize: '14px', display: 'flex', alignItems: 'center' }}>
-                    <AlertCircle size={14} style={{ marginRight: '4px' }} />
-                    {error}
+              <div style={{ pointerEvents: 'auto', width: '100%', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ position: 'relative' }}>
+                    <input type="text" value={streamUrl} readOnly placeholder="推流地址" style={{ width: '100%', backgroundColor: 'rgba(30, 41, 59, 0.9)', color: 'white', padding: '6px 36px 6px 12px', borderRadius: '6px', border: '1px solid rgba(71, 85, 105, 0.5)', fontSize: '14px', outline: 'none' }} />
+                    <button onClick={() => copyToClipboard(streamUrl, 'url')} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: copied === 'url' ? '#10b981' : '#9ca3af', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.2s' }} title="复制推流地址">
+                      {copied === 'url' ? <Check size={14} /> : <Copy size={14} />}
+                    </button>
                   </div>
-                )}
+                  <div style={{ position: 'relative' }}>
+                    <input type="text" value={streamKey ? '********' : ''} readOnly placeholder="推流密钥" style={{ width: '100%', backgroundColor: 'rgba(30, 41, 59, 0.9)', color: 'white', padding: '6px 36px 6px 12px', borderRadius: '6px', border: '1px solid rgba(71, 85, 105, 0.5)', fontSize: '14px', outline: 'none' }} />
+                    <button onClick={() => copyToClipboard(streamKey, 'key')} style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: copied === 'key' ? '#10b981' : '#9ca3af', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.2s' }} title="复制推流密钥">
+                      {copied === 'key' ? <Check size={14} /> : <Copy size={14} />}
+                    </button>
+                  </div>
+                </div>
+                <button
+                  onClick={handleStopStreaming}
+                  style={{
+                    padding: '16px 32px',
+                    borderRadius: '12px',
+                    fontWeight: 'bold',
+                    fontSize: '20px',
+                    background: 'linear-gradient(to right, #ef4444, #dc2626)',
+                    color: 'white',
+                    border: 'none',
+                    cursor: 'pointer',
+                    outline: 'none'
+                  }}
+                >
+                  停止直播
+                </button>
               </div>
             )}
           </div>
 
-          <div className="stream-footer">
-            <button onClick={() => navigate('/app/obs-config')} className="btn-base btn-ghost">OBS一键配置</button>
-            <button onClick={() => navigate('/danmu')} className="btn-base btn-ghost">打开弹幕</button>
-          </div>
+
         </div>
 
         {/* Right: Settings and User Info */}
