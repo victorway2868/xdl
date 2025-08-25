@@ -28,6 +28,15 @@ const HomePage = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [copied, setCopied] = useState(''); // Can be 'url' or 'key'
 
+  // 手机开播轮询控制（前端）
+  const pollingTimer = React.useRef<number | null>(null);
+  const pollingRunning = React.useRef(false);
+  const inFlight = React.useRef(false);
+  const shownStatus4Hint = React.useRef(false);
+  const shownAuthOnce = React.useRef(false);
+  const [showStatus4Image, setShowStatus4Image] = React.useState(false);
+  const [showStatus2Image, setShowStatus2Image] = React.useState(false);
+
   const initialized = React.useRef(false);
 
   useEffect(() => {
@@ -42,6 +51,32 @@ const HomePage = () => {
       }
     }
   }, [dispatch, douyinUserInfo]);
+
+  // 监听认证/状态通知（可选增强）
+  useEffect(() => {
+    const offAuth = window.electronAPI.onAuthNotification?.((p: any) => {
+      if (p?.message) console.warn(p.message);
+      if (p?.url) {
+        window.electronAPI.openAuthUrl({ url: p.url });
+        setError('需要进行直播安全认证，请在浏览器完成后返回应用继续。');
+      }
+    });
+    const offStatus = window.electronAPI.onStatusNotification?.((p: any) => {
+      if (p?.message) console.log('状态通知:', p.message);
+    });
+    return () => {
+      try { offAuth && offAuth(); } catch {}
+      try { offStatus && offStatus(); } catch {}
+    };
+  }, []);
+
+  // 组件卸载时清理：停止轮询并尝试停止心跳
+  useEffect(() => {
+    return () => {
+      try { /* 停止前端轮询 */ stopPolling(); } catch {}
+      try { /* 尝试停止心跳 */ window.electronAPI.getDouyinApiInfo('stop'); } catch {}
+    };
+  }, []);
 
   // Derived state
   const obsVersion = checks['OBS Studio']?.version || '未检测到';
@@ -69,63 +104,148 @@ const HomePage = () => {
   const handlePlatformChange = (newPlatform: string) => setPlatform(newPlatform);
   const handleMethodChange = (newMethod: string) => setStreamMethod(newMethod);
 
+  // 手机开播轮询逻辑（前端控制）
+  const pollOnce = async () => {
+    if (!pollingRunning.current || inFlight.current) return;
+    inFlight.current = true;
+    try {
+      const res = await window.electronAPI.getDouyinApiInfo('get');
+      if (!pollingRunning.current) return;
+
+      // 需要认证（仅首次自动打开）
+      if (res?.requiresAuth && res?.authUrl && !shownAuthOnce.current) {
+        shownAuthOnce.current = true;
+        try { await window.electronAPI.openAuthUrl({ url: res.authUrl }); } catch {}
+      }
+
+      // 就绪：展示 status2 引导图、配置 OBS、启动推流、维持心跳并停止轮询
+      if (res?.streamUrl && res?.streamKey) {
+        setShowStatus2Image(true);
+        setShowStatus4Image(false);
+        setStreamUrl(res.streamUrl);
+        setStreamKey(res.streamKey);
+        setStreamInfoSuccess(true);
+        setIsStreaming(true);
+        // 配置 OBS
+        try {
+          const setRes = await window.electronAPI.setOBSStreamSettings(res.streamUrl, res.streamKey);
+          if (!setRes?.success) {
+            console.warn('OBS 参数设置失败:', setRes?.message);
+          } else {
+            const startRes = await window.electronAPI.startOBSStreaming();
+            if (!startRes?.success) {
+              console.warn('OBS 启动推流失败:', startRes?.message);
+            }
+          }
+        } catch (e) {
+          console.warn('OBS 配置/启动异常:', e);
+        }
+        // 维持心跳
+        if (res?.room_id && res?.stream_id) {
+          try { await window.electronAPI.maintainDouyinStream(res.room_id, res.stream_id, 'phone'); } catch {}
+        }
+        setIsLoading(false);
+        stopPolling();
+        return;
+      }
+
+      // 未就绪：status=4 首次显示提示图
+      if (res?.currentStatus === 4 && !shownStatus4Hint.current) {
+        shownStatus4Hint.current = true;
+        setShowStatus4Image(true);
+      }
+    } catch (e) {
+      console.warn('轮询异常:', e);
+    } finally {
+      inFlight.current = false;
+      if (pollingRunning.current) {
+        pollingTimer.current = window.setTimeout(pollOnce, 3000);
+      }
+    }
+  };
+
+  const startPolling = () => {
+    stopPolling();
+    shownStatus4Hint.current = false;
+    shownAuthOnce.current = false;
+    setShowStatus4Image(false);
+    setShowStatus2Image(false);
+    pollingRunning.current = true;
+    pollingTimer.current = window.setTimeout(pollOnce, 0);
+  };
+
+  const stopPolling = () => {
+    pollingRunning.current = false;
+    if (pollingTimer.current) {
+      clearTimeout(pollingTimer.current);
+      pollingTimer.current = null;
+    }
+    inFlight.current = false;
+  };
+
   const handleStartStreaming = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      if (platform !== '抖音' || streamMethod !== '直播伴侣') {
-        setError('当前仅支持 抖音-直播伴侣 路线');
+      if (platform !== '抖音') {
+        setError('当前仅支持抖音平台');
         setIsLoading(false);
         return;
       }
 
-      // 1) 从抖音直播伴侣读取 RTMP
-      const info = await window.electronAPI.getDouyinCompanionInfo();
-      if (!info || info.error) {
-        setError(info?.error || '获取推流信息失败');
+      if (streamMethod === '直播伴侣') {
+        // 1) 从抖音直播伴侣读取 RTMP
+        const info = await window.electronAPI.getDouyinCompanionInfo();
+        if (!info || info.error) {
+          setError(info?.error || '获取推流信息失败');
+          setIsLoading(false);
+          return;
+        }
+        if (!info.streamUrl || !info.streamKey) {
+          setError('未获取到有效的推流地址，请确认直播伴侣已开播且状态为2');
+          setIsLoading(false);
+          return;
+        }
+
+        // --- 关键改动：拿到推流码后，立刻更新UI ---
+        setStreamUrl(info.streamUrl);
+        setStreamKey(info.streamKey);
+        setStreamInfoSuccess(true);
+        setIsStreaming(true); // 立即切换到显示推流码的界面
+        // ----------------------------------------
+
+        // 后续步骤继续在后台执行
+        // 2) 配置 OBS 推流参数
+        const setRes = await window.electronAPI.setOBSStreamSettings(info.streamUrl, info.streamKey);
+        if (!setRes?.success) {
+          setError(`OBS 参数设置失败: ${setRes?.message || '未知错误'}`);
+          // 此时 UI 已显示推流码，仅在错误区域提示 OBS 问题
+          setIsLoading(false);
+          return; // 流程中断，但 UI 保持显示推流码
+        }
+
+        // 3) 启动 OBS 推流
+        const startRes = await window.electronAPI.startOBSStreaming();
+        if (!startRes?.success) {
+          setError(`OBS 启动推流失败: ${startRes?.message || '未知错误'}`);
+          setIsLoading(false);
+          return;
+        }
+
+        // 4) 杀掉 MediaSDK_Server.exe 避免冲突（两次，间隔3秒）
+        try {
+          await window.electronAPI.killMediaSDKServer();
+          setTimeout(() => { window.electronAPI.killMediaSDKServer().catch(() => {}); }, 3000);
+        } catch {}
+
+        // 所有流程成功，结束 loading 状态
         setIsLoading(false);
         return;
       }
-      if (!info.streamUrl || !info.streamKey) {
-        setError('未获取到有效的推流地址，请确认直播伴侣已开播且状态为2');
-        setIsLoading(false);
-        return;
-      }
 
-      // --- 关键改动：拿到推流码后，立刻更新UI ---
-      setStreamUrl(info.streamUrl);
-      setStreamKey(info.streamKey);
-      setStreamInfoSuccess(true);
-      setIsStreaming(true); // 立即切换到显示推流码的界面
-      // ----------------------------------------
-
-      // 后续步骤继续在后台执行
-      // 2) 配置 OBS 推流参数
-      const setRes = await window.electronAPI.setOBSStreamSettings(info.streamUrl, info.streamKey);
-      if (!setRes?.success) {
-        setError(`OBS 参数设置失败: ${setRes?.message || '未知错误'}`);
-        // 此时 UI 已显示推流码，仅在错误区域提示 OBS 问题
-        setIsLoading(false);
-        return; // 流程中断，但 UI 保持显示推流码
-      }
-
-      // 3) 启动 OBS 推流
-      const startRes = await window.electronAPI.startOBSStreaming();
-      if (!startRes?.success) {
-        setError(`OBS 启动推流失败: ${startRes?.message || '未知错误'}`);
-        setIsLoading(false);
-        return;
-      }
-
-      // 4) 杀掉 MediaSDK_Server.exe 避免冲突（两次，间隔3秒）
-      try {
-        await window.electronAPI.killMediaSDKServer();
-        setTimeout(() => { window.electronAPI.killMediaSDKServer().catch(() => {}); }, 3000);
-      } catch {}
-
-      // 所有流程成功，结束 loading 状态
-      setIsLoading(false);
+      // 手机开播：前端开启轮询（在拿到推流码前，按钮保持“获取中...”）
+      startPolling();
     } catch (e: any) {
       setError(e?.message || String(e));
       setIsLoading(false);
@@ -137,14 +257,22 @@ const HomePage = () => {
       setIsLoading(true);
       setError(null);
 
-      // 1) 触发直播伴侣的“结束直播”热键（Shift+L）
-      try {
-        const hkRes = await window.electronAPI.endLiveHotkey();
-        if (!hkRes?.success) {
-          console.warn('结束直播热键发送失败: ', hkRes?.message);
+      // 停止前端轮询
+      stopPolling();
+
+      if (streamMethod === '直播伴侣') {
+        // 1) 触发直播伴侣的“结束直播”热键（Shift+L）
+        try {
+          const hkRes = await window.electronAPI.endLiveHotkey();
+          if (!hkRes?.success) {
+            console.warn('结束直播热键发送失败: ', hkRes?.message);
+          }
+        } catch (e) {
+          console.warn('结束直播热键调用异常: ', e);
         }
-      } catch (e) {
-        console.warn('结束直播热键调用异常: ', e);
+      } else {
+        // API 路线：停止心跳
+        try { await window.electronAPI.getDouyinApiInfo('stop'); } catch {}
       }
 
       // 2) 停止 OBS 推流
@@ -162,6 +290,8 @@ const HomePage = () => {
         setStreamUrl('');
         setStreamKey('');
         setIsLoading(false);
+        setShowStatus4Image(false);
+        setShowStatus2Image(false);
       }, 800);
     }
   };
@@ -226,7 +356,8 @@ const HomePage = () => {
 
           <div className="stream-control">
             {!isStreaming ? (
-              <button
+              <>
+                <button
                 onClick={handleStartStreaming}
                 disabled={isLoading}
                 style={{
@@ -248,6 +379,31 @@ const HomePage = () => {
               >
                 {isLoading ? '获取中...' : '开始直播'}
               </button>
+
+              {/* 手机开播状态提示图（仅首次显示一次，不影响轮询） */}
+              {false && showStatus4Image && (
+                <div style={{ marginTop: '12px', padding: '8px', borderRadius: '8px', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)' }}>
+                  <img src="pngs/phonestatus4.png" alt="请在手机上点击开始直播" style={{ maxWidth: '100%', display: 'block' }} />
+                  <div style={{ marginTop: '8px', textAlign: 'right' }}>
+                    <button onClick={() => setShowStatus4Image(false)} className="btn-base btn-ghost" style={{ padding: '4px 10px' }}>我知道了</button>
+                  </div>
+                </div>
+              )}
+
+              {false && showStatus2Image && (
+                <div style={{ marginTop: '12px', padding: '8px', borderRadius: '8px', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.25)' }}>
+                  <img src="pngs/phonestatus2.png" alt="请打开飞行模式或清退抖音App" style={{ maxWidth: '100%', display: 'block' }} />
+                  <div style={{ marginTop: '8px', textAlign: 'right' }}>
+                    <button onClick={() => setShowStatus2Image(false)} className="btn-base btn-ghost" style={{ padding: '4px 10px' }}>我已完成</button>
+                  </div>
+                </div>
+              )}
+
+              </>
+
+
+
+
             ) : (
               <div style={{ pointerEvents: 'auto', width: '100%', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -445,6 +601,30 @@ const HomePage = () => {
           </>
         )}
       </div>
+
+      {/* 手机开播提示图 - 弹窗方式显示 */}
+      {showStatus4Image && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowStatus4Image(false)}>
+          <div style={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(148,163,184,0.2)', borderRadius: 12, padding: 16, width: 'min(540px, 92vw)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }} onClick={(e) => e.stopPropagation()}>
+            <img src="pngs/phonestatus4.png" alt="请在手机上点击开始直播" style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 8 }} />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+              <button onClick={() => setShowStatus4Image(false)} className="btn-base btn-ghost" style={{ padding: '6px 14px' }}>我知道了</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showStatus2Image && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowStatus2Image(false)}>
+          <div style={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(148,163,184,0.2)', borderRadius: 12, padding: 16, width: 'min(540px, 92vw)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }} onClick={(e) => e.stopPropagation()}>
+            <img src="pngs/phonestatus2.png" alt="请打开飞行模式或清退抖音App" style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 8 }} />
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+              <button onClick={() => setShowStatus2Image(false)} className="btn-base btn-ghost" style={{ padding: '6px 14px' }}>我已完成</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

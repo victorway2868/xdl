@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { ipcMain, shell, BrowserWindow } from 'electron';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -8,6 +8,7 @@ import { configureHotkeySettings } from '../modules/douyinHotkey';
 import { executeStartLiveHotkey, executeEndLiveHotkey } from '../modules/keyboardShortcut';
 import { checkMediaSDKServerRunning, killMediaSDKServer } from '../modules/mediaSdkProcess';
 import { setOBSStreamSettings, startOBSStreaming, stopOBSStreaming } from '../modules/obsWebSocket';
+import { main as douyinApiMain, startPingAnchor, stopPingAnchor, webcastStop } from '../modules/douyinRtmpApi';
 
 const fsAccess = promisify(fs.access);
 const fsReadFile = promisify(fs.readFile);
@@ -73,6 +74,23 @@ async function readCompanionRoomStore(): Promise<{ streamUrl?: string; streamKey
     return { streamUrl: parts.streamUrl, streamKey: parts.streamKey, status: status ?? undefined };
   } catch (e: any) {
     return { error: `无法读取 roomStore.json: ${e?.message || e}` };
+  }
+}
+
+// ---------------- Douyin API route helpers ----------------
+let securityAuthInProgress = false;
+let lastAuthUrl: string | null = null;
+
+// 记录最近一次成功获取到的 room/stream，用于 stop 时调用 webcastStop
+let lastRoomId: string | null = null;
+let lastStreamId: string | null = null;
+let lastMode: 'phone' | 'auto' = 'phone';
+
+function sendToRenderer(channel: string, payload: any) {
+  const all = BrowserWindow.getAllWindows();
+  const win = all.find(w => !w.isDestroyed()) || null;
+  if (win) {
+    try { win.webContents.send(channel, payload); } catch {}
   }
 }
 
@@ -146,6 +164,102 @@ export function registerStreamingHandlers(): void {
   // MediaSDK_Server 进程管理
   ipcMain.handle('kill-mediasdk-server', async () => {
     return await killMediaSDKServer();
+  });
+
+  // ---------------- Douyin API 路线 ----------------
+  ipcMain.handle('open-auth-url', async (_e, { url }) => {
+    if (!url) return { success: false, message: '无效的认证地址' };
+    if (securityAuthInProgress && lastAuthUrl === url) {
+      return { success: true, alreadyInProgress: true };
+    }
+    securityAuthInProgress = true;
+    lastAuthUrl = url;
+    try {
+      await shell.openExternal(url);
+      // 8 秒后允许再次打开
+      setTimeout(() => { securityAuthInProgress = false; }, 8000);
+      return { success: true };
+    } catch (e: any) {
+      securityAuthInProgress = false;
+      return { success: false, message: e?.message || String(e) };
+    }
+  });
+
+  ipcMain.handle('get-douyin-api-info', async (_e, { method }: { method: 'get' | 'create' | 'stop' }) => {
+    try {
+      const mode = method === 'create' ? 'auto' : 'phone';
+
+      if (method === 'stop') {
+        try { stopPingAnchor(); } catch {}
+        let stopMsg = '已停止维持心跳';
+        try {
+          if (lastRoomId && lastStreamId) {
+            const res = await webcastStop(lastRoomId, lastStreamId, lastMode);
+            if (res?.success) stopMsg = '已停止维持心跳并结束抖音直播';
+          }
+        } catch {}
+        sendToRenderer('status-notification', { message: stopMsg });
+        return { success: true, message: stopMsg };
+      }
+
+      const result = await douyinApiMain(mode as any, { handleAuth: true });
+
+      // 认证需求
+      if (result?.requiresAuth && result?.authUrl) {
+        sendToRenderer('auth-notification', { url: result.authUrl, message: result.authPrompt || '需要进行直播安全认证' });
+        return { requiresAuth: true, authUrl: result.authUrl };
+      }
+
+      // 状态提示
+      if (result?.statusMessage) {
+        sendToRenderer('status-notification', { message: result.statusMessage, status: result.status });
+      }
+
+      // 统一返回结构
+      const out: any = {};
+      if (result?.needsRetry !== undefined) out.needsRetry = result.needsRetry;
+      if (result?.currentStatus !== undefined) out.currentStatus = result.currentStatus;
+      if (result?.expectedStatus !== undefined) out.expectedStatus = result.expectedStatus;
+      if (result?.room_id) out.room_id = result.room_id;
+      if (result?.stream_id) out.stream_id = result.stream_id;
+
+      const rtmp = result?.rtmpUrl || result?.rtmp_push_url;
+      if (typeof rtmp === 'string') {
+        const parts = splitRtmp(rtmp);
+        if (parts) {
+          out.streamUrl = parts.streamUrl;
+          out.streamKey = parts.streamKey;
+        }
+      }
+
+      if (result?.error) {
+        out.error = result.error;
+      }
+
+      // 记录最近一次 room/stream，用于停止时调用 webcastStop
+      if (out.room_id && out.stream_id) {
+        lastRoomId = String(out.room_id);
+        lastStreamId = String(out.stream_id);
+        lastMode = mode as any;
+      }
+
+      return out;
+    } catch (e: any) {
+      return { error: e?.message || String(e) };
+    }
+  });
+
+  ipcMain.handle('maintain-douyin-stream', async (_e, { room_id, stream_id, mode }: { room_id: string; stream_id: string; mode?: 'phone' | 'auto' }) => {
+    try {
+      const ok = startPingAnchor(room_id, stream_id, (mode as any) || 'phone');
+      if (ok) {
+        sendToRenderer('status-notification', { message: '已开始维持直播心跳', room_id, stream_id });
+        return { success: true, message: '已开始维持直播心跳' };
+      }
+      return { success: false, message: '无法启动心跳维持' };
+    } catch (e: any) {
+      return { success: false, message: e?.message || String(e) };
+    }
   });
 }
 

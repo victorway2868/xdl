@@ -43,6 +43,15 @@ export interface IpcApi {
 
   // Streaming (Companion route first)
   getDouyinCompanionInfo: () => Promise<{ streamUrl?: string; streamKey?: string; error?: string; status?: number }>;
+
+  // Douyin API route (手机开播/自动开播)
+  getDouyinApiInfo: (method: 'get' | 'create' | 'stop') => Promise<any>;
+  maintainDouyinStream: (room_id: string, stream_id: string, mode?: 'phone' | 'auto') => Promise<{ success: boolean; message: string }>;
+  openAuthUrl: ({ url }: { url: string }) => Promise<{ success: boolean; alreadyInProgress?: boolean; message?: string }>;
+  onAuthNotification: (cb: (payload: any) => void) => () => void;
+  onStatusNotification: (cb: (payload: any) => void) => () => void;
+
+  // OBS 控制
   setOBSStreamSettings: (streamUrl: string, streamKey: string) => Promise<{ success: boolean; message: string }>;
   startOBSStreaming: () => Promise<{ success: boolean; message: string }>;
   stopOBSStreaming: () => Promise<{ success: boolean; message: string }>;

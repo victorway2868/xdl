@@ -2,6 +2,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { IpcApi } from '../shared/interfaces/ipc';
 import { IPC_CHANNELS } from '../shared/constants';
+import type { LogEntry } from '../shared/types';
 
 // 创建安全的 API 对象
 const electronAPI: IpcApi = {
@@ -55,8 +56,24 @@ const electronAPI: IpcApi = {
   getDouyinUserInfo: () => ipcRenderer.invoke('get-douyin-user-info'),
 
 
-  // Streaming APIs (Companion route first)
+  // Streaming APIs (Companion route first, then API route)
   getDouyinCompanionInfo: () => ipcRenderer.invoke('get-douyin-companion-info'),
+  // Douyin API route
+  getDouyinApiInfo: (method: 'get' | 'create' | 'stop') => ipcRenderer.invoke('get-douyin-api-info', { method }),
+  maintainDouyinStream: (room_id: string, stream_id: string, mode: 'phone' | 'auto' = 'phone') =>
+    ipcRenderer.invoke('maintain-douyin-stream', { room_id, stream_id, mode }),
+  openAuthUrl: ({ url }: { url: string }) => ipcRenderer.invoke('open-auth-url', { url }),
+  onAuthNotification: (cb: (payload: any) => void) => {
+    const listener = (_event: any, payload: any) => cb(payload);
+    ipcRenderer.on('auth-notification', listener);
+    return () => ipcRenderer.removeListener('auth-notification', listener);
+  },
+  onStatusNotification: (cb: (payload: any) => void) => {
+    const listener = (_event: any, payload: any) => cb(payload);
+    ipcRenderer.on('status-notification', listener);
+    return () => ipcRenderer.removeListener('status-notification', listener);
+  },
+  // OBS
   setOBSStreamSettings: (streamUrl: string, streamKey: string) => ipcRenderer.invoke('set-obs-stream-settings', { streamUrl, streamKey }),
   startOBSStreaming: () => ipcRenderer.invoke('start-obs-streaming'),
   stopOBSStreaming: () => ipcRenderer.invoke('stop-obs-streaming'),
