@@ -1,5 +1,5 @@
 import { spawn } from 'child_process';
-import { getStartLiveHotkey } from './douyinHotkey';
+import { getStartLiveHotkey, getEndLiveHotkey } from './douyinHotkey';
 
 // 将快捷键字符串转换为 SendKeys 格式，如 Ctrl+Shift+L -> ^+L
 function acceleratorToSendKeys(accelerator: string): string {
@@ -7,7 +7,6 @@ function acceleratorToSendKeys(accelerator: string): string {
     .replace(/Ctrl/gi, '^')
     .replace(/Shift/gi, '+')
     .replace(/Alt/gi, '%')
-    .replace(/\+/g, '')
     .replace(/\s/g, '');
 }
 
@@ -156,3 +155,135 @@ Start-Sleep -Milliseconds 300
   });
 }
 
+
+
+export async function executeEndLiveHotkey(): Promise<void> {
+  const hk = await getEndLiveHotkey();
+  console.log('executeEndLiveHotkey', hk);
+  const sendKeys = acceleratorToSendKeys(hk.accelerator || 'Shift+L');
+
+  const vkCodes = (hk.code || ['ShiftLeft', 'KeyL']).map(getVirtualKeyCode);
+  const vkArray = vkCodes.map(c => `0x${c.toString(16).toUpperCase()}`).join(', ');
+
+  // 优先聚焦抖音直播伴侣窗口，然后 Win32 键盘注入，最后 SendKeys 兜底
+  const appName = '抖音直播伴侣';
+  const psScript = `
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+using System.Diagnostics;
+using System.Text;
+
+public class WindowManager
+{
+    [DllImport("user32.dll")]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
+    private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetForegroundWindow();
+
+    [DllImport("user32.dll")]
+    private static extern int GetWindowText(IntPtr hWnd, StringBuilder text, int count);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    private static extern void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
+
+    private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+    private const int SW_RESTORE = 9;
+    private const int SW_SHOW = 5;
+    private const int KEYEVENTF_EXTENDEDKEY = 0x1;
+    private const int KEYEVENTF_KEYUP = 0x2;
+
+    public static bool FocusApplicationWindow(string processNameOrTitle)
+    {
+        bool found = false;
+        // 1) 枚举进程
+        foreach (Process process in Process.GetProcesses())
+        {
+            try
+            {
+                if (process.ProcessName.ToLower().Contains("electron") || (process.ProcessName.ToLower().Contains(processNameOrTitle.ToLower())))
+                {
+                    IntPtr h = process.MainWindowHandle;
+                    if (h != IntPtr.Zero)
+                    {
+                        ShowWindow(h, SW_RESTORE);
+                        SetForegroundWindow(h);
+                        found = true;
+                        break;
+                    }
+                }
+            }
+            catch { }
+        }
+        // 2) 若未找到，枚举窗口标题
+        if (!found)
+        {
+            EnumWindows(new EnumWindowsProc((hWnd, lParam) => {
+                StringBuilder sb = new StringBuilder(512);
+                GetWindowText(hWnd, sb, sb.Capacity);
+                var title = sb.ToString();
+                if (!string.IsNullOrEmpty(title) && title.Contains(processNameOrTitle))
+                {
+                    ShowWindow(hWnd, SW_RESTORE);
+                    SetForegroundWindow(hWnd);
+                    found = true;
+                    return false; // stop
+                }
+                return true; // continue
+            }), IntPtr.Zero);
+        }
+        return found;
+    }
+
+    public static void SendKeyCombination(byte[] keys)
+    {
+        // 按下
+        foreach (byte k in keys)
+        {
+            keybd_event(k, 0, KEYEVENTF_EXTENDEDKEY, 0);
+            System.Threading.Thread.Sleep(50);
+        }
+        // 释放（反序）
+        for (int i = keys.Length - 1; i >= 0; i--)
+        {
+            keybd_event(keys[i], 0, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, 0);
+            System.Threading.Thread.Sleep(50);
+        }
+    }
+}
+"@
+
+# 1) 尝试聚焦当前应用窗口（与旧项目一致）
+$appTitle = '${appName}'
+$focused = [WindowManager]::FocusApplicationWindow($appTitle)
+Start-Sleep -Milliseconds 300
+
+# 2) 使用 Win32 方式发送组合键
+[WindowManager]::SendKeyCombination(@(${vkArray}))
+Start-Sleep -Milliseconds 300
+
+# 3) 兜底再用 SendKeys 发送一次
+[System.Windows.Forms.SendKeys]::SendWait('${sendKeys}')
+`;
+
+  await new Promise<void>((resolve, reject) => {
+    const ps = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', psScript]);
+    let stderr = '';
+    ps.stderr.on('data', (d) => { stderr += String(d); });
+    ps.on('error', (err) => reject(err));
+    ps.on('close', (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`PowerShell exited with code ${code}: ${stderr}`));
+    });
+  });
+}

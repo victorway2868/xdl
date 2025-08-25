@@ -48,6 +48,9 @@ export interface IpcApi {
   stopOBSStreaming: () => Promise<{ success: boolean; message: string }>;
   killMediaSDKServer: () => Promise<{ success: boolean; message: string }>;
 
+  endLiveHotkey: () => Promise<{ success: boolean; message?: string }>;
+
+
   // Auto Update APIs
   checkForUpdates: () => Promise<UpdateCheckResult>;
   getAppVersion: () => Promise<AppVersionInfo>;

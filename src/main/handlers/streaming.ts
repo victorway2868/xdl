@@ -5,7 +5,7 @@ import os from 'os';
 import { promisify } from 'util';
 import { loginDouyinCompanion } from '../modules/douyinCompanionLogin';
 import { configureHotkeySettings } from '../modules/douyinHotkey';
-import { executeStartLiveHotkey } from '../modules/keyboardShortcut';
+import { executeStartLiveHotkey, executeEndLiveHotkey } from '../modules/keyboardShortcut';
 import { checkMediaSDKServerRunning, killMediaSDKServer } from '../modules/mediaSdkProcess';
 import { setOBSStreamSettings, startOBSStreaming, stopOBSStreaming } from '../modules/obsWebSocket';
 
@@ -116,6 +116,17 @@ export function registerStreamingHandlers(): void {
       return { error: lastErr || '未能在限定时间内获取推流信息，请确认直播伴侣已开始直播' };
     } catch (e: any) {
       return { error: e?.message || String(e) };
+    }
+  });
+
+  // 触发结束直播热键（Shift+L 默认）
+  ipcMain.handle('end-live-hotkey', async () => {
+    try {
+      try { await configureHotkeySettings(); } catch {}
+      await executeEndLiveHotkey();
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, message: e?.message || String(e) };
     }
   });
 

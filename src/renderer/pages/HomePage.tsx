@@ -93,16 +93,21 @@ const HomePage = () => {
         return;
       }
 
+      // --- 关键改动：拿到推流码后，立刻更新UI ---
       setStreamUrl(info.streamUrl);
       setStreamKey(info.streamKey);
       setStreamInfoSuccess(true);
+      setIsStreaming(true); // 立即切换到显示推流码的界面
+      // ----------------------------------------
 
+      // 后续步骤继续在后台执行
       // 2) 配置 OBS 推流参数
       const setRes = await window.electronAPI.setOBSStreamSettings(info.streamUrl, info.streamKey);
       if (!setRes?.success) {
         setError(`OBS 参数设置失败: ${setRes?.message || '未知错误'}`);
+        // 此时 UI 已显示推流码，仅在错误区域提示 OBS 问题
         setIsLoading(false);
-        return;
+        return; // 流程中断，但 UI 保持显示推流码
       }
 
       // 3) 启动 OBS 推流
@@ -119,7 +124,7 @@ const HomePage = () => {
         setTimeout(() => { window.electronAPI.killMediaSDKServer().catch(() => {}); }, 3000);
       } catch {}
 
-      setIsStreaming(true);
+      // 所有流程成功，结束 loading 状态
       setIsLoading(false);
     } catch (e: any) {
       setError(e?.message || String(e));
@@ -131,6 +136,18 @@ const HomePage = () => {
     try {
       setIsLoading(true);
       setError(null);
+
+      // 1) 触发直播伴侣的“结束直播”热键（Shift+L）
+      try {
+        const hkRes = await window.electronAPI.endLiveHotkey();
+        if (!hkRes?.success) {
+          console.warn('结束直播热键发送失败: ', hkRes?.message);
+        }
+      } catch (e) {
+        console.warn('结束直播热键调用异常: ', e);
+      }
+
+      // 2) 停止 OBS 推流
       const res = await window.electronAPI.stopOBSStreaming();
       if (!res?.success) {
         // 即使失败也重置 UI 状态

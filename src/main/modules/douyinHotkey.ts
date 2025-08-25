@@ -20,6 +20,11 @@ const DEFAULT_START_LIVE: StartLiveHotkey = {
   code: ['ControlLeft', 'ShiftLeft', 'KeyL']
 };
 
+const DEFAULT_END_LIVE: StartLiveHotkey = {
+  accelerator: 'Shift+L',
+  code: ['ShiftLeft', 'KeyL']
+};
+
 export async function configureHotkeySettings(): Promise<boolean> {
   try {
     // Load existing or initialize new structure
@@ -28,11 +33,17 @@ export async function configureHotkeySettings(): Promise<boolean> {
         config: [
           {
             label: '开始直播', target: '0', command: 'StartLive', accelerator: DEFAULT_START_LIVE.accelerator, code: DEFAULT_START_LIVE.code
+          },
+          {
+            label: '结束直播', target: '0', command: 'EndLive', accelerator: DEFAULT_END_LIVE.accelerator, code: DEFAULT_END_LIVE.code
           }
         ],
         hotkeys: [
           {
             label: '开始直播', target: '0', command: 'StartLive', accelerator: DEFAULT_START_LIVE.accelerator, code: DEFAULT_START_LIVE.code, type: 'LIVE_SETTING'
+          },
+          {
+            label: '结束直播', target: '0', command: 'EndLive', accelerator: DEFAULT_END_LIVE.accelerator, code: DEFAULT_END_LIVE.code, type: 'LIVE_SETTING'
           }
         ],
         enable: true,
@@ -56,13 +67,23 @@ export async function configureHotkeySettings(): Promise<boolean> {
       data.hotkeyStore.typeEnable.LIVE_SETTING = true;
 
       // add start live if missing
-      const hasHotkey = data.hotkeyStore.hotkeys.some((h: any) => h.label === '开始直播' && h.type === 'LIVE_SETTING');
-      if (!hasHotkey) {
+      const hasHotkeyStart = data.hotkeyStore.hotkeys.some((h: any) => h.label === '开始直播' && h.type === 'LIVE_SETTING');
+      if (!hasHotkeyStart) {
         data.hotkeyStore.hotkeys.push({ label: '开始直播', target: '0', command: 'StartLive', accelerator: DEFAULT_START_LIVE.accelerator, code: DEFAULT_START_LIVE.code, type: 'LIVE_SETTING' });
       }
-      const hasConfig = data.hotkeyStore.config.some((c: any) => c.label === '开始直播' && c.command === 'StartLive');
-      if (!hasConfig) {
+      const hasConfigStart = data.hotkeyStore.config.some((c: any) => c.label === '开始直播' && c.command === 'StartLive');
+      if (!hasConfigStart) {
         data.hotkeyStore.config.push({ label: '开始直播', target: '0', command: 'StartLive', accelerator: DEFAULT_START_LIVE.accelerator, code: DEFAULT_START_LIVE.code });
+      }
+
+      // add end live if missing
+      const hasHotkeyEnd = data.hotkeyStore.hotkeys.some((h: any) => h.label === '结束直播' && h.type === 'LIVE_SETTING');
+      if (!hasHotkeyEnd) {
+        data.hotkeyStore.hotkeys.push({ label: '结束直播', target: '0', command: 'EndLive', accelerator: DEFAULT_END_LIVE.accelerator, code: DEFAULT_END_LIVE.code, type: 'LIVE_SETTING' });
+      }
+      const hasConfigEnd = data.hotkeyStore.config.some((c: any) => c.label === '结束直播' && c.command === 'EndLive');
+      if (!hasConfigEnd) {
+        data.hotkeyStore.config.push({ label: '结束直播', target: '0', command: 'EndLive', accelerator: DEFAULT_END_LIVE.accelerator, code: DEFAULT_END_LIVE.code });
       }
     } catch {
       // directory may not exist; create recursively
@@ -93,3 +114,18 @@ export async function getStartLiveHotkey(): Promise<StartLiveHotkey> {
   }
 }
 
+export async function getEndLiveHotkey(): Promise<StartLiveHotkey> {
+  try {
+    await fsAccess(HOTKEY_STORE_PATH, fs.constants.R_OK);
+    const raw = await fsReadFile(HOTKEY_STORE_PATH, 'utf8');
+    const parsed = JSON.parse(raw || '{}');
+    const store = parsed.hotkeyStore || {};
+    const hk = Array.isArray(store.hotkeys) ? store.hotkeys.find((h: any) => h.label === '结束直播' && h.type === 'LIVE_SETTING') : null;
+    if (hk && hk.accelerator && Array.isArray(hk.code)) {
+      return { accelerator: hk.accelerator, code: hk.code };
+    }
+    return DEFAULT_END_LIVE;
+  } catch {
+    return DEFAULT_END_LIVE;
+  }
+}

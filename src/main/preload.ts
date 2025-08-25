@@ -63,6 +63,11 @@ const electronAPI: IpcApi = {
   killMediaSDKServer: () => ipcRenderer.invoke('kill-mediasdk-server'),
 
 
+  // Hotkey APIs
+  endLiveHotkey: () => ipcRenderer.invoke('end-live-hotkey'),
+
+
+
   // Auto Update APIs
   checkForUpdates: () =>
     ipcRenderer.invoke('check-for-updates'),
