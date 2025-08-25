@@ -83,7 +83,13 @@ const electronAPI: IpcApi = {
   // Hotkey APIs
   endLiveHotkey: () => ipcRenderer.invoke('end-live-hotkey'),
 
+  // OBS Configuration APIs
+  installFonts: () => ipcRenderer.invoke('install-fonts'),
+  oneClickConfigureObs: (options: { deviceName: string; resolution: string }) =>
+    ipcRenderer.invoke('one-click-configure-obs', options),
 
+  // System Info
+  getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
 
   // Auto Update APIs
   checkForUpdates: () =>

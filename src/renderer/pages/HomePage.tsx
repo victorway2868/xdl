@@ -28,6 +28,7 @@ const HomePage = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [copied, setCopied] = useState(''); // Can be 'url' or 'key'
 
+
   // 手机开播轮询控制（前端）
   const pollingTimer = React.useRef<number | null>(null);
   const pollingRunning = React.useRef(false);
@@ -340,7 +341,7 @@ const HomePage = () => {
           <div className="stream-header" style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
             <button onClick={() => navigate('/app/obs-config')} className="btn-base btn-ghost" style={{ padding: '4px 8px', fontSize: '12px' }}>OBS一键配置</button>
             <div className="version-info">
-              <span>obs:</span>
+              <span>OBS:</span>
               <span className={`version-number ${obsVersion === '未检测到' ? '' : ''}`} style={{ color: obsVersion === '未检测到' ? '#fca5a5' : '#fbbf24', marginLeft: '4px' }}>
                 {obsVersion}
               </span>
@@ -353,6 +354,8 @@ const HomePage = () => {
             </div>
             <button onClick={() => navigate('/danmu')} className="btn-base btn-ghost" style={{ padding: '4px 8px', fontSize: '12px' }}>打开弹幕</button>
           </div>
+
+
 
           <div className="stream-control">
             {!isStreaming ? (

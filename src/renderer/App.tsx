@@ -9,6 +9,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import MainLayout from './components/layout/MainLayout';
 import HomePage from './pages/HomePage';
 import DanmuPage from './pages/DanmuPage';
+import ObsConfigPage from './pages/ObsConfigPage';
 import './styles/App.css';
 
 // 在生产环境(file://)下使用 HashRouter，避免 BrowserRouter 在 file 协议下跳转到 /app 导致空白页
@@ -27,6 +28,7 @@ const App: React.FC = () => {
               {/* 主应用路由 */}
               <Route path="/app" element={<MainLayout />}>
                 <Route index element={<HomePage />} />
+                <Route path="obs-config" element={<ObsConfigPage />} />
               </Route>
 
               {/* 弹幕功能路由 */}

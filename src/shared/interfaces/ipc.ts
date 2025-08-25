@@ -59,6 +59,12 @@ export interface IpcApi {
 
   endLiveHotkey: () => Promise<{ success: boolean; message?: string }>;
 
+  // OBS Configuration
+  installFonts: () => Promise<{ success: boolean; message?: string; error?: string }>;
+  oneClickConfigureObs: (options: { deviceName: string; resolution: string }) => Promise<{ success: boolean; message: string; steps: any[] }>;
+
+  // System Info
+  getSystemInfo: () => Promise<any>;
 
   // Auto Update APIs
   checkForUpdates: () => Promise<UpdateCheckResult>;

@@ -11,7 +11,7 @@ import { getSoftwarePath } from '@main/utils/findSoftwarePaths';
 const exec = promisify(execCb);
 
 let obs: any | null = null;
-let connected = false;
+
 
 type ObsWsConfig = {
   server_enabled?: boolean;
@@ -29,7 +29,7 @@ const getObsWsConfigPath = () =>
     'config.json'
   );
 
-async function startOBSProcess(): Promise<{ success: boolean; message: string }> {
+export async function startOBSProcess(): Promise<{ success: boolean; message: string }> {
   try {
     const obsPath = await getSoftwarePath('OBS Studio', 'obs64.exe');
     if (!obsPath) return { success: false, message: '无法找到 OBS 安装路径，请确保已安装 OBS Studio' };
@@ -73,7 +73,7 @@ async function writeObsConfig(cfg: ObsWsConfig): Promise<boolean> {
   }
 }
 
-async function ensureObsEnabledAndMaybeRestart(): Promise<{ ok: boolean; cfg?: ObsWsConfig; msg?: string }>{
+export async function ensureObsEnabledAndMaybeRestart(): Promise<{ ok: boolean; cfg?: ObsWsConfig; msg?: string }>{
   const cfgPath = getObsWsConfigPath();
   const running = await isOBSRunning();
   // Ensure config exists
@@ -113,9 +113,8 @@ async function ensureObsEnabledAndMaybeRestart(): Promise<{ ok: boolean; cfg?: O
   return { ok: true, cfg };
 }
 
-async function ConnectToOBS(address = '', password = ''): Promise<void> {
-  if (connected && obs) return;
-
+export async function ensureAndConnectToOBS(address = '', password = ''): Promise<void> {
+  // 强制重新连接，移除 if (connected && obs) return; 检查
   const ensure = await ensureObsEnabledAndMaybeRestart();
   if (!ensure.ok) throw new Error(ensure.msg || '确保 OBS WebSocket 启用失败');
   const cfg = ensure.cfg || {};
@@ -136,30 +135,31 @@ async function ConnectToOBS(address = '', password = ''): Promise<void> {
   const fullUrl = `ws://${serverAddress}:${serverPort}`;
   const pass = password || cfg.server_password || '';
 
-
   const { default: OBSWebSocket } = await import('obs-websocket-js');
 
   if (obs) {
     try { await obs.disconnect(); } catch {}
-  }  
+  }
 
   console.log(`正在尝试连接 OBS WebSocket: ${fullUrl}`);
   try {
     obs = new OBSWebSocket();
     await obs.connect(fullUrl, pass);
-    connected = true;
+
     console.log('成功连接到 OBS WebSocket');
   } catch (error) {
     console.error('连接 OBS WebSocket 失败:', error);
-    connected = false;
+
     throw error; // 将错误抛出，以便调用方可以捕获
   }
 }
 
+export function getObsInstance() { return obs; }
+
 export async function setOBSStreamSettings(streamUrl: string, streamKey: string, password = '') {
   console.log('setOBSStreamSettings called');
   try {
-    await ConnectToOBS('', password);
+    await ensureAndConnectToOBS('', password);
     if (!obs) throw new Error('OBS not initialized');
     await obs.call('SetStreamServiceSettings', {
       streamServiceType: 'rtmp_custom',
@@ -174,7 +174,7 @@ export async function setOBSStreamSettings(streamUrl: string, streamKey: string,
 export async function startOBSStreaming(password = '') {
   console.log('startOBSStreaming called');
   try {
-    await ConnectToOBS('', password);
+    await ensureAndConnectToOBS('', password);
     if (!obs) throw new Error('OBS not initialized');
     const status = await obs.call('GetStreamStatus');
     if (!status.outputActive) await obs.call('StartStream');
@@ -187,7 +187,7 @@ export async function startOBSStreaming(password = '') {
 export async function stopOBSStreaming(password = '') {
   console.log('stopOBSStreaming called');
   try {
-    await ConnectToOBS('', password);
+    await ensureAndConnectToOBS('', password);
     if (!obs) throw new Error('OBS not initialized');
     const status = await obs.call('GetStreamStatus');
     if (status.outputActive) await obs.call('StopStream');

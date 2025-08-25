@@ -66,6 +66,14 @@
       {
         "from": "public/icons",
         "to": "assets/icons"
+      },
+      {
+        "from": "public/fonts",
+        "to": "public/fonts"
+      },
+      {
+        "from": "public/images",
+        "to": "public/images"
       }
     ],
     "directories": {
