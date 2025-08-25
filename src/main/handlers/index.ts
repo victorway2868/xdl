@@ -5,6 +5,7 @@ import { registerPluginsHandlers } from './plugins';
 import { registerWindowHandlers } from './window';
 import { registerAuthHandlers } from './auth';
 import { loggerService } from '../services/logger';
+import { registerStreamingHandlers } from './streaming';
 
 export function registerAllHandlers(): void {
   try {
@@ -12,6 +13,7 @@ export function registerAllHandlers(): void {
     registerSettingsHandlers();
     registerPluginsHandlers();
     registerAuthHandlers();
+    registerStreamingHandlers();
     registerWindowHandlers();
 
     loggerService.addLog('info', 'All IPC handlers registered successfully', 'main');

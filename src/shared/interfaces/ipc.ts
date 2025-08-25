@@ -41,6 +41,12 @@ export interface IpcApi {
   getDouyinUserStats: (options?: any) => Promise<any>;
   getDouyinUserInfo: () => Promise<any>;
 
+  // Streaming (Companion route first)
+  getDouyinCompanionInfo: () => Promise<{ streamUrl?: string; streamKey?: string; error?: string; status?: number }>;
+  setOBSStreamSettings: (streamUrl: string, streamKey: string) => Promise<{ success: boolean; message: string }>;
+  startOBSStreaming: () => Promise<{ success: boolean; message: string }>;
+  stopOBSStreaming: () => Promise<{ success: boolean; message: string }>;
+  killMediaSDKServer: () => Promise<{ success: boolean; message: string }>;
 
   // Auto Update APIs
   checkForUpdates: () => Promise<UpdateCheckResult>;

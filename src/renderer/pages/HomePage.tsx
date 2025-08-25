@@ -70,23 +70,83 @@ const HomePage = () => {
   const handleMethodChange = (newMethod: string) => setStreamMethod(newMethod);
 
   const handleStartStreaming = async () => {
-    setIsLoading(true);
-    setError(null);
-    // Simulate API call to get stream info
-    setTimeout(() => {
-      setStreamUrl('rtmp://push-rtmp-l1.douyincdn.com/live/');
-      setStreamKey('stream_123456789');
-      setIsStreaming(true);
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      if (platform !== '抖音' || streamMethod !== '直播伴侣') {
+        setError('当前仅支持 抖音-直播伴侣 路线');
+        setIsLoading(false);
+        return;
+      }
+
+      // 1) 从抖音直播伴侣读取 RTMP
+      const info = await window.electronAPI.getDouyinCompanionInfo();
+      if (!info || info.error) {
+        setError(info?.error || '获取推流信息失败');
+        setIsLoading(false);
+        return;
+      }
+      if (!info.streamUrl || !info.streamKey) {
+        setError('未获取到有效的推流地址，请确认直播伴侣已开播且状态为2');
+        setIsLoading(false);
+        return;
+      }
+
+      setStreamUrl(info.streamUrl);
+      setStreamKey(info.streamKey);
       setStreamInfoSuccess(true);
+
+      // 2) 配置 OBS 推流参数
+      const setRes = await window.electronAPI.setOBSStreamSettings(info.streamUrl, info.streamKey);
+      if (!setRes?.success) {
+        setError(`OBS 参数设置失败: ${setRes?.message || '未知错误'}`);
+        setIsLoading(false);
+        return;
+      }
+
+      // 3) 启动 OBS 推流
+      const startRes = await window.electronAPI.startOBSStreaming();
+      if (!startRes?.success) {
+        setError(`OBS 启动推流失败: ${startRes?.message || '未知错误'}`);
+        setIsLoading(false);
+        return;
+      }
+
+      // 4) 杀掉 MediaSDK_Server.exe 避免冲突（两次，间隔3秒）
+      try {
+        await window.electronAPI.killMediaSDKServer();
+        setTimeout(() => { window.electronAPI.killMediaSDKServer().catch(() => {}); }, 3000);
+      } catch {}
+
+      setIsStreaming(true);
       setIsLoading(false);
-    }, 2000);
+    } catch (e: any) {
+      setError(e?.message || String(e));
+      setIsLoading(false);
+    }
   };
 
-  const handleStopStreaming = () => {
-    setIsStreaming(false);
-    setStreamInfoSuccess(false);
-    setStreamUrl('');
-    setStreamKey('');
+  const handleStopStreaming = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await window.electronAPI.stopOBSStreaming();
+      if (!res?.success) {
+        // 即使失败也重置 UI 状态
+        console.warn('停止 OBS 推流失败: ', res?.message);
+      }
+    } catch (e) {
+      console.warn('停止 OBS 推流异常: ', e);
+    } finally {
+      setTimeout(() => {
+        setIsStreaming(false);
+        setStreamInfoSuccess(false);
+        setStreamUrl('');
+        setStreamKey('');
+        setIsLoading(false);
+      }, 800);
+    }
   };
 
   const copyToClipboard = (text: string, type: 'url' | 'key') => {

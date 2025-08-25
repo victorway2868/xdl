@@ -55,6 +55,14 @@ const electronAPI: IpcApi = {
   getDouyinUserInfo: () => ipcRenderer.invoke('get-douyin-user-info'),
 
 
+  // Streaming APIs (Companion route first)
+  getDouyinCompanionInfo: () => ipcRenderer.invoke('get-douyin-companion-info'),
+  setOBSStreamSettings: (streamUrl: string, streamKey: string) => ipcRenderer.invoke('set-obs-stream-settings', { streamUrl, streamKey }),
+  startOBSStreaming: () => ipcRenderer.invoke('start-obs-streaming'),
+  stopOBSStreaming: () => ipcRenderer.invoke('stop-obs-streaming'),
+  killMediaSDKServer: () => ipcRenderer.invoke('kill-mediasdk-server'),
+
+
   // Auto Update APIs
   checkForUpdates: () =>
     ipcRenderer.invoke('check-for-updates'),
