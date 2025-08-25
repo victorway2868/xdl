@@ -1,5 +1,5 @@
 import { exec } from 'child_process';
-import { getSoftwareVersion, getSoftwarePath } from '../utils/findSoftwarePaths.js';
+import { getSoftwareVersion, getSoftwarePath } from '../utils/findSoftwarePaths.ts';
 import { getDouyinCompanionCookies } from './getDouyinCompanionCookies';
 
 export interface DouyinLoginResult {

@@ -32,5 +32,14 @@ export default defineConfig({
     },
     minify: false,
   },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+      '@main': path.resolve(__dirname, './src/main'),
+      '@shared': path.resolve(__dirname, './src/shared'),
+      '@renderer': path.resolve(__dirname, './src/renderer'),
+      '@plugins': path.resolve(__dirname, './src/plugins'),
+    },
+  },
 });
 

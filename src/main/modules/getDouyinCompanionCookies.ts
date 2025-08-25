@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { execSync } from 'child_process';
-import pathManager, { PathType } from '../utils/pathManager.js';
+import { getPath, PathType } from '../utils/pathManager';
 
 export interface CookieItem { name: string; value: string; domain?: string; path?: string }
 export interface CookieResult { success: boolean; cookies?: CookieItem[]; cookieString?: string; error?: string }
@@ -66,7 +66,7 @@ async function decryptCookieValue(encrypted: Buffer, masterKey: Buffer): Promise
   } catch {}
   // DPAPI fallback via PowerShell
   try {
-    const tmpDir = pathManager.getPath(PathType.TEMP);
+    const tmpDir = getPath(PathType.TEMP);
     fs.mkdirSync(tmpDir, { recursive: true });
     const encPath = path.join(tmpDir, `enc_${Date.now()}.bin`);
     const decPath = path.join(tmpDir, `dec_${Date.now()}.bin`);
@@ -94,7 +94,7 @@ export async function getDouyinCompanionCookies(): Promise<CookieResult> {
     if (!fs.existsSync(sourceDb) || !fs.existsSync(localState)) {
       return { success: false, error: '未找到 webcast_mate 数据，请先安装并登录直播伴侣' };
     }
-    const tempDir = pathManager.getPath(PathType.TEMP);
+    const tempDir = getPath(PathType.TEMP);
     fs.mkdirSync(tempDir, { recursive: true });
     const tempDb = path.join(tempDir, 'cookies_tmp.db');
     copyLockedFile(sourceDb, tempDb);
@@ -119,7 +119,7 @@ export async function getDouyinCompanionCookies(): Promise<CookieResult> {
     if (!cookies.length) return { success: false, error: '未解密到有效Cookie' };
 
     const cookieString = cookies.map(c => `${c.name}=${c.value}`).join('; ');
-    const outFile = pathManager.getPath(PathType.DOUYIN_COOKIES);
+    const outFile = getPath(PathType.DOUYIN_COOKIES);
     fs.mkdirSync(path.dirname(outFile), { recursive: true });
     fs.writeFileSync(outFile, cookieString, 'utf8');
 

@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-function caseInsensitiveIncludes(str1, str2) {
+function caseInsensitiveIncludes(str1: string, str2: string) {
   return str1.toLowerCase().includes(str2.toLowerCase());
 }
 
@@ -12,7 +12,7 @@ function caseInsensitiveIncludes(str1, str2) {
  * @param {string} processName 进程名称（包含.exe）
  * @returns {string|null} 进程路径或null
  */
-function getRunningProcessPath(processName) {
+function getRunningProcessPath(processName: string): string | null {
   try {
     // 方法1: 使用wmic
     const command = `wmic process where "name='${processName}'" get ExecutablePath`;
@@ -41,7 +41,7 @@ function getRunningProcessPath(processName) {
  * @param {string} shortwareName 快捷方式名称（不含.lnk）
  * @returns {string|null} 目标路径或null
  */
-function getPathFromShortcut(shortwareName) {
+function getPathFromShortcut(shortwareName: string): string | null {
   try {
     const locations = [
       path.join(os.homedir(), 'Desktop'),
@@ -53,7 +53,7 @@ function getPathFromShortcut(shortwareName) {
 
     const possibleNames = [
       shortwareName,
-    ].filter(Boolean);
+    ].filter(Boolean) as string[];
 
     for (const location of locations) {
       if (!fs.existsSync(location)) continue;
@@ -70,7 +70,7 @@ function getPathFromShortcut(shortwareName) {
     }
 
     return null;
-  } catch (error) {
+  } catch (error: any) {
     console.error(`获取快捷方式路径失败: ${error.message}`);
     return null;
   }
@@ -82,7 +82,7 @@ function getPathFromShortcut(shortwareName) {
  * @param {string} processName 进程名称
  * @returns {string|null} 软件路径或null
  */
-function getPathFromRegistry(shortwareName, processName) {
+function getPathFromRegistry(shortwareName: string, processName: string): string | null {
   if (processName === '直播伴侣.exe') {
     processName = '直播伴侣 Launcher.exe';
   }
@@ -103,7 +103,7 @@ function getPathFromRegistry(shortwareName, processName) {
             const iconPath = match[1].trim();
             const cleanPath = iconPath.split(",")[0];
             if (caseInsensitiveIncludes(cleanPath, processName)) {
-              const pathMatch = cleanPath.match(/[a-zA-Z]:\\.*?\.exe/i);
+              const pathMatch = cleanPath.match(/[a-zA-Z]:\\\\.*?\.exe/i);
               return pathMatch ? pathMatch[0] : null;
             }
           }
@@ -122,7 +122,7 @@ function getPathFromRegistry(shortwareName, processName) {
  * @param {string} processName 进程名称（可选，默认为softwareName.exe）
  * @returns {Promise<string|null>} 软件路径或null
  */
-async function getSoftwarePath(softwareName, processName = null) {
+async function getSoftwarePath(softwareName: string, processName: string | null = null): Promise<string | null> {
   processName = (softwareName === 'OBS Studio') ? 'obs64.exe' : `${softwareName}.exe`;
 
   console.log(`正在查找 ${softwareName} 的路径...`);
@@ -160,7 +160,7 @@ async function getSoftwarePath(softwareName, processName = null) {
  * @param {string} filePath 文件路径
  * @returns {Promise<string|null>} 版本号或null
  */
-async function getFileVersion(filePath) {
+async function getFileVersion(filePath: string): Promise<string | null> {
   try {
     if (!fs.existsSync(filePath)) {
       console.error(`文件不存在: ${filePath}`);
@@ -184,7 +184,7 @@ async function getFileVersion(filePath) {
           return cleanVersion;
         }
       }
-    } catch (psError) {
+    } catch (psError: any) {
       console.debug(`PowerShell获取版本失败: ${psError.message}`);
     }
 
@@ -201,13 +201,13 @@ async function getFileVersion(filePath) {
           return version;
         }
       }
-    } catch (wmicError) {
+    } catch (wmicError: any) {
       console.debug(`wmic获取版本失败: ${wmicError.message}`);
     }
 
     console.error(`无法获取文件版本: ${filePath}`);
     return null;
-  } catch (error) {
+  } catch (error: any) {
     console.error(`获取文件版本时出错: ${error.message}`);
     return null;
   }
@@ -218,7 +218,7 @@ async function getFileVersion(filePath) {
  * @param {string} shortcutPath 快捷方式文件路径
  * @returns {Promise<string|null>} 目标路径或null
  */
-async function resolveShortcutTarget(shortcutPath) {
+async function resolveShortcutTarget(shortcutPath: string): Promise<string | null> {
   try {
     if (!shortcutPath.toLowerCase().endsWith('.lnk')) {
       return shortcutPath;
@@ -235,7 +235,7 @@ async function resolveShortcutTarget(shortcutPath) {
 
     console.error(`无法解析快捷方式: ${shortcutPath}`);
     return null;
-  } catch (error) {
+  } catch (error: any) {
     console.error(`解析快捷方式时出错: ${error.message}`);
     return shortcutPath;
   }
@@ -247,7 +247,7 @@ async function resolveShortcutTarget(shortcutPath) {
  * @param {string} processName 进程名称（可选，默认为softwareName.exe）
  * @returns {Promise<string|null>} 版本号或null
  */
-async function getSoftwareVersion(softwareName, processName = null) {
+async function getSoftwareVersion(softwareName: string, processName: string | null = null): Promise<string | null> {
   try {
     const softwarePath = await getSoftwarePath(softwareName, processName);
     if (!softwarePath) {
@@ -256,7 +256,7 @@ async function getSoftwareVersion(softwareName, processName = null) {
     }
     // getSoftwarePath 现在直接返回最终路径，无需再解析
     return await getFileVersion(softwarePath);
-  } catch (error) {
+  } catch (error: any) {
     console.error(`获取软件版本时出错: ${error.message}`);
     return null;
   }
@@ -271,3 +271,4 @@ export {
   getFileVersion,
   resolveShortcutTarget,
 };
+

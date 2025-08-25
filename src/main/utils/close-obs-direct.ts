@@ -14,7 +14,7 @@ const exec = promisify(execCallback);
  * Function to check if OBS is running
  * @returns {Promise<boolean>} Promise that resolves to true if OBS is running
  */
-async function isOBSRunning() {
+async function isOBSRunning(): Promise<boolean> {
   try {
     await exec('powershell -command "Get-Process obs64 -ErrorAction SilentlyContinue"');
     return true; // 如果命令成功执行，OBS正在运行
@@ -53,7 +53,7 @@ async function forceCloseOBS() {
  * Main function to close OBS
  * @returns {Promise} Promise that resolves when OBS is closed
  */
-async function closeOBS() {
+async function closeOBS(): Promise<{ status: string }> {
   console.log('Checking if OBS is running...');
   const running = await isOBSRunning();
 
@@ -85,3 +85,4 @@ async function closeOBS() {
 
 // Export the functions so they can be used in other ES modules
 export { closeOBS, isOBSRunning };
+

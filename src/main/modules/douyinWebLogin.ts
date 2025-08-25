@@ -1,5 +1,5 @@
 import { BrowserWindow, session, app } from 'electron';
-import pathManager, { PathType } from '../utils/pathManager.js';
+import { getPath, PathType } from '../utils/pathManager';
 import fs from 'fs';
 
 export interface DouyinLoginResult {
@@ -30,7 +30,7 @@ async function clearAllBrowserData() {
 function saveCookiesToFile(cookies: Electron.Cookie[]) {
   try {
     const cookieString = cookies.map(c => `${c.name}=${c.value}`).join('; ');
-    const file = pathManager.getPath(PathType.DOUYIN_COOKIES);
+    const file = getPath(PathType.DOUYIN_COOKIES);
     fs.mkdirSync(require('path').dirname(file), { recursive: true });
     fs.writeFileSync(file, cookieString, 'utf8');
     return cookieString;

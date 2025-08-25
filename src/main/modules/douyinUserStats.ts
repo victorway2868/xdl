@@ -1,6 +1,6 @@
 import fetch from 'electron-fetch';
 import fs from 'fs/promises';
-import pathManager, { PathType } from '../utils/pathManager.js';
+import { getPath, PathType } from '../utils/pathManager';
 
 export interface DouyinStatsOptions { enableFallback?: boolean; verbose?: boolean }
 export interface DouyinUserStatsResult {
@@ -98,7 +98,7 @@ async function douyinGetUserStatsWebcast(cookieData: string): Promise<DouyinUser
 export async function getdouyinUserStats(options: DouyinStatsOptions = {}): Promise<DouyinUserStatsResult | null> {
   const { enableFallback = true } = options;
   // Read cookie file saved by login modules
-  const cookieFile = pathManager.getPath(PathType.DOUYIN_COOKIES);
+  const cookieFile = getPath(PathType.DOUYIN_COOKIES);
   let cookie: string = '';
   try {
     cookie = (await fs.readFile(cookieFile, 'utf8')).trim();

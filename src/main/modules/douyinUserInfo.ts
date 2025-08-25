@@ -1,6 +1,6 @@
 import axios from 'axios';
 import fs from 'fs/promises';
-import pathManager, { PathType } from '../utils/pathManager.js';
+import { getPath, PathType } from '../utils/pathManager';
 
 const USER_API = 'https://webcast.amemv.com/webcast/user/me/?aid=2079&device_platform=windows&version_code=5.6.0';
 const AGENT_VALUE = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0';
@@ -55,7 +55,7 @@ async function fetchDouyinUserInfo(cookie: string): Promise<DouyinUserInfo | nul
 }
 
 export async function getDouyinUserInfo(): Promise<DouyinUserInfo | null> {
-  const cookieFile = pathManager.getPath(PathType.DOUYIN_COOKIES);
+  const cookieFile = getPath(PathType.DOUYIN_COOKIES);
   let cookie: string;
   try {
     cookie = (await fs.readFile(cookieFile, 'utf8')).trim();

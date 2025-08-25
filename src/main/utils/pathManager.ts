@@ -6,8 +6,7 @@
  * and installation locations.
  */
 
-import pkg from 'electron';
-const { app } = pkg;
+import { app } from 'electron';
 import path from 'path';
 import fs from 'fs';
 import { promisify } from 'util';
@@ -18,28 +17,26 @@ const fsMkdir = promisify(fs.mkdir);
 
 /**
  * Path types enum
- * @readonly
- * @enum {string}
  */
-export const PathType = {
+export enum PathType {
   // User data paths (stored in standard user data directory)
-  USER_DATA: 'userData',           // Base user data directory
-  WEBSTORE: 'webstore',            // Web store directory
-  DOUYIN_COOKIES: 'douyinCookies', // Douyin cookies file
+  USER_DATA = 'userData',           // Base user data directory
+  WEBSTORE = 'webstore',            // Web store directory
+  DOUYIN_COOKIES = 'douyinCookies', // Douyin cookies file
 
   // Application paths (relative to the application directory)
-  APP_DATA: 'appData',             // Application data directory
-  MODULES: 'modules',              // Modules directory
-  TEMP: 'temp',                    // Temporary files
-  LOGS: 'logs',                    // Log files
-};
+  APP_DATA = 'appData',             // Application data directory
+  MODULES = 'modules',              // Modules directory
+  TEMP = 'temp',                    // Temporary files
+  LOGS = 'logs',                    // Log files
+}
 
 /**
  * Get the path for a specific path type
- * @param {string} pathType - The type of path to get (use PathType enum)
- * @returns {string} The resolved path
+ * @param pathType - The type of path to get (use PathType enum)
+ * @returns The resolved path
  */
-export function getPath(pathType) {
+export function getPath(pathType: PathType): string {
   // Check if we're in an Electron environment
   if (!app || typeof app.getPath !== 'function') {
     console.warn('pathManager: Not in Electron environment, returning empty path');
@@ -56,10 +53,7 @@ export function getPath(pathType) {
   const webStoreDir = path.join(userData, 'WBStore');
 
   // Modules directory within app
-  // 在开发环境和生产环境中，modulesDir 的路径可能不同
-  // 在开发环境中，它是 app.getAppPath() + '/electron/modules'
-  // 在生产环境中，它是 app.getAppPath() + '/resources/app/electron/modules' 或类似路径
-  let modulesDir;
+  let modulesDir: string;
   if (app.isPackaged) {
     // 生产环境 - 使用相对于可执行文件的路径
     modulesDir = path.join(path.dirname(app.getPath('exe')), 'resources', 'app', 'electron', 'modules');
@@ -72,7 +66,7 @@ export function getPath(pathType) {
   const appTempDir = path.join(tempPath, 'webcast_mate');
 
   // Map path types to actual paths
-  const pathMap = {
+  const pathMap: { [key in PathType]: string } = {
     // User data paths
     [PathType.USER_DATA]: userData,
     [PathType.WEBSTORE]: webStoreDir,
@@ -91,10 +85,10 @@ export function getPath(pathType) {
 
 /**
  * Ensure a directory exists, creating it if necessary
- * @param {string} dirPath - The directory path to ensure
- * @returns {Promise<boolean>} True if the directory exists or was created
+ * @param dirPath - The directory path to ensure
+ * @returns True if the directory exists or was created
  */
-export async function ensureDir(dirPath) {
+export async function ensureDir(dirPath: string): Promise<boolean> {
   try {
     await fsAccess(dirPath, fs.constants.F_OK);
     return true;
@@ -112,9 +106,9 @@ export async function ensureDir(dirPath) {
 
 /**
  * Initialize all required directories
- * @returns {Promise<boolean>} True if all directories were initialized successfully
+ * @returns True if all directories were initialized successfully
  */
-export async function initializePaths() {
+export async function initializePaths(): Promise<boolean> {
   try {
     // Check if we're in an Electron environment
     if (!app || typeof app.getPath !== 'function') {
@@ -133,7 +127,9 @@ export async function initializePaths() {
     // 打印所有路径，便于调试
     console.log('Application paths:');
     for (const type in PathType) {
-      console.log(`- ${type}: ${getPath(PathType[type])}`);
+      if (isNaN(Number(type))) {
+        console.log(`- ${type}: ${getPath(PathType[type as keyof typeof PathType])}`);
+      }
     }
 
     // Ensure all necessary directories exist
@@ -159,20 +155,12 @@ export async function initializePaths() {
 
 /**
  * Get the path for a file within a specific directory
- * @param {string} basePathType - The base path type (use PathType enum)
- * @param {string} fileName - The file name to append to the base path
- * @returns {string} The resolved file path
+ * @param basePathType - The base path type (use PathType enum)
+ * @param fileName - The file name to append to the base path
+ * @returns The resolved file path
  */
-export function getFilePath(basePathType, fileName) {
+export function getFilePath(basePathType: PathType, fileName: string): string {
   const basePath = getPath(basePathType);
   return path.join(basePath, fileName);
 }
 
-// Export default object for easier imports
-export default {
-  PathType,
-  getPath,
-  ensureDir,
-  initializePaths,
-  getFilePath
-};
