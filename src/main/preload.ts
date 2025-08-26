@@ -88,6 +88,11 @@ const electronAPI: IpcApi = {
   oneClickConfigureObs: (options: { deviceName: string; resolution: string }) =>
     ipcRenderer.invoke('one-click-configure-obs', options),
 
+  // OBS Backup & Restore APIs
+  backupObsConfig: () => ipcRenderer.invoke('backup-obs-config'),
+  restoreObsConfig: (backupFilePath?: string) => ipcRenderer.invoke('restore-obs-config', backupFilePath),
+  getAvailableBackups: () => ipcRenderer.invoke('get-available-backups'),
+
   // System Info
   getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
 

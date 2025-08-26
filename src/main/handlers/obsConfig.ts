@@ -4,6 +4,8 @@ import { manageProfileAndSceneCollection } from '@main/modules/obsconfig/manageP
 import { configureSourceTransform } from '@main/modules/obsconfig/sourceTransform';
 import { configureEncoder } from '@main/modules/obsconfig/encoderConfig';
 import { addOrEnsureVideoCaptureDevice } from '@main/modules/obsconfig/videoCaptureDevice';
+import { createDisplayCaptureSource } from '@main/modules/obsconfig/displayCapture';
+import { backupObsConfiguration, restoreObsConfiguration, getAvailableBackups } from '@main/modules/obsconfig/backupRestore';
 import { enableDefaultAudioSources } from '@main/modules/obsconfig/enableAudioSources';
 import { ensureObsEnabledAndMaybeRestart, startOBSProcess } from '@main/modules/obsWebSocket';
 import { closeOBS } from '@main/utils/close-obs-direct';
@@ -43,10 +45,18 @@ export function registerObsConfigHandlers() {
       if (!prof.success) return { success: false, message: prof.message, steps };
 
 
-      // Step 4: 配置视频采集设备（含滤镜）
-      const vcap = await addOrEnsureVideoCaptureDevice({ preferredResolution: options.resolution, applyFilters: true });
-      steps.push({ name: 'Configure video capture device', success: !!vcap.success, message: vcap.message || `resolution=${vcap.resolution}` });
-      if (!vcap.success) return { success: false, message: vcap.message || '视频采集设备配置失败', steps };
+      // Step 4: 根据设备类型配置采集源
+      let captureResult: any;
+      if (options.deviceName === 'PC端游') {
+        // PC端游使用显示器采集
+        captureResult = await createDisplayCaptureSource({ sourceName: '显示器采集' });
+        steps.push({ name: 'Configure display capture', success: !!captureResult.success, message: captureResult.message || `monitor=${captureResult.monitorName}` });
+      } else {
+        // 其他设备使用视频采集设备
+        captureResult = await addOrEnsureVideoCaptureDevice({ preferredResolution: options.resolution, applyFilters: true });
+        steps.push({ name: 'Configure video capture device', success: !!captureResult.success, message: captureResult.message || `resolution=${captureResult.resolution}` });
+      }
+      if (!captureResult.success) return { success: false, message: captureResult.message || '采集源配置失败', steps };
 
       // Step 5: 启用音频源（桌面音频/麦克风 + 噪声抑制）
       const audio = await enableDefaultAudioSources();
@@ -94,6 +104,26 @@ export function registerObsConfigHandlers() {
   // 单独配置编码器
   ipcMain.handle('configure-obs-encoder', async (_e, options: { encoderName: string; profileName: string }) => {
     try { return await configureEncoder(options.encoderName, options.profileName); } catch (e: any) { return { success: false, message: e?.message || String(e) }; }
+  });
+
+  // 配置显示器采集
+  ipcMain.handle('configure-display-capture', async (_e, options: { sourceName?: string } = {}) => {
+    try { return await createDisplayCaptureSource(options); } catch (e: any) { return { success: false, message: e?.message || String(e) }; }
+  });
+
+  // 备份OBS配置
+  ipcMain.handle('backup-obs-config', async () => {
+    try { return await backupObsConfiguration(); } catch (e: any) { return { success: false, message: e?.message || String(e) }; }
+  });
+
+  // 恢复OBS配置
+  ipcMain.handle('restore-obs-config', async (_e, backupFilePath?: string) => {
+    try { return await restoreObsConfiguration(backupFilePath); } catch (e: any) { return { success: false, message: e?.message || String(e) }; }
+  });
+
+  // 获取可用备份列表
+  ipcMain.handle('get-available-backups', async () => {
+    try { return await getAvailableBackups(); } catch (e: any) { return { success: false, backups: [], message: e?.message || String(e) }; }
   });
 }
 

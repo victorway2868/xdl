@@ -63,6 +63,11 @@ export interface IpcApi {
   installFonts: () => Promise<{ success: boolean; message?: string; error?: string }>;
   oneClickConfigureObs: (options: { deviceName: string; resolution: string }) => Promise<{ success: boolean; message: string; steps: any[] }>;
 
+  // OBS Backup & Restore
+  backupObsConfig: () => Promise<{ success: boolean; message: string; backupPath?: string }>;
+  restoreObsConfig: (backupFilePath?: string) => Promise<{ success: boolean; message: string; profileName?: string; sceneCollectionName?: string; steps?: Array<{ name: string; success: boolean; message?: string }> }>;
+  getAvailableBackups: () => Promise<{ success: boolean; backups: Array<{ path: string; name: string; size: number; createdAt: Date }> }>;
+
   // System Info
   getSystemInfo: () => Promise<any>;
 

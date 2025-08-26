@@ -37,6 +37,15 @@ function ObsConfigPage() {
   const [configStatus, setConfigStatus] = useState<'idle' | 'configuring' | 'success' | 'error'>('idle');
   const [configSteps, setConfigSteps] = useState<any[]>([]);
 
+  // Backup and restore state
+  const [backupStatus, setBackupStatus] = useState<'idle' | 'backing-up' | 'success' | 'error'>('idle');
+  const [restoreStatus, setRestoreStatus] = useState<'idle' | 'restoring' | 'success' | 'error'>('idle');
+  const [availableBackups, setAvailableBackups] = useState<any[]>([]);
+  const [selectedBackup, setSelectedBackup] = useState<string>('');
+  const [backupMessage, setBackupMessage] = useState<string>('');
+  const [restoreMessage, setRestoreMessage] = useState<string>('');
+  const [restoreSteps, setRestoreSteps] = useState<any[]>([]);
+
   // Hardware info state
   const [hardwareInfo, setHardwareInfo] = useState<SystemInfo | null>(null);
 
@@ -53,7 +62,20 @@ function ObsConfigPage() {
       }
     };
     fetchHardwareInfo();
+    loadAvailableBackups();
   }, []);
+
+  // Load available backups
+  const loadAvailableBackups = async () => {
+    try {
+      const result = await window.electronAPI.getAvailableBackups();
+      if (result.success) {
+        setAvailableBackups(result.backups);
+      }
+    } catch (error) {
+      console.error('Failed to load backups:', error);
+    }
+  };
 
   // Effect to update the selected device whenever the device type or selections change
   useEffect(() => {
@@ -134,6 +156,54 @@ function ObsConfigPage() {
     } catch (error: any) {
       setConfigStatus('error');
       setConfigSteps(prev => [...prev, { name: 'Fatal Error', success: false, message: error.message }]);
+    }
+  };
+
+  const handleBackupConfig = async () => {
+    setBackupStatus('backing-up');
+    setBackupMessage('');
+
+    try {
+      const result = await window.electronAPI.backupObsConfig();
+      if (result.success) {
+        setBackupStatus('success');
+        setBackupMessage(result.message);
+        await loadAvailableBackups(); // 刷新备份列表
+      } else {
+        setBackupStatus('error');
+        setBackupMessage(result.message);
+      }
+    } catch (error: any) {
+      setBackupStatus('error');
+      setBackupMessage(`备份失败: ${error.message}`);
+    }
+  };
+
+  const handleRestoreConfig = async () => {
+    if (!selectedBackup && availableBackups.length === 0) {
+      alert('没有可用的备份文件');
+      return;
+    }
+
+    setRestoreStatus('restoring');
+    setRestoreMessage('');
+    setRestoreSteps([]);
+
+    try {
+      const result = await window.electronAPI.restoreObsConfig(selectedBackup || undefined);
+      
+      setRestoreSteps(result.steps || []);
+      
+      if (result.success) {
+        setRestoreStatus('success');
+        setRestoreMessage(result.message);
+      } else {
+        setRestoreStatus('error');
+        setRestoreMessage(result.message);
+      }
+    } catch (error: any) {
+      setRestoreStatus('error');
+      setRestoreMessage(`恢复失败: ${error.message}`);
     }
   };
 
@@ -248,26 +318,105 @@ function ObsConfigPage() {
       </div>
 
       {/* Action Area */}
-      <div className="bg-gray-800/50 p-4 rounded-lg mt-4">
-        <button onClick={handleConfigureOBS} disabled={!selectedDevice || configStatus === 'configuring'} className="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">
-          {configStatus === 'configuring' ? '配置中...' : '一键配置OBS'}
-        </button>
-        {configSteps.length > 0 && (
-          <div className="mt-4 border border-gray-700 rounded-md p-3 bg-gray-900/50 space-y-2">
-            <h4 className="text-sm font-medium text-gray-300 mb-2">配置日志:</h4>
-            {configSteps.map((step, index) => (
-              <div key={index} className="flex items-start text-xs">
-                <span className={`mr-2 ${step.success ? 'text-green-400' : 'text-red-400'}`}>{step.success ? '✔' : '✖'}</span>
-                <div className="flex-1">
-                  <span className={`font-semibold ${step.success ? 'text-green-400' : 'text-red-400'}`}>{step.name}</span>
-                  {step.message && <p className="text-gray-400 mt-0.5">{step.message}</p>}
+      <div className="bg-gray-800/50 p-4 rounded-lg mt-4 space-y-4">
+        {/* 一键配置 */}
+        <div>
+          <button onClick={handleConfigureOBS} disabled={!selectedDevice || configStatus === 'configuring'} className="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">
+            {configStatus === 'configuring' ? '配置中...' : '一键配置OBS'}
+          </button>
+          {configSteps.length > 0 && (
+            <div className="mt-4 border border-gray-700 rounded-md p-3 bg-gray-900/50 space-y-2">
+              <h4 className="text-sm font-medium text-gray-300 mb-2">配置日志:</h4>
+              {configSteps.map((step, index) => (
+                <div key={index} className="flex items-start text-xs">
+                  <span className={`mr-2 ${step.success ? 'text-green-400' : 'text-red-400'}`}>{step.success ? '✔' : '✖'}</span>
+                  <div className="flex-1">
+                    <span className={`font-semibold ${step.success ? 'text-green-400' : 'text-red-400'}`}>{step.name}</span>
+                    {step.message && <p className="text-gray-400 mt-0.5">{step.message}</p>}
+                  </div>
                 </div>
+              ))}
+              {configStatus === 'success' && <p className='text-green-400 text-sm mt-2'>✓ 配置成功完成！</p>}
+              {configStatus === 'error' && <p className='text-red-400 text-sm mt-2'>✗ 配置中遇到错误。</p>}
+            </div>
+          )}
+        </div>
+
+        {/* 备份和恢复 */}
+        <div className="border-t border-gray-700 pt-4">
+          <h3 className="text-sm font-medium text-gray-300 mb-3">配置备份与恢复</h3>
+          
+          {/* 备份区域 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <button 
+                onClick={handleBackupConfig} 
+                disabled={backupStatus === 'backing-up'}
+                className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed text-sm"
+              >
+                {backupStatus === 'backing-up' ? '备份中...' : '备份当前配置'}
+              </button>
+              {backupMessage && (
+                <p className={`text-xs mt-2 ${backupStatus === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                  {backupMessage}
+                </p>
+              )}
+            </div>
+
+            {/* 恢复区域 */}
+            <div>
+              <div className="space-y-2">
+                {availableBackups.length > 0 && (
+                  <select 
+                    value={selectedBackup} 
+                    onChange={(e) => setSelectedBackup(e.target.value)}
+                    className="w-full bg-gray-700 border border-gray-600 rounded-md py-1 px-2 text-gray-300 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  >
+                    <option value="">选择备份文件</option>
+                    {availableBackups.map((backup, index) => (
+                      <option key={index} value={backup.path}>
+                        {backup.name} ({(backup.size / 1024 / 1024).toFixed(1)}MB)
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <button 
+                  onClick={handleRestoreConfig} 
+                  disabled={restoreStatus === 'restoring' || availableBackups.length === 0}
+                  className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-md transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed text-sm"
+                >
+                  {restoreStatus === 'restoring' ? '恢复中...' : '恢复配置'}
+                </button>
               </div>
-            ))}
-            {configStatus === 'success' && <p className='text-green-400 text-sm mt-2'>✓ 配置成功完成！</p>}
-            {configStatus === 'error' && <p className='text-red-400 text-sm mt-2'>✗ 配置中遇到错误。</p>}
+              {restoreMessage && (
+                <p className={`text-xs mt-2 ${restoreStatus === 'success' ? 'text-green-400' : 'text-red-400'}`}>
+                  {restoreMessage}
+                </p>
+              )}
+              {restoreSteps.length > 0 && (
+                <div className="mt-2 border border-gray-700 rounded-md p-2 bg-gray-900/50 space-y-1">
+                  <h5 className="text-xs font-medium text-gray-300 mb-1">恢复步骤:</h5>
+                  {restoreSteps.map((step, index) => (
+                    <div key={index} className="flex items-start text-xs">
+                      <span className={`mr-1 ${step.success ? 'text-green-400' : 'text-red-400'}`}>
+                        {step.success ? '✔' : '✖'}
+                      </span>
+                      <div className="flex-1">
+                        <span className={`font-medium ${step.success ? 'text-green-400' : 'text-red-400'}`}>
+                          {step.name}
+                        </span>
+                        {step.message && <p className="text-gray-400 mt-0.5">{step.message}</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {availableBackups.length === 0 && (
+                <p className="text-xs text-gray-500 mt-2">未找到备份文件</p>
+              )}
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
