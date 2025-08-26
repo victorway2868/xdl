@@ -5,8 +5,8 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as os from 'os';
-const archiver = require('archiver');
-const extract = require('extract-zip');
+import * as archiver from 'archiver';
+import * as extract from 'extract-zip';
 import { ensureAndConnectToOBS, getObsInstance, startOBSProcess } from '@main/modules/obsWebSocket';
 import { closeOBS } from '@main/utils/close-obs-direct';
 
@@ -34,19 +34,19 @@ async function createZipArchive(sourceDir: string, outputPath: string): Promise<
     return new Promise((resolve, reject) => {
         try {
             const output = fs.createWriteStream(outputPath);
-            const archive = archiver('zip', { zlib: { level: 9 } });
+            const archive = (archiver as any)('zip', { zlib: { level: 9 } });
 
             output.on('close', () => {
                 console.log(`ZIP文件创建完成: ${outputPath}`);
                 resolve();
             });
 
-            output.on('error', (err) => {
+            output.on('error', (err: any) => {
                 console.error('输出流错误:', err);
                 reject(err);
             });
 
-            archive.on('warning', (err) => {
+            archive.on('warning', (err: any) => {
                 if (err.code === 'ENOENT') {
                     console.warn('Archive warning:', err);
                 } else {
@@ -54,7 +54,7 @@ async function createZipArchive(sourceDir: string, outputPath: string): Promise<
                 }
             });
 
-            archive.on('error', (err) => {
+            archive.on('error', (err: any) => {
                 console.error('Archive错误:', err);
                 reject(err);
             });
@@ -79,7 +79,7 @@ async function createZipArchive(sourceDir: string, outputPath: string): Promise<
  */
 async function extractZipArchive(zipPath: string, outputDir: string): Promise<void> {
     await fs.ensureDir(outputDir);
-    await extract(zipPath, { dir: outputDir });
+    await (extract as any)(zipPath, { dir: outputDir });
 }
 
 /**
@@ -123,7 +123,7 @@ function findMediaFilePaths(data: any): string[] {
         if (Array.isArray(obj)) {
             obj.forEach(item => traverse(item));
         } else {
-            for (const [key, value] of Object.entries(obj)) {
+            for (const [, value] of Object.entries(obj)) {
                 if (typeof value === 'string' && fs.existsSync(value)) {
                     try {
                         const stats = fs.statSync(value);
@@ -183,8 +183,8 @@ async function updateIniFile(iniPath: string, profileName: string, sceneCollecti
         let content = '';
         for (const [section, values] of Object.entries(config)) {
             content += `[${section}]\n`;
-            for (const [key, value] of Object.entries(values as any)) {
-                content += `${key}=${value}\n`;
+            for (const [configKey, value] of Object.entries(values as any)) {
+                content += `${configKey}=${value}\n`;
             }
             content += '\n';
         }
