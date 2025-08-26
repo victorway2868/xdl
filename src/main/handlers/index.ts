@@ -8,6 +8,7 @@ import { loggerService } from '../services/logger';
 import { registerStreamingHandlers } from './streaming';
 import { registerObsConfigHandlers } from './obsConfig';
 import { registerSystemHandlers } from './system';
+import { registerAudioHandlers } from './audio';
 
 export function registerAllHandlers(): void {
   try {
@@ -19,6 +20,7 @@ export function registerAllHandlers(): void {
     registerWindowHandlers();
     registerObsConfigHandlers();
     registerSystemHandlers();
+    registerAudioHandlers();
 
     loggerService.addLog('info', 'All IPC handlers registered successfully', 'main');
   } catch (error) {

@@ -71,6 +71,21 @@ export interface IpcApi {
   // System Info
   getSystemInfo: () => Promise<any>;
 
+  // Audio APIs
+  getAudioFiles: () => Promise<string[]>;
+  getLocalSoundPacks: () => Promise<string[]>;
+  downloadSoundPack: (packName: string, packUrl: string) => Promise<boolean>;
+  playAudioFile: (filePath: string) => Promise<boolean>; // 备用方案
+  getAudioFileUrl: (filePath: string) => Promise<string | null>;
+  checkSoundPackUpdates: () => Promise<{ files: Array<{ name: string; url: string }> } | null>;
+
+  // Global Hotkey APIs
+  registerGlobalHotkey: (hotkey: string, filePath: string) => Promise<boolean>;
+  unregisterGlobalHotkey: (hotkey: string) => Promise<boolean>;
+  updateGlobalHotkeys: (soundEffects: Array<{id: string, hotkey: string, filePath?: string}>) => Promise<boolean>;
+  clearAllGlobalHotkeys: () => Promise<boolean>;
+  onPlayAudioFromHotkey: (cb: (payload: { hotkey: string, filePath: string }) => void) => () => void;
+
   // Auto Update APIs
   checkForUpdates: () => Promise<UpdateCheckResult>;
   getAppVersion: () => Promise<AppVersionInfo>;

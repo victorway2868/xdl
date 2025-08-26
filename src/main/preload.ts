@@ -73,6 +73,11 @@ const electronAPI: IpcApi = {
     ipcRenderer.on('status-notification', listener);
     return () => ipcRenderer.removeListener('status-notification', listener);
   },
+  onPlayAudioFromHotkey: (cb: (payload: { hotkey: string, filePath: string }) => void) => {
+    const listener = (_event: any, payload: { hotkey: string, filePath: string }) => cb(payload);
+    ipcRenderer.on('play-audio-from-hotkey', listener);
+    return () => ipcRenderer.removeListener('play-audio-from-hotkey', listener);
+  },
   // OBS
   setOBSStreamSettings: (streamUrl: string, streamKey: string) => ipcRenderer.invoke('set-obs-stream-settings', { streamUrl, streamKey }),
   startOBSStreaming: () => ipcRenderer.invoke('start-obs-streaming'),
@@ -95,6 +100,20 @@ const electronAPI: IpcApi = {
 
   // System Info
   getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
+
+  // Audio APIs
+  getAudioFiles: () => ipcRenderer.invoke('get-audio-files'),
+  getLocalSoundPacks: () => ipcRenderer.invoke('get-local-sound-packs'),
+  downloadSoundPack: (packName: string, packUrl: string) => ipcRenderer.invoke('download-sound-pack', packName, packUrl),
+  playAudioFile: (filePath: string) => ipcRenderer.invoke('play-audio-file', filePath), // 备用方案
+  getAudioFileUrl: (filePath: string) => ipcRenderer.invoke('get-audio-file-url', filePath),
+  checkSoundPackUpdates: () => ipcRenderer.invoke('check-sound-pack-updates'),
+
+  // Global Hotkey APIs
+  registerGlobalHotkey: (hotkey: string, filePath: string) => ipcRenderer.invoke('register-global-hotkey', hotkey, filePath),
+  unregisterGlobalHotkey: (hotkey: string) => ipcRenderer.invoke('unregister-global-hotkey', hotkey),
+  updateGlobalHotkeys: (soundEffects: Array<{id: string, hotkey: string, filePath?: string}>) => ipcRenderer.invoke('update-global-hotkeys', soundEffects),
+  clearAllGlobalHotkeys: () => ipcRenderer.invoke('clear-all-global-hotkeys'),
 
   // Auto Update APIs
   checkForUpdates: () =>
