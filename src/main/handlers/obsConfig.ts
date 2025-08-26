@@ -1,8 +1,10 @@
 import { ipcMain } from 'electron';
-import { installFonts } from '@main/modules/obsConfig/installFonts';
-import { manageProfileAndSceneCollection } from '@main/modules/obsConfig/manageProfileAndScene';
-import { configureSourceTransform } from '@main/modules/obsConfig/sourceTransform';
-import { configureEncoder } from '@main/modules/obsConfig/encoderConfig';
+import { installFonts } from '@main/modules/obsconfig/installFonts';
+import { manageProfileAndSceneCollection } from '@main/modules/obsconfig/manageProfileAndScene';
+import { configureSourceTransform } from '@main/modules/obsconfig/sourceTransform';
+import { configureEncoder } from '@main/modules/obsconfig/encoderConfig';
+import { addOrEnsureVideoCaptureDevice } from '@main/modules/obsconfig/videoCaptureDevice';
+import { enableDefaultAudioSources } from '@main/modules/obsconfig/enableAudioSources';
 import { ensureObsEnabledAndMaybeRestart, startOBSProcess } from '@main/modules/obsWebSocket';
 import { closeOBS } from '@main/utils/close-obs-direct';
 
@@ -27,7 +29,7 @@ export function registerObsConfigHandlers() {
     try {
       // Step 1: 字体
       const fontRes = await installFonts();
-      steps.push({ name: 'Install fonts', success: !!fontRes.success, message: fontRes.message || fontRes.error });
+      steps.push({ name: 'Install fonts', success: !!fontRes.success, message: fontRes.message || (fontRes as any).error });
       if (!fontRes.success) return { success: false, message: 'Font install failed', steps };
 
       // Step 2: 确保 WebSocket 启用/启动 OBS
@@ -40,28 +42,40 @@ export function registerObsConfigHandlers() {
       steps.push({ name: 'Configure profile/scene', success: !!prof.success, message: prof.message });
       if (!prof.success) return { success: false, message: prof.message, steps };
 
-      // Step 4: 源位置/说明栏
+
+      // Step 4: 配置视频采集设备（含滤镜）
+      const vcap = await addOrEnsureVideoCaptureDevice({ preferredResolution: options.resolution, applyFilters: true });
+      steps.push({ name: 'Configure video capture device', success: !!vcap.success, message: vcap.message || `resolution=${vcap.resolution}` });
+      if (!vcap.success) return { success: false, message: vcap.message || '视频采集设备配置失败', steps };
+
+      // Step 5: 启用音频源（桌面音频/麦克风 + 噪声抑制）
+      const audio = await enableDefaultAudioSources();
+      steps.push({ name: 'Enable audio sources', success: !!audio.success, message: audio.message });
+      if (!audio.success) return { success: false, message: audio.message, steps };
+
+      // Step 6: 源位置/说明栏
       const pos = await configureSourceTransform();
       steps.push({ name: 'Configure source transform', success: !!pos.success, message: pos.message });
       if (!pos.success) return { success: false, message: pos.message, steps };
 
-      // Step 5: 关闭 OBS 以写入编码器配置
+      // Step 7: 关闭 OBS 以写入编码器配置
       steps.push({ name: 'Closing OBS', success: true, message: '正在关闭 OBS 以应用离线配置...' });
       const closeResult = await closeOBS();
       if (closeResult.status === 'failed') {
-        steps[steps.length - 1] = { name: 'Closing OBS', success: false, message: `关闭 OBS 失败: ${closeResult.error}` };
-        return { success: false, message: '关闭 OBS 失败', steps };
+        const errMsg = (closeResult as any).error ? `关闭 OBS 失败: ${(closeResult as any).error}` : '关闭 OBS 失败';
+        steps[steps.length - 1] = { name: 'Closing OBS', success: false, message: errMsg };
+        return { success: false, message: errMsg, steps };
       }
       steps[steps.length - 1].message = 'OBS 已关闭';
       await new Promise(r => setTimeout(r, 2000)); // 等待进程完全退出
 
-      // Step 6: 写入编码器配置
+      // Step 8: 写入编码器配置
       steps.push({ name: 'Configure encoder', success: true, message: '正在写入编码器配置...' });
       const enc = await configureEncoder(pos.Encodername || 'obs_x264', pos.profileName);
       steps[steps.length - 1] = { name: 'Configure encoder', success: !!enc.success, message: enc.message };
       if (!enc.success) return { success: false, message: enc.message, steps };
 
-      // Step 7: 重启 OBS
+      // Step 9: 重启 OBS
       steps.push({ name: 'Restarting OBS', success: true, message: '正在重启 OBS...' });
       const startResult = await startOBSProcess();
       if (!startResult.success) {
