@@ -5,8 +5,8 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as os from 'os';
-import * as archiver from 'archiver';
-import * as extract from 'extract-zip';
+import archiver from 'archiver';
+import extract from 'extract-zip';
 import { ensureAndConnectToOBS, getObsInstance, startOBSProcess } from '@main/modules/obsWebSocket';
 import { closeOBS } from '@main/utils/close-obs-direct';
 
@@ -34,7 +34,7 @@ async function createZipArchive(sourceDir: string, outputPath: string): Promise<
     return new Promise((resolve, reject) => {
         try {
             const output = fs.createWriteStream(outputPath);
-            const archive = (archiver as any)('zip', { zlib: { level: 9 } });
+            const archive = archiver('zip', { zlib: { level: 9 } });
 
             output.on('close', () => {
                 console.log(`ZIP文件创建完成: ${outputPath}`);
@@ -79,7 +79,7 @@ async function createZipArchive(sourceDir: string, outputPath: string): Promise<
  */
 async function extractZipArchive(zipPath: string, outputDir: string): Promise<void> {
     await fs.ensureDir(outputDir);
-    await (extract as any)(zipPath, { dir: outputDir });
+    await extract(zipPath, { dir: outputDir });
 }
 
 /**
