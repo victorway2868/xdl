@@ -1,10 +1,128 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Outlet } from 'react-router-dom';
 import TitleBar from './TitleBar';
 
+interface SoundEffect {
+  id: string;
+  name: string;
+  hotkey: string;
+  position: number;
+  filePath?: string;
+}
+
 const MainLayout: React.FC = () => {
+  const [soundEffects, setSoundEffects] = useState<SoundEffect[]>([]);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  // 加载音效配置
   useEffect(() => {
-    console.log('MainLayout rendered');
+    const loadSoundEffects = () => {
+      const savedEffects = localStorage.getItem('soundEffects');
+      if (savedEffects) {
+        setSoundEffects(JSON.parse(savedEffects));
+      }
+    };
+
+    // 初始加载
+    loadSoundEffects();
+
+    // 监听自定义事件（当音效页面更新配置时）
+    const handleSoundEffectsUpdate = () => {
+      loadSoundEffects();
+    };
+
+    window.addEventListener('soundEffectsUpdated', handleSoundEffectsUpdate);
+
+    return () => {
+      window.removeEventListener('soundEffectsUpdated', handleSoundEffectsUpdate);
+    };
+  }, []);
+
+  // 音效播放处理
+  const handlePlaySound = async (effect: SoundEffect) => {
+    // 如果是停止音效，只停止当前播放
+    if (effect.id === 'stop-effect') {
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
+        currentAudioRef.current.currentTime = 0;
+        currentAudioRef.current = null;
+      }
+      return;
+    }
+
+    if (!effect.filePath) return;
+
+    try {
+      // 停止当前播放的音频
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
+        currentAudioRef.current.currentTime = 0;
+        currentAudioRef.current = null;
+      }
+
+      // 获取音频文件的完整路径
+      const audioUrl = await window.electronAPI?.getAudioFileUrl?.(effect.filePath);
+      if (!audioUrl) {
+        console.error('Failed to get audio file URL:', effect.filePath);
+        return;
+      }
+
+      // 创建新的音频对象
+      const audio = new Audio(audioUrl);
+      currentAudioRef.current = audio;
+
+      audio.onended = () => {
+        currentAudioRef.current = null;
+      };
+
+      audio.onerror = (e) => {
+        console.error('Audio playback error:', e);
+        currentAudioRef.current = null;
+      };
+
+      // 开始播放
+      await audio.play();
+
+    } catch (error) {
+      console.error('Failed to play sound:', error);
+      currentAudioRef.current = null;
+    }
+  };
+
+  // 全局快捷键监听
+  useEffect(() => {
+    const unsubscribe = window.electronAPI?.onHotkeyTriggered?.((payload) => {
+      const { hotkey } = payload;
+      // 找到对应的音效并播放（包括停止音效）
+      const effect = soundEffects.find(e => e.hotkey === hotkey);
+      if (effect) {
+        handlePlaySound(effect);
+      }
+    });
+
+    return () => {
+      unsubscribe?.();
+    };
+  }, [soundEffects]);
+
+  // 更新全局快捷键
+  useEffect(() => {
+    if (soundEffects.length > 0) {
+      window.electronAPI?.updateGlobalHotkeys?.(soundEffects);
+    }
+  }, [soundEffects]);
+
+  // 组件卸载时清理
+  useEffect(() => {
+    return () => {
+      // 清理音频
+      if (currentAudioRef.current) {
+        currentAudioRef.current.pause();
+        currentAudioRef.current = null;
+      }
+      // 清理全局快捷键
+      window.electronAPI?.clearAllGlobalHotkeys?.();
+    };
   }, []);
 
   return (

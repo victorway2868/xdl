@@ -97,42 +97,17 @@ function AudioSettingsPage() {
     useEffect(() => {
         if (soundEffects.length > 0) {
             localStorage.setItem('soundEffects', JSON.stringify(soundEffects));
-            // 同步更新全局快捷键
-            updateGlobalHotkeys();
+            // 通知 MainLayout 更新全局快捷键
+            window.dispatchEvent(new CustomEvent('soundEffectsUpdated'));
         }
     }, [soundEffects]);
-
-    // 更新全局快捷键
-    const updateGlobalHotkeys = async () => {
-        try {
-            await window.electronAPI?.updateGlobalHotkeys?.(soundEffects);
-        } catch (error) {
-            console.error('Failed to update global hotkeys:', error);
-        }
-    };
 
     // Save lock state when it changes
     useEffect(() => {
         localStorage.setItem('soundEffectsLocked', isLocked.toString());
     }, [isLocked]);
 
-    // 监听来自主进程的快捷键触发
-    useEffect(() => {
-        const unsubscribe = window.electronAPI?.onHotkeyTriggered?.((payload) => {
-            const { hotkey } = payload;
-            // 找到对应的音效并播放（包括停止音效）
-            const effect = soundEffects.find(e => e.hotkey === hotkey);
-            if (effect) {
-                handlePlaySound(effect);
-            }
-        });
-
-        return () => {
-            unsubscribe?.();
-            // 组件卸载时清理全局快捷键
-            window.electronAPI?.clearAllGlobalHotkeys?.();
-        };
-    }, [soundEffects]);
+    // 注意：全局快捷键监听现在由 MainLayout 处理，这里只处理页面内的音效播放
 
     const loadAvailableAudioFiles = async () => {
         try {
