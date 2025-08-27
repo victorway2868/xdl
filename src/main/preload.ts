@@ -73,10 +73,10 @@ const electronAPI: IpcApi = {
     ipcRenderer.on('status-notification', listener);
     return () => ipcRenderer.removeListener('status-notification', listener);
   },
-  onPlayAudioFromHotkey: (cb: (payload: { hotkey: string, filePath: string }) => void) => {
-    const listener = (_event: any, payload: { hotkey: string, filePath: string }) => cb(payload);
-    ipcRenderer.on('play-audio-from-hotkey', listener);
-    return () => ipcRenderer.removeListener('play-audio-from-hotkey', listener);
+  onHotkeyTriggered: (cb: (payload: { hotkey: string }) => void) => {
+    const listener = (_event: any, payload: { hotkey: string }) => cb(payload);
+    ipcRenderer.on('hotkey-triggered', listener);
+    return () => ipcRenderer.removeListener('hotkey-triggered', listener);
   },
   // OBS
   setOBSStreamSettings: (streamUrl: string, streamKey: string) => ipcRenderer.invoke('set-obs-stream-settings', { streamUrl, streamKey }),

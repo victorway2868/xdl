@@ -84,7 +84,7 @@ export interface IpcApi {
   unregisterGlobalHotkey: (hotkey: string) => Promise<boolean>;
   updateGlobalHotkeys: (soundEffects: Array<{id: string, hotkey: string, filePath?: string}>) => Promise<boolean>;
   clearAllGlobalHotkeys: () => Promise<boolean>;
-  onPlayAudioFromHotkey: (cb: (payload: { hotkey: string, filePath: string }) => void) => () => void;
+  onHotkeyTriggered: (cb: (payload: { hotkey: string }) => void) => () => void;
 
   // Auto Update APIs
   checkForUpdates: () => Promise<UpdateCheckResult>;

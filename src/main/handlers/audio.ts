@@ -284,11 +284,32 @@ async function getAudioFileUrl(filePath: string): Promise<string | null> {
 
 // 转换快捷键格式（从前端格式转换为Electron格式）
 function convertHotkeyFormat(hotkey: string): string {
-  // 前端格式: Ctrl+A, Alt+F1, Shift+Space
-  // Electron格式: CommandOrControl+A, Alt+F1, Shift+Space
-  return hotkey
+  // 前端格式: Ctrl+A, Alt+F1, Shift+Space, Numpad0, NumpadAdd
+  // Electron格式: CommandOrControl+A, Alt+F1, Shift+Space, numadd, num0
+  let electronHotkey = hotkey
     .replace(/Ctrl/g, 'CommandOrControl')
     .replace(/Meta/g, 'CommandOrControl'); // Mac的Cmd键
+  
+  // 处理小键盘按键 - Electron 使用特殊的小键盘格式
+  electronHotkey = electronHotkey
+    .replace(/Numpad0/g, 'num0')
+    .replace(/Numpad1/g, 'num1')
+    .replace(/Numpad2/g, 'num2')
+    .replace(/Numpad3/g, 'num3')
+    .replace(/Numpad4/g, 'num4')
+    .replace(/Numpad5/g, 'num5')
+    .replace(/Numpad6/g, 'num6')
+    .replace(/Numpad7/g, 'num7')
+    .replace(/Numpad8/g, 'num8')
+    .replace(/Numpad9/g, 'num9')
+    .replace(/NumpadAdd/g, 'numadd')
+    .replace(/NumpadSubtract/g, 'numsub')
+    .replace(/NumpadMultiply/g, 'nummult')
+    .replace(/NumpadDivide/g, 'numdiv')
+    .replace(/NumpadDecimal/g, 'numdec')
+    .replace(/NumpadEnter/g, 'Enter'); // 小键盘回车和普通回车在 Electron 中是一样的
+  
+  return electronHotkey;
 }
 
 // 注册全局快捷键
@@ -304,13 +325,13 @@ async function registerGlobalHotkey(hotkey: string, filePath: string): Promise<b
 
     // 注册新的快捷键
     const success = globalShortcut.register(electronHotkey, () => {
-      loggerService.addLog('info', `Global hotkey triggered: ${hotkey} -> ${filePath}`, 'main');
+      loggerService.addLog('info', `Global hotkey triggered: ${hotkey}`, 'main');
 
-      // 通知渲染进程播放音频，而不是在主进程播放
+      // 通知渲染进程触发对应的快捷键，让前端根据 hotkey 找到对应的音效并处理
       const { BrowserWindow } = require('electron');
       const mainWindow = BrowserWindow.getAllWindows()[0];
       if (mainWindow) {
-        mainWindow.webContents.send('play-audio-from-hotkey', { hotkey, filePath });
+        mainWindow.webContents.send('hotkey-triggered', { hotkey });
       }
     });
 
@@ -356,8 +377,12 @@ async function updateGlobalHotkeys(soundEffects: Array<{ id: string, hotkey: str
 
     // 注册新的快捷键
     for (const effect of soundEffects) {
-      if (effect.hotkey && effect.filePath) {
-        await registerGlobalHotkey(effect.hotkey, effect.filePath);
+      if (effect.hotkey) {
+        // 对于停止音效，使用 id 作为标识符；对于普通音效，使用 filePath
+        const effectIdentifier = effect.id === 'stop-effect' ? effect.id : effect.filePath;
+        if (effectIdentifier) {
+          await registerGlobalHotkey(effect.hotkey, effectIdentifier);
+        }
       }
     }
 
