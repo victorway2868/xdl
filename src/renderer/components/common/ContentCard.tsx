@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Play, ExternalLink, Download, Eye, Settings, Globe } from 'lucide-react';
 import { ContentItem } from '../../store/features/contentSlice';
+import imageCacheService from '../../utils/ImageCacheService';
 
 interface ContentCardProps {
   item: ContentItem;
@@ -43,11 +44,11 @@ const actionConfig = {
 const ContentCard: React.FC<ContentCardProps> = ({ item, size = 'medium', onAction }) => {
   const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageCached, setImageCached] = useState(false);
 
   const platform = platformConfig[item.platform as keyof typeof platformConfig] || platformConfig.default;
-  const action = actionConfig[item.action as keyof typeof actionConfig] || actionConfig.default;
   const PlatformIcon = platform.icon;
-  const ActionIcon = action.icon;
 
   // 尺寸配置
   const sizeConfig = {
@@ -76,6 +77,32 @@ const ContentCard: React.FC<ContentCardProps> = ({ item, size = 'medium', onActi
 
   const config = sizeConfig[size];
 
+  // 图片缓存逻辑
+  useEffect(() => {
+    if (item.coverUrl) {
+      // 检查图片是否已缓存
+      if (imageCacheService.isImageCached(item.coverUrl)) {
+        setImageCached(true);
+        setImageLoading(false);
+      } else if (imageCacheService.isImageFailed(item.coverUrl)) {
+        setImageError(true);
+        setImageLoading(false);
+      } else {
+        // 预加载图片
+        imageCacheService.preloadImage(item.coverUrl).then((success) => {
+          setImageLoading(false);
+          if (success) {
+            setImageCached(true);
+          } else {
+            setImageError(true);
+          }
+        });
+      }
+    } else {
+      setImageLoading(false);
+    }
+  }, [item.coverUrl]);
+
   const handleClick = () => {
     if (onAction) {
       onAction(item);
@@ -87,11 +114,6 @@ const ContentCard: React.FC<ContentCardProps> = ({ item, size = 'medium', onActi
         window.electronAPI?.openExternal?.(item.externalUrl);
       }
     }
-  };
-
-  const truncateText = (text: string, lines: number) => {
-    const maxLength = lines * 30; // 估算每行30个字符
-    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
   };
 
   return (
@@ -125,7 +147,31 @@ const ContentCard: React.FC<ContentCardProps> = ({ item, size = 'medium', onActi
           overflow: 'hidden',
         }}
       >
-        {!imageError && item.coverUrl ? (
+        {imageLoading ? (
+          // 加载状态
+          <div
+            style={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'linear-gradient(135deg, #1E293B 0%, #334155 100%)',
+              color: '#64748B',
+            }}
+          >
+            <div
+              style={{
+                width: '24px',
+                height: '24px',
+                border: '2px solid #64748B',
+                borderTop: '2px solid #3B82F6',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+              }}
+            />
+          </div>
+        ) : !imageError && item.coverUrl ? (
           <img
             src={item.coverUrl}
             alt={item.title}
@@ -135,8 +181,17 @@ const ContentCard: React.FC<ContentCardProps> = ({ item, size = 'medium', onActi
               objectFit: 'cover',
               transition: 'transform 0.3s ease',
               transform: isHovered ? 'scale(1.1)' : 'scale(1)',
+              opacity: imageCached ? 1 : 0.8,
             }}
-            onError={() => setImageError(true)}
+            onError={() => {
+              setImageError(true);
+              setImageLoading(false);
+            }}
+            onLoad={() => {
+              if (!imageCached) {
+                setImageCached(true);
+              }
+            }}
           />
         ) : (
           <div

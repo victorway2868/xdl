@@ -1,4 +1,29 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import imageCacheService from '../../utils/ImageCacheService';
+
+// 预加载封面图片
+const preloadCoverImages = (data: ContentData) => {
+  const allImages: string[] = [];
+  
+  // 收集所有分类中的封面图片URL
+  Object.values(data).forEach((items) => {
+    if (Array.isArray(items)) {
+      items.forEach((item: ContentItem) => {
+        if (item.coverUrl) {
+          allImages.push(item.coverUrl);
+        }
+      });
+    }
+  });
+
+  if (allImages.length > 0) {
+    console.log(`🖼️ [ContentSlice] 开始预加载 ${allImages.length} 张封面图片`);
+    // 异步预加载，不阻塞主流程
+    imageCacheService.preloadImages(allImages).catch((error) => {
+      console.warn('预加载图片失败:', error);
+    });
+  }
+};
 
 // 内容项接口
 export interface ContentItem {
@@ -93,6 +118,10 @@ export const fetchContentData = createAsyncThunk(
       }
 
       console.log('🎉 [ContentSlice] 数据获取完成，返回最新数据');
+      
+      // 预加载所有封面图片
+      preloadCoverImages(data);
+      
       return data;
     } catch (error) {
       console.error('❌ [ContentSlice] 获取数据失败:', error);
@@ -121,6 +150,10 @@ export const fetchContentData = createAsyncThunk(
             console.log('💾 [ContentSlice] 成功加载缓存数据');
             console.log('📅 [ContentSlice] 缓存数据年龄:', Math.round(cacheAge / 1000 / 60), '分钟');
             console.log('📋 [ContentSlice] 缓存数据包含的分类:', Object.keys(parsedData));
+            
+            // 预加载缓存数据中的图片
+            preloadCoverImages(parsedData);
+            
             return parsedData;
           } else {
             console.warn('💾 [ContentSlice] 没有找到缓存数据');
