@@ -44,32 +44,13 @@ interface WorkCardProps {
  * 可用于视频教程、插件、设备推荐等各种内容的展示
  */
 const WorkCard: React.FC<WorkCardProps> = ({
-  // 服务器数据字段 - 直接对应服务器返回的数据
-  id,              // 数据ID
+  // 基本字段
   title,           // 标题
-  description,     // 描述
-  type,            // 媒体类型 (video, image)
-  url,             // 链接地址
-  platform,        // 平台 (douyin, kuaishou, etc.)
-  playType,        // 播放类型 (manual, autoplay, etc.)
-  viewCount,       // 观看次数
-  isHot,           // 是否热门
-  coverurl,        // 封面图片URL (注意是coverurl不是coverImage)
-
-  // 可选的服务器字段
+  coverurl,        // 封面图片URL
   thumbnail,       // 缩略图 (备用封面)
-  duration,        // 时长
-  level,           // 等级 (tutorial专用)
-  deviceModel,     // 设备型号 (device专用)
-  downloadUrl,     // 下载链接 (plugin专用)
-  clickUrl,        // 点击链接 (advertisement专用)
-  version,         // 版本号 (plugin专用)
-  rating,          // 评分
 
   // 交互
   onClick,         // 点击事件
-  onSecondaryAction, // 次要操作
-  secondaryActionText = '查看详情', // 次要操作按钮文字
 
   // 样式定制
   size = 'medium', // 尺寸: 'small', 'medium', 'large'
@@ -79,30 +60,29 @@ const WorkCard: React.FC<WorkCardProps> = ({
   // 状态
   isLoading = false,
   isDisabled = false,
-  showActions = true, // 是否显示操作按钮
 }) => {
   // 根据尺寸设置样式
   const sizeClasses = {
     small: {
       container: 'h-48',
-      image: 'h-32',
+      image: 'h-40', // 增加封面图高度
       title: 'text-sm',
       description: 'text-xs',
-      padding: 'p-2'
+      padding: 'p-1' // 减少padding
     },
     medium: {
       container: 'h-64',
-      image: 'h-32',
+      image: 'h-52', // 增加封面图高度
       title: 'text-base',
       description: 'text-sm',
-      padding: 'p-3'
+      padding: 'p-2' // 减少padding
     },
     large: {
       container: 'h-80',
-      image: 'h-48',
+      image: 'h-68', // 增加封面图高度
       title: 'text-lg',
       description: 'text-base',
-      padding: 'p-4'
+      padding: 'p-2' // 减少padding
     }
   };
 
@@ -124,27 +104,10 @@ const WorkCard: React.FC<WorkCardProps> = ({
 
   // 获取封面图片URL - 优先使用coverurl，然后是thumbnail
   const getCoverImage = () => {
-    return coverurl || thumbnail || null;
+    return coverurl || thumbnail || undefined;
   };
 
-  // 获取分类显示文本
-  const getCategory = () => {
-    // 根据不同的数据类型返回相应的分类
-    if (deviceModel) return '设备推荐';
-    if (level) return '教程';
-    if (downloadUrl || version) return '插件';
-    if (clickUrl) return '广告';
-    return type || '其他';
-  };
 
-  // 格式化观看次数
-  const formatViewCount = (count?: number) => {
-    if (!count) return '';
-    if (count >= 10000) {
-      return `${(count / 10000).toFixed(1)}万次观看`;
-    }
-    return `${count}次观看`;
-  };
 
   return (
     <div
@@ -176,87 +139,19 @@ const WorkCard: React.FC<WorkCardProps> = ({
             {title || '暂无封面'}
           </div>
         )}
-
-        {/* 分类标签 */}
-        <div className="absolute top-2 left-2">
-          <span className="inline-block bg-black/70 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
-            {getCategory()}
-          </span>
-        </div>
-
-        {/* 热门标签 */}
-        {isHot && (
-          <div className="absolute top-2 right-2">
-            <span className="inline-block bg-red-500/90 text-white text-xs px-2 py-1 rounded font-medium">
-              🔥 热门
-            </span>
-          </div>
-        )}
-
-        {/* 评分 */}
-        {rating && (
-          <div className="absolute top-10 right-2">
-            <span className="inline-block bg-yellow-500/90 text-black text-xs px-2 py-1 rounded font-medium">
-              ⭐ {rating}
-            </span>
-          </div>
-        )}
       </div>
 
-      {/* 内容区域 */}
-      <div className={`${currentSize.padding} flex flex-col min-h-16`}>
-        {/* 标题和版本 */}
-        <div className="flex justify-between items-start mb-1">
-          <div className="flex-1 mr-2">
-            <div className="flex items-baseline gap-2">
-              <h3 className={`${currentSize.title} font-semibold text-white leading-tight flex-1`}
-                  style={{
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden'
-                  }}>
-                {title}
-              </h3>
-              {/* 显示观看次数在标题右侧 */}
-              {viewCount && (
-                <span className="text-xs text-gray-400 shrink-0">
-                  {formatViewCount(viewCount)}
-                </span>
-              )}
-            </div>
-          </div>
-          {version && (
-            <span className="text-xs text-gray-400 bg-gray-700 px-2 py-0.5 rounded shrink-0">
-              v{version}
-            </span>
-          )}
-        </div>
-
-        {/* 底部信息和操作 */}
-        <div className="flex justify-between items-end mt-auto">
-          <div className="flex flex-col">
-            {/* 显示平台信息 */}
-            {platform && (
-              <span className="text-xs text-gray-400">
-                {platform}
-              </span>
-            )}
-          </div>
-
-          {showActions && onSecondaryAction && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onSecondaryAction();
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5 rounded text-xs transition-colors"
-              disabled={isDisabled}
-            >
-              {secondaryActionText}
-            </button>
-          )}
-        </div>
+      {/* 标题区域 */}
+      <div className={`${currentSize.padding} flex items-center justify-center`}>
+        <h3 className={`${currentSize.title} font-semibold text-white text-center leading-tight`}
+          style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden'
+          }}>
+          {title}
+        </h3>
       </div>
     </div>
   );

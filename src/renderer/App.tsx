@@ -11,6 +11,9 @@ import HomePage from './pages/HomePage';
 import DanmuPage from './pages/DanmuPage';
 import ObsConfigPage from './pages/ObsConfigPage';
 import AudioSettingsPage from './pages/AudioSettingsPage';
+import TutorialsPage from './pages/TutorialsPage';
+import PluginsPage from './pages/PluginsPage';
+import DevicesPage from './pages/DevicesPage';
 import './styles/App.css';
 
 // 在生产环境(file://)下使用 HashRouter，避免 BrowserRouter 在 file 协议下跳转到 /app 导致空白页
@@ -31,6 +34,9 @@ const App: React.FC = () => {
                 <Route index element={<HomePage />} />
                 <Route path="obs-config" element={<ObsConfigPage />} />
                 <Route path="audio-settings" element={<AudioSettingsPage />} />
+                <Route path="tutorials" element={<TutorialsPage />} />
+                <Route path="plugins" element={<PluginsPage />} />
+                <Route path="devices" element={<DevicesPage />} />
               </Route>
 
               {/* 弹幕功能路由 */}

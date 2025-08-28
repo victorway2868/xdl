@@ -89,6 +89,9 @@ export interface IpcApi {
   // Auto Update APIs
   checkForUpdates: () => Promise<UpdateCheckResult>;
   getAppVersion: () => Promise<AppVersionInfo>;
+
+  // External URL APIs
+  openExternal: (url: string) => Promise<void>;
 }
 
 // 扩展 Window 接口

@@ -63,6 +63,7 @@ const electronAPI: IpcApi = {
   maintainDouyinStream: (room_id: string, stream_id: string, mode: 'phone' | 'auto' = 'phone') =>
     ipcRenderer.invoke('maintain-douyin-stream', { room_id, stream_id, mode }),
   openAuthUrl: ({ url }: { url: string }) => ipcRenderer.invoke('open-auth-url', { url }),
+  openExternal: (url: string) => ipcRenderer.invoke('open-external', url),
   onAuthNotification: (cb: (payload: any) => void) => {
     const listener = (_event: any, payload: any) => cb(payload);
     ipcRenderer.on('auth-notification', listener);

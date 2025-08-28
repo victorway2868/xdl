@@ -5,6 +5,7 @@ import settingsReducer from './features/settings/settingsSlice';
 import pluginsReducer from './features/plugins/pluginsSlice';
 import danmakuReducer from './features/danmakuSlice';
 import softwareReducer from './features/softwareSlice';
+import contentReducer from './features/contentSlice';
 import { danmakuMiddleware } from './danmakuMiddleware';
 
 export const store = configureStore({
@@ -14,6 +15,7 @@ export const store = configureStore({
     plugins: pluginsReducer,
     danmaku: danmakuReducer,
     software: softwareReducer,
+    content: contentReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

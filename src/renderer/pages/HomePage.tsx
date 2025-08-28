@@ -3,9 +3,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store/store';
 import { fetchSoftwareVersion } from '../store/features/softwareSlice';
 import { fetchDouyinUserInfo, logout, loginWithDouyinWeb, loginWithDouyinCompanion } from '../store/features/user/userSlice';
+import { fetchContentData, loadCachedData } from '../store/features/contentSlice';
 import { User, Copy, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import LoginModal from '../components/LoginModal';
+import ContentCard from '../components/common/ContentCard';
+import ContentModal from '../components/common/ContentModal';
+import { ContentItem } from '../store/features/contentSlice';
 
 const HomePage = () => {
   const navigate = useNavigate();
@@ -14,6 +18,8 @@ const HomePage = () => {
   // Global state from Redux
   const { checks } = useSelector((state: RootState) => state.software);
   const { douyinUserInfo, isLoggedIn, loading: userLoading, error: userError } = useSelector((state: RootState) => state.user);
+  // 内容数据状态
+  const { data: contentData, loading: contentLoading } = useSelector((state: RootState) => state.content);
 
   // Local component state
 
@@ -27,6 +33,8 @@ const HomePage = () => {
   const [error, setError] = useState<string | null>(null); // For stream actions
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [copied, setCopied] = useState(''); // Can be 'url' or 'key'
+  const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
+  const [isContentModalOpen, setIsContentModalOpen] = useState(false);
 
 
   // 手机开播轮询控制（前端）
@@ -52,6 +60,40 @@ const HomePage = () => {
       }
     }
   }, [dispatch, douyinUserInfo]);
+
+  // 单独的 effect 处理内容数据获取
+  useEffect(() => {
+    // 检查是否已经有数据
+    if (contentData) {
+      console.log('HomePage 已有数据，无需重新获取');
+      return;
+    }
+
+    // 检查是否正在加载
+    if (contentLoading) {
+      console.log('HomePage 数据正在加载中...');
+      return;
+    }
+
+    // 检查缓存时间戳，避免频繁请求
+    const lastFetched = localStorage.getItem('contentDataTimestamp');
+    if (lastFetched) {
+      const timeDiff = Date.now() - parseInt(lastFetched);
+      const oneMinute = 60 * 1000; // 1分钟内不重复请求
+      if (timeDiff < oneMinute) {
+        console.log('HomePage 1分钟内已获取过数据，跳过请求');
+        // 尝试加载缓存数据
+        dispatch(loadCachedData());
+        return;
+      }
+    }
+
+    console.log('HomePage 开始获取内容数据...');
+    // 首先尝试加载缓存数据
+    dispatch(loadCachedData());
+    // 然后获取最新数据
+    dispatch(fetchContentData());
+  }, [dispatch, contentData, contentLoading]);
 
   // 监听认证/状态通知（可选增强）
   useEffect(() => {
@@ -83,22 +125,32 @@ const HomePage = () => {
   const obsVersion = checks['OBS Studio']?.version || '未检测到';
   const companionVersion = checks['直播伴侣']?.version || '未检测到';
 
-  // Ad and recommendation data (remains local state)
-  const [advertisements] = useState<any[]>([
-    {
-      id: 'baidu-ad-1',
-      type: 'banner',
-      title: '百度',
-      description: '百度广告',
-      backgroundColor: '#4285f4',
-      textColor: 'white',
-      brandName: '百度',
-      clickUrl: 'https://www.baidu.com'
-    }
-  ]);
+  // Ad and recommendation data
+  const advertisements = contentData?.Ads || [];
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
-  const [recommendedWorks] = useState<any[]>([]);
-  const [hotDataLoading, setHotDataLoading] = useState(false);
+
+  // 广告轮播
+  useEffect(() => {
+    if (advertisements.length > 1) {
+      const interval = setInterval(() => {
+        setCurrentAdIndex((prev) => (prev + 1) % advertisements.length);
+      }, 5000); // 5秒切换一次
+      return () => clearInterval(interval);
+    }
+  }, [advertisements.length]);
+  
+  // Get mixed recommendations from all categories
+  const getRecommendations = () => {
+    if (!contentData) return [];
+    const allItems = [
+      ...(contentData.Tutorials || []).slice(0, 2),
+      ...(contentData.OBSPlugins || []).slice(0, 2),
+      ...(contentData.DeviceRecommendations || []).slice(0, 3),
+    ];
+    return allItems.slice(0, 7);
+  };
+  
+  const recommendedWorks = getRecommendations();
 
   // Handlers
 
@@ -325,6 +377,16 @@ const HomePage = () => {
     setShowLoginModal(false);
   };
 
+  const handleContentAction = (item: ContentItem) => {
+    setSelectedContent(item);
+    setIsContentModalOpen(true);
+  };
+
+  const refreshContent = () => {
+    console.log('手动刷新内容数据...');
+    dispatch(fetchContentData());
+  };
+
 
   return (
     <div className="home-page-container">
@@ -382,6 +444,21 @@ const HomePage = () => {
               >
                 {isLoading ? '获取中...' : '开始直播'}
               </button>
+
+              {/* 错误提示 */}
+              {error && (
+                <div style={{ 
+                  marginTop: '12px', 
+                  padding: '12px', 
+                  borderRadius: '8px', 
+                  background: 'rgba(239, 68, 68, 0.1)', 
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: '#FCA5A5',
+                  fontSize: '14px'
+                }}>
+                  {error}
+                </div>
+              )}
 
               {/* 手机开播状态提示图（仅首次显示一次，不影响轮询） */}
               {false && showStatus4Image && (
@@ -530,15 +607,38 @@ const HomePage = () => {
             <>
               {advertisements.map((ad, index) => (
                 <div key={ad.id} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: index === currentAdIndex ? 1 : 0, transition: 'opacity 1s' }}>
-                  {ad.type === 'banner' ? (
-                    <div style={{ width: '100%', height: '100%', backgroundColor: ad.backgroundColor || '#4285f4', display: 'flex', alignItems: 'center', justifyContent: 'center', color: ad.textColor || 'white', fontSize: '24px', fontWeight: 'bold', fontFamily: 'Arial, sans-serif' }}>
-                      {ad.brandName || ad.title}
-                    </div>
-                  ) : (
-                    <img src={ad.url} alt={ad.title || '广告内容'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  )}
-                  {ad.clickUrl && (
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, cursor: 'pointer' }} onClick={() => window.open(ad.clickUrl, '_blank')} />
+                  {ad.coverUrl ? (
+                    <img 
+                      src={ad.coverUrl} 
+                      alt={ad.title || '广告内容'} 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      onError={(e) => {
+                        // 如果图片加载失败，显示文字广告
+                        e.currentTarget.style.display = 'none';
+                        const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                        if (fallback) fallback.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    backgroundColor: '#4285f4', 
+                    display: ad.coverUrl ? 'none' : 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    color: 'white', 
+                    fontSize: '24px', 
+                    fontWeight: 'bold', 
+                    fontFamily: 'Arial, sans-serif' 
+                  }}>
+                    {ad.title}
+                  </div>
+                  {ad.externalUrl && (
+                    <div 
+                      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, cursor: 'pointer' }} 
+                      onClick={() => ad.externalUrl && window.electronAPI?.openExternal?.(ad.externalUrl)} 
+                    />
                   )}
                 </div>
               ))}
@@ -574,30 +674,52 @@ const HomePage = () => {
         <div className="recommendations-header">
           <h2>热门推荐</h2>
           <nav style={{ display: 'flex', gap: '16px' }}>
+            <button onClick={() => navigate('/app/tutorials')} className="btn-base btn-ghost">直播教程</button>
             <button onClick={() => navigate('/app/plugins')} className="btn-base btn-ghost">插件</button>
             <button onClick={() => navigate('/app/devices')} className="btn-base btn-ghost">设备推荐</button>
-            <button onClick={() => navigate('/app/tutorials')} className="btn-base btn-ghost">直播教程</button>
-            <button onClick={() => navigate('/app/more')} className="btn-base btn-ghost">更多</button>
           </nav>
         </div>
-        {hotDataLoading ? (
-          <div className="recommendations-loading"><div className="spinner"></div><span>正在加载热门推荐...</span></div>
+        {contentLoading && !contentData ? (
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column',
+            alignItems: 'center', 
+            justifyContent: 'center',
+            minHeight: '200px',
+            gap: '16px'
+          }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              border: '3px solid rgba(59, 130, 246, 0.3)',
+              borderTop: '3px solid #3B82F6',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite'
+            }} />
+            <span style={{ color: '#94A3B8' }}>正在加载热门推荐...</span>
+          </div>
         ) : (
           <>
             {recommendedWorks.length === 0 ? (
               <div style={{ textAlign: 'center', color: '#9ca3af', padding: '32px 0' }}>
                 <div style={{ fontSize: '24px', marginBottom: '8px' }}>🔥</div>
                 <p>暂无热门推荐</p>
-                <button onClick={() => setHotDataLoading(true)} className="btn-base btn-refresh" style={{ marginTop: '16px' }}>刷新数据</button>
+
               </div>
             ) : (
-              <div className="recommendations-grid">
-                {recommendedWorks.slice(0, 7).map((work, index) => (
-                  <div key={index} className="recommendation-card">
-                    <div className="card-thumbnail"><span className="card-thumbnail-text">预览图</span></div>
-                    <h3 className="card-title">{work.title || '推荐内容'}</h3>
-                    <p className="card-description">{work.description || '暂无描述'}</p>
-                  </div>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                gap: '16px',
+                marginTop: '16px'
+              }}>
+                {recommendedWorks.map((work) => (
+                  <ContentCard
+                    key={work.id}
+                    item={work}
+                    size="small"
+                    onAction={handleContentAction}
+                  />
                 ))}
               </div>
             )}
@@ -627,6 +749,25 @@ const HomePage = () => {
           </div>
         </div>
       )}
+
+      {/* 内容详情弹窗 */}
+      <ContentModal
+        item={selectedContent}
+        isOpen={isContentModalOpen}
+        onClose={() => {
+          setIsContentModalOpen(false);
+          setSelectedContent(null);
+        }}
+      />
+
+      <style>
+        {`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}
+      </style>
 
     </div>
   );

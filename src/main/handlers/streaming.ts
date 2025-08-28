@@ -185,6 +185,16 @@ export function registerStreamingHandlers(): void {
     }
   });
 
+  // 打开外部链接
+  ipcMain.handle('open-external', async (_e, url: string) => {
+    try {
+      await shell.openExternal(url);
+    } catch (e: any) {
+      console.error('Failed to open external URL:', e);
+      throw e;
+    }
+  });
+
   ipcMain.handle('get-douyin-api-info', async (_e, { method }: { method: 'get' | 'create' | 'stop' }) => {
     try {
       const mode = method === 'create' ? 'auto' : 'phone';
