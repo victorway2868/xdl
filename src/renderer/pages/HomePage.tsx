@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import LoginModal from '../components/LoginModal';
 import ContentCard from '../components/common/ContentCard';
 import ContentModal from '../components/common/ContentModal';
+import VideoModal from '../components/common/VideoModal';
 import { ContentItem } from '../store/features/contentSlice';
 
 const HomePage = () => {
@@ -47,6 +48,8 @@ const HomePage = () => {
   const [copied, setCopied] = useState(''); // Can be 'url' or 'key'
   const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
   const [isContentModalOpen, setIsContentModalOpen] = useState(false);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [currentVideoItem, setCurrentVideoItem] = useState<ContentItem | null>(null);
 
 
   // 手机开播轮询控制（前端）
@@ -358,8 +361,26 @@ const HomePage = () => {
   };
 
   const handleContentAction = (item: ContentItem) => {
-    setSelectedContent(item);
-    setIsContentModalOpen(true);
+    console.log('点击推荐作品:', item);
+    console.log('category:', item.category);
+    console.log('workType:', item.workType);
+    console.log('platform:', item.platform);
+    console.log('videoUrl:', item.videoUrl);
+
+    if (item.workType === 'Video') {
+      console.log('打开视频播放弹窗');
+      setCurrentVideoItem(item);
+      setIsVideoModalOpen(true);
+    } else {
+      console.log('打开内容详情弹窗');
+      setSelectedContent(item);
+      setIsContentModalOpen(true);
+    }
+  };
+
+  const closeVideoModal = () => {
+    setIsVideoModalOpen(false);
+    setCurrentVideoItem(null);
   };
 
   // 注意：手动刷新功能已移除，数据由MainLayout统一管理
@@ -735,6 +756,15 @@ const HomePage = () => {
           setIsContentModalOpen(false);
           setSelectedContent(null);
         }}
+      />
+
+      {/* 视频播放弹窗 */}
+      <VideoModal
+        isOpen={isVideoModalOpen}
+        videoUrl={currentVideoItem?.videoUrl}
+        platform={currentVideoItem?.platform}
+        title={currentVideoItem?.title}
+        onClose={closeVideoModal}
       />
 
       <style dangerouslySetInnerHTML={{

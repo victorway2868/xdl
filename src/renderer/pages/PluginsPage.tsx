@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import ContentCard from '../components/common/ContentCard';
 import ContentModal from '../components/common/ContentModal';
+import VideoModal from '../components/common/VideoModal';
 import { ArrowLeft, Puzzle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,10 +17,30 @@ const PluginsPage: React.FC = () => {
   
   const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [currentVideoItem, setCurrentVideoItem] = useState<ContentItem | null>(null);
 
   const handleCardAction = (item: ContentItem) => {
-    setSelectedItem(item);
-    setIsModalOpen(true);
+    console.log('点击插件项目:', item);
+    console.log('category:', item.category);
+    console.log('workType:', item.workType);
+    console.log('platform:', item.platform);
+    console.log('videoUrl:', item.videoUrl);
+
+    if (item.workType === 'Video') {
+      console.log('打开视频播放弹窗');
+      setCurrentVideoItem(item);
+      setIsVideoModalOpen(true);
+    } else {
+      console.log('打开内容详情弹窗');
+      setSelectedItem(item);
+      setIsModalOpen(true);
+    }
+  };
+
+  const closeVideoModal = () => {
+    setIsVideoModalOpen(false);
+    setCurrentVideoItem(null);
   };
 
   const plugins = data?.OBSPlugins || [];
@@ -185,6 +206,15 @@ const PluginsPage: React.FC = () => {
           setIsModalOpen(false);
           setSelectedItem(null);
         }}
+      />
+
+      {/* 视频播放弹窗 */}
+      <VideoModal
+        isOpen={isVideoModalOpen}
+        videoUrl={currentVideoItem?.videoUrl}
+        platform={currentVideoItem?.platform}
+        title={currentVideoItem?.title}
+        onClose={closeVideoModal}
       />
 
       <style>
