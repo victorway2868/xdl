@@ -1,28 +1,79 @@
-import React, { useState } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { ContentItem } from '../store/features/contentSlice';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 import ContentCard from '../components/common/ContentCard';
 import ContentModal from '../components/common/ContentModal';
+import VideoModal from '../components/common/VideoModal';
 import { ArrowLeft, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const TutorialsPage: React.FC = () => {
   const navigate = useNavigate();
 
+  // 只读取数据，不进行任何数据获取操作
   const { data, loading, error } = useSelector((state: RootState) => state.content);
   
-
+  // 页面加载时记录数据来源
+  useEffect(() => {
+    console.log('📚 [TutorialsPage] 页面加载');
+    if (data) {
+      console.log('📊 [TutorialsPage] 从Redux状态获取数据');
+      console.log('📋 [TutorialsPage] 教程数量:', data.Tutorials?.length || 0);
+    } else if (loading) {
+      console.log('⏳ [TutorialsPage] 数据正在加载中...');
+    } else if (error) {
+      console.log('❌ [TutorialsPage] 数据加载错误:', error);
+    } else {
+      console.log('❓ [TutorialsPage] 没有可用数据');
+    }
+  }, [data, loading, error]);
   
   const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // 视频播放相关状态
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [currentVideoItem, setCurrentVideoItem] = useState<ContentItem | null>(null);
 
   const handleCardAction = (item: ContentItem) => {
-    setSelectedItem(item);
-    setIsModalOpen(true);
+    console.log('点击教程项目:', item);
+    console.log('category:', item.category);
+    console.log('workType:', item.workType);
+    console.log('platform:', item.platform);
+    console.log('videoUrl:', item.videoUrl);
+    
+    // 根据workType值选择不同的弹窗
+    if (item.workType === 'Video') {
+      // 视频类型 - 使用VideoModal
+      console.log('打开视频播放弹窗');
+      setCurrentVideoItem(item);
+      setIsVideoModalOpen(true);
+    } else {
+      // 文本类型或其他 - 使用ContentModal
+      console.log('打开内容详情弹窗');
+      setSelectedItem(item);
+      setIsModalOpen(true);
+    }
+  };
+
+  // 关闭视频弹窗
+  const closeVideoModal = () => {
+    setIsVideoModalOpen(false);
+    setCurrentVideoItem(null);
   };
 
   const tutorials = data?.Tutorials || [];
+
+  // 加载动画样式
+  const spinnerStyle: React.CSSProperties = {
+    width: '40px',
+    height: '40px',
+    border: '3px solid rgba(59, 130, 246, 0.3)',
+    borderTop: '3px solid #3B82F6',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
+  };
 
   return (
     <div style={{ 
@@ -31,6 +82,16 @@ const TutorialsPage: React.FC = () => {
       backgroundColor: '#0F172A',
       color: '#F1F5F9'
     }}>
+      {/* CSS 动画定义 */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `
+      }} />
+
       {/* 头部 */}
       <div style={{ 
         display: 'flex', 
@@ -78,8 +139,6 @@ const TutorialsPage: React.FC = () => {
             </h1>
           </div>
         </div>
-
-
       </div>
 
       {/* 内容区域 */}
@@ -92,14 +151,7 @@ const TutorialsPage: React.FC = () => {
           minHeight: '400px',
           gap: '16px'
         }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '3px solid rgba(59, 130, 246, 0.3)',
-            borderTop: '3px solid #3B82F6',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }} />
+          <div style={spinnerStyle} />
           <p style={{ color: '#94A3B8', fontSize: '16px' }}>正在加载教程数据...</p>
         </div>
       ) : error && !data ? (
@@ -113,21 +165,9 @@ const TutorialsPage: React.FC = () => {
           <p style={{ color: '#FCA5A5', fontSize: '16px', marginBottom: '16px' }}>
             加载失败: {error}
           </p>
-          <button
-            onClick={refresh}
-            style={{
-              backgroundColor: '#EF4444',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '10px 20px',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer',
-            }}
-          >
-            重试
-          </button>
+          <p style={{ color: '#94A3B8', fontSize: '14px' }}>
+            数据由系统统一管理，请重启应用重新加载
+          </p>
         </div>
       ) : tutorials.length === 0 ? (
         <div style={{ 
@@ -187,14 +227,14 @@ const TutorialsPage: React.FC = () => {
         }}
       />
 
-      <style>
-        {`
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-        `}
-      </style>
+      {/* 视频播放弹窗 */}
+      <VideoModal
+        isOpen={isVideoModalOpen}
+        videoUrl={currentVideoItem?.videoUrl}
+        platform={currentVideoItem?.platform}
+        title={currentVideoItem?.title}
+        onClose={closeVideoModal}
+      />
     </div>
   );
 };

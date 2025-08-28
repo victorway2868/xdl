@@ -1,6 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
+﻿import React, { useEffect, useState, useRef } from 'react';
 import { Outlet } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import TitleBar from './TitleBar';
+import { RootState } from '../../store/store';
+import { fetchContentData } from '../../store/features/contentSlice';
 
 interface SoundEffect {
   id: string;
@@ -11,8 +14,29 @@ interface SoundEffect {
 }
 
 const MainLayout: React.FC = () => {
+  // Redux状态管理
+  const dispatch = useDispatch();
+  const { data: contentData, loading: contentLoading } = useSelector((state: RootState) => state.content);
+  
   const [soundEffects, setSoundEffects] = useState<SoundEffect[]>([]);
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
+  const contentInitialized = useRef(false);
+
+  // 内容数据初始化 - 软件启动时执行一次
+  useEffect(() => {
+    if (!contentInitialized.current && !contentData && !contentLoading) {
+      console.log('🏠 [MainLayout] 软件启动检测');
+      console.log('📊 [MainLayout] 当前状态 - 数据:', !!contentData, '加载中:', contentLoading, '已初始化:', contentInitialized.current);
+      console.log('🚀 [MainLayout] 开始初始化内容数据...');
+      contentInitialized.current = true;
+      
+      // 直接获取最新数据，失败时自动fallback到缓存（在contentSlice中处理）
+      dispatch(fetchContentData());
+    } else {
+      console.log('🏠 [MainLayout] 跳过数据初始化');
+      console.log('📊 [MainLayout] 当前状态 - 数据:', !!contentData, '加载中:', contentLoading, '已初始化:', contentInitialized.current);
+    }
+  }, [dispatch, contentData, contentLoading]);
 
   // 加载音效配置
   useEffect(() => {

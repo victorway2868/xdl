@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store/store';
 import { fetchSoftwareVersion } from '../store/features/softwareSlice';
 import { fetchDouyinUserInfo, logout, loginWithDouyinWeb, loginWithDouyinCompanion } from '../store/features/user/userSlice';
-import { fetchContentData, loadCachedData } from '../store/features/contentSlice';
 import { User, Copy, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import LoginModal from '../components/LoginModal';
@@ -18,8 +17,21 @@ const HomePage = () => {
   // Global state from Redux
   const { checks } = useSelector((state: RootState) => state.software);
   const { douyinUserInfo, isLoggedIn, loading: userLoading, error: userError } = useSelector((state: RootState) => state.user);
-  // 内容数据状态
+  // 内容数据状态 - 现在由MainLayout统一管理
   const { data: contentData, loading: contentLoading } = useSelector((state: RootState) => state.content);
+
+  // 页面加载时记录数据来源
+  useEffect(() => {
+    console.log('🏡 [HomePage] 页面加载');
+    if (contentData) {
+      console.log('📊 [HomePage] 从Redux状态获取数据');
+      console.log('📋 [HomePage] 可用数据分类:', Object.keys(contentData));
+    } else if (contentLoading) {
+      console.log('⏳ [HomePage] 数据正在加载中...');
+    } else {
+      console.log('❌ [HomePage] 没有可用数据');
+    }
+  }, [contentData, contentLoading]);
 
   // Local component state
 
@@ -61,39 +73,7 @@ const HomePage = () => {
     }
   }, [dispatch, douyinUserInfo]);
 
-  // 单独的 effect 处理内容数据获取
-  useEffect(() => {
-    // 检查是否已经有数据
-    if (contentData) {
-      console.log('HomePage 已有数据，无需重新获取');
-      return;
-    }
-
-    // 检查是否正在加载
-    if (contentLoading) {
-      console.log('HomePage 数据正在加载中...');
-      return;
-    }
-
-    // 检查缓存时间戳，避免频繁请求
-    const lastFetched = localStorage.getItem('contentDataTimestamp');
-    if (lastFetched) {
-      const timeDiff = Date.now() - parseInt(lastFetched);
-      const oneMinute = 60 * 1000; // 1分钟内不重复请求
-      if (timeDiff < oneMinute) {
-        console.log('HomePage 1分钟内已获取过数据，跳过请求');
-        // 尝试加载缓存数据
-        dispatch(loadCachedData());
-        return;
-      }
-    }
-
-    console.log('HomePage 开始获取内容数据...');
-    // 首先尝试加载缓存数据
-    dispatch(loadCachedData());
-    // 然后获取最新数据
-    dispatch(fetchContentData());
-  }, [dispatch, contentData, contentLoading]);
+  // 注意：内容数据获取逻辑已移至MainLayout统一管理
 
   // 监听认证/状态通知（可选增强）
   useEffect(() => {
@@ -272,7 +252,7 @@ const HomePage = () => {
         // 2) 配置 OBS 推流参数
         const setRes = await window.electronAPI.setOBSStreamSettings(info.streamUrl, info.streamKey);
         if (!setRes?.success) {
-          setError(`OBS 参数设置失败: ${setRes?.message || '未知错误'}`);
+          setError(`OBS 参数设置失败: ${setRes?.error || '未知错误'}`);
           // 此时 UI 已显示推流码，仅在错误区域提示 OBS 问题
           setIsLoading(false);
           return; // 流程中断，但 UI 保持显示推流码
@@ -281,7 +261,7 @@ const HomePage = () => {
         // 3) 启动 OBS 推流
         const startRes = await window.electronAPI.startOBSStreaming();
         if (!startRes?.success) {
-          setError(`OBS 启动推流失败: ${startRes?.message || '未知错误'}`);
+                      setError(`OBS 启动推流失败: ${startRes?.error || '未知错误'}`);
           setIsLoading(false);
           return;
         }
@@ -297,7 +277,7 @@ const HomePage = () => {
         return;
       }
 
-      // 手机开播：前端开启轮询（在拿到推流码前，按钮保持“获取中...”）
+      // 手机开播：前端开启轮询（在拿到推流码前，按钮保持"获取中..."）
       startPolling();
     } catch (e: any) {
       setError(e?.message || String(e));
@@ -314,7 +294,7 @@ const HomePage = () => {
       stopPolling();
 
       if (streamMethod === '直播伴侣') {
-        // 1) 触发直播伴侣的“结束直播”热键（Shift+L）
+        // 1) 触发直播伴侣的"结束直播"热键（Shift+L）
         try {
           const hkRes = await window.electronAPI.endLiveHotkey();
           if (!hkRes?.success) {
@@ -382,10 +362,7 @@ const HomePage = () => {
     setIsContentModalOpen(true);
   };
 
-  const refreshContent = () => {
-    console.log('手动刷新内容数据...');
-    dispatch(fetchContentData());
-  };
+  // 注意：手动刷新功能已移除，数据由MainLayout统一管理
 
 
   return (
@@ -404,13 +381,13 @@ const HomePage = () => {
             <button onClick={() => navigate('/app/obs-config')} className="btn-base btn-ghost" style={{ padding: '4px 8px', fontSize: '12px' }}>OBS一键配置</button>
             <div className="version-info">
               <span>OBS:</span>
-              <span className={`version-number ${obsVersion === '未检测到' ? '' : ''}`} style={{ color: obsVersion === '未检测到' ? '#fca5a5' : '#fbbf24', marginLeft: '4px' }}>
+              <span className="version-number" style={{ color: obsVersion === '未检测到' ? '#fca5a5' : '#fbbf24', marginLeft: '4px' }}>
                 {obsVersion}
               </span>
             </div>
             <div className="version-info">
               <span>伴侣:</span>
-              <span className={`version-number ${companionVersion === '未检测到' ? '' : ''}`} style={{ color: companionVersion === '未检测到' ? '#fca5a5' : '#fbbf24', marginLeft: '4px' }}>
+              <span className="version-number" style={{ color: companionVersion === '未检测到' ? '#fca5a5' : '#fbbf24', marginLeft: '4px' }}>
                 {companionVersion}
               </span>
             </div>
@@ -702,7 +679,7 @@ const HomePage = () => {
           <>
             {recommendedWorks.length === 0 ? (
               <div style={{ textAlign: 'center', color: '#9ca3af', padding: '32px 0' }}>
-                <div style={{ fontSize: '24px', marginBottom: '8px' }}>🔥</div>
+                <div style={{ fontSize: '24px', marginBottom: '8px' }}></div>
                 <p>暂无热门推荐</p>
 
               </div>
@@ -760,17 +737,19 @@ const HomePage = () => {
         }}
       />
 
-      <style>
-        {`
+      <style dangerouslySetInnerHTML={{
+        __html: `
           @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
           }
-        `}
-      </style>
+        `
+      }} />
 
     </div>
   );
 };
 
 export default HomePage;
+
+
