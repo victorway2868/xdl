@@ -173,6 +173,23 @@ textarea {
   box-shadow: 0 0 0 3px var(--border-secondary);
 }
 
+/* 选择框选项样式 */
+.theme-select option {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 0.5rem 0.75rem;
+}
+
+/* 暗色主题下的选择框选项优化 */
+.dark .theme-select {
+  background-color: var(--bg-secondary);
+}
+
+.dark .theme-select option {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
 .theme-label {
   color: var(--text-secondary);
   font-weight: 500;

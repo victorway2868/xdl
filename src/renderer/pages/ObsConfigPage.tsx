@@ -247,7 +247,7 @@ function ObsConfigPage() {
 
       {/* Device Selection Area */}
       <div className="mt-6 flex flex-col md:flex-row gap-8">
-        <div className="flex-1 theme-card-elevated p-6 rounded-lg">
+        <div className="flex-1 theme-card-secondary p-6 rounded-lg">
           <h3 className="text-lg font-semibold mb-4 theme-text-primary">设备选择</h3>
           <div className="flex flex-col gap-4">
           {deviceType === 'tablet' && (
@@ -315,8 +315,9 @@ function ObsConfigPage() {
         </div>
 
         {/* Preview Box */}
-        <div className="flex items-center justify-center md:w-1/3 theme-card-elevated p-6 rounded-lg">
-          <h3 className="text-lg font-semibold mb-4 theme-text-primary absolute top-6 left-6">设备预览</h3>
+        <div className="md:w-1/3 theme-card-secondary p-6 rounded-lg">
+          <h3 className="text-lg font-semibold mb-4 theme-text-primary">设备预览</h3>
+          <div className="flex items-center justify-center h-48">
           {selectedDevice ? (
             <div className={`theme-card rounded-lg flex flex-col items-center justify-center p-4 transition-colors ${deviceType === 'phone' ? 'w-[100px] h-[180px]' : 'w-[240px] h-[180px]'}`}>
               <div className="text-center w-full overflow-hidden px-2">
@@ -326,11 +327,12 @@ function ObsConfigPage() {
               </div>
             </div>
           ) : <div className="theme-text-muted text-sm">请选择设备以查看预览</div>}
+          </div>
         </div>
       </div>
 
       {/* Action Area */}
-      <div className="theme-card-elevated p-6 rounded-lg mt-6 space-y-6">
+      <div className="theme-card-secondary p-6 rounded-lg mt-6 space-y-6">
         {/* 一键配置 */}
         <div>
           <h3 className="text-lg font-semibold mb-4 theme-text-primary">配置操作</h3>
@@ -366,7 +368,7 @@ function ObsConfigPage() {
               <button 
                 onClick={handleBackupConfig} 
                 disabled={backupStatus === 'backing-up'}
-                className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                className="w-full px-4 py-2 theme-btn-secondary rounded-md disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 {backupStatus === 'backing-up' ? '备份中...' : '备份当前配置'}
               </button>
@@ -384,7 +386,7 @@ function ObsConfigPage() {
                   <select 
                     value={selectedBackup} 
                     onChange={(e) => setSelectedBackup(e.target.value)}
-                    className="w-full bg-gray-700 border border-gray-600 rounded-md py-1 px-2 text-gray-300 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="w-full theme-select text-xs"
                   >
                     <option value="">选择备份文件</option>
                     {availableBackups.map((backup, index) => (
@@ -397,7 +399,7 @@ function ObsConfigPage() {
                 <button 
                   onClick={handleRestoreConfig} 
                   disabled={restoreStatus === 'restoring' || availableBackups.length === 0}
-                  className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-md transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed text-sm"
+                  className="w-full px-4 py-2 theme-btn-secondary rounded-md disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   {restoreStatus === 'restoring' ? '恢复中...' : '恢复配置'}
                 </button>
@@ -408,8 +410,8 @@ function ObsConfigPage() {
                 </p>
               )}
               {restoreSteps.length > 0 && (
-                <div className="mt-2 border border-gray-700 rounded-md p-2 bg-gray-900/50 space-y-1">
-                  <h5 className="text-xs font-medium text-gray-300 mb-1">恢复步骤:</h5>
+                <div className="mt-2 theme-card-secondary rounded-md p-2 space-y-1">
+                  <h5 className="text-xs font-medium theme-text-secondary mb-1">恢复步骤:</h5>
                   {restoreSteps.map((step, index) => (
                     <div key={index} className="flex items-start text-xs">
                       <span className={`mr-1 ${step.success ? 'text-green-400' : 'text-red-400'}`}>
@@ -426,7 +428,7 @@ function ObsConfigPage() {
                 </div>
               )}
               {availableBackups.length === 0 && (
-                <p className="text-xs text-gray-500 mt-2">未找到备份文件</p>
+                <p className="text-xs theme-text-muted mt-2">未找到备份文件</p>
               )}
             </div>
           </div>

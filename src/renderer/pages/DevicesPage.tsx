@@ -6,11 +6,9 @@ import ContentCard from '../components/common/ContentCard';
 import ContentModal from '../components/common/ContentModal';
 import VideoModal from '../components/common/VideoModal';
 import { Smartphone } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import '../styles/themes.css';
 
 const DevicesPage: React.FC = () => {
-  const navigate = useNavigate();
 
   const { data, loading, error } = useSelector((state: RootState) => state.content);
   
@@ -74,7 +72,7 @@ const DevicesPage: React.FC = () => {
             加载失败: {error}
           </p>
           <button
-            onClick={refresh}
+            onClick={() => window.location.reload()}
             className="bg-red-500 hover:bg-red-600 text-white border-none rounded-lg px-5 py-2.5 text-sm font-medium cursor-pointer transition-colors"
           >
             重试
@@ -88,13 +86,6 @@ const DevicesPage: React.FC = () => {
         </div>
       ) : (
         <>
-          {/* 统计信息 */}
-          <div className="mb-6 py-4 px-5 theme-card-contrast rounded-xl">
-            <p className="m-0 text-purple-300 dark:text-purple-400 text-sm">
-              共找到 <strong>{devices.length}</strong> 个设备推荐
-            </p>
-          </div>
-
           {/* 设备网格 */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-10">
             {devices.map((device) => (

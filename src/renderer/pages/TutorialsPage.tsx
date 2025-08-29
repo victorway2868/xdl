@@ -6,11 +6,9 @@ import ContentCard from '../components/common/ContentCard';
 import ContentModal from '../components/common/ContentModal';
 import VideoModal from '../components/common/VideoModal';
 import { BookOpen } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import '../styles/themes.css';
 
 const TutorialsPage: React.FC = () => {
-  const navigate = useNavigate();
 
   // 只读取数据，不进行任何数据获取操作
   const { data, loading, error } = useSelector((state: RootState) => state.content);
@@ -115,13 +113,6 @@ const TutorialsPage: React.FC = () => {
         </div>
       ) : (
         <>
-          {/* 统计信息 */}
-          <div className="mb-6 py-4 px-5 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
-            <p className="m-0 text-blue-300 dark:text-blue-400 text-sm">
-              共找到 <strong>{tutorials.length}</strong> 个教程
-            </p>
-          </div>
-
           {/* 教程网格 */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-10">
             {tutorials.map((tutorial) => (
