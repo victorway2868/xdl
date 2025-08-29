@@ -33,15 +33,17 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({
     }
   }, []);
 
-  // 应用Tailwind暗色模式类
+  // 应用Tailwind暗色模式类和数据属性
   useEffect(() => {
     localStorage.setItem('app-theme', themeType);
 
     // 使用Tailwind的暗色模式类
     if (themeType === 'dark') {
       document.documentElement.classList.add('dark');
+      document.documentElement.setAttribute('data-theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
     }
   }, [themeType]);
 

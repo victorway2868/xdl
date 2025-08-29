@@ -5,8 +5,9 @@ import { RootState } from '../store/store';
 import ContentCard from '../components/common/ContentCard';
 import ContentModal from '../components/common/ContentModal';
 import VideoModal from '../components/common/VideoModal';
-import { ArrowLeft, Puzzle } from 'lucide-react';
+import { Puzzle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import '../styles/themes.css';
 
 const PluginsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -46,55 +47,13 @@ const PluginsPage: React.FC = () => {
   const plugins = data?.OBSPlugins || [];
 
   return (
-    <div style={{ 
-      padding: '24px', 
-      minHeight: '100vh',
-      backgroundColor: '#0F172A',
-      color: '#F1F5F9'
-    }}>
+    <div className="p-6 theme-page transition-colors duration-300">
       {/* 头部 */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between',
-        marginBottom: '32px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button
-            onClick={() => navigate('/app')}
-            style={{
-              backgroundColor: 'transparent',
-              border: '1px solid rgba(148, 163, 184, 0.3)',
-              borderRadius: '8px',
-              padding: '8px',
-              color: '#94A3B8',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              transition: 'all 0.2s ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(148, 163, 184, 0.1)';
-              e.currentTarget.style.color = '#F1F5F9';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.color = '#94A3B8';
-            }}
-          >
-            <ArrowLeft size={20} />
-          </button>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Puzzle size={28} color="#10B981" />
-            <h1 style={{ 
-              fontSize: '28px', 
-              fontWeight: '700', 
-              margin: 0,
-              background: 'linear-gradient(to right, #10B981, #3B82F6)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}>
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <Puzzle size={28} className="text-emerald-500" />
+            <h1 className="text-3xl font-bold m-0 bg-gradient-to-r from-emerald-500 to-blue-500 bg-clip-text text-transparent">
               OBS插件
             </h1>
           </div>
@@ -105,87 +64,39 @@ const PluginsPage: React.FC = () => {
 
       {/* 内容区域 */}
       {loading && !data ? (
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: 'column',
-          alignItems: 'center', 
-          justifyContent: 'center',
-          minHeight: '400px',
-          gap: '16px'
-        }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '3px solid rgba(16, 185, 129, 0.3)',
-            borderTop: '3px solid #10B981',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite'
-          }} />
-          <p style={{ color: '#94A3B8', fontSize: '16px' }}>正在加载插件数据...</p>
+        <div className="flex flex-col items-center justify-center min-h-96 gap-4">
+          <div className="w-10 h-10 border-3 border-emerald-300 border-t-emerald-500 rounded-full animate-spin" />
+          <p className="text-gray-500 dark:text-gray-400 text-base">正在加载插件数据...</p>
         </div>
       ) : error && !data ? (
-        <div style={{ 
-          textAlign: 'center', 
-          padding: '60px 20px',
-          backgroundColor: 'rgba(239, 68, 68, 0.1)',
-          border: '1px solid rgba(239, 68, 68, 0.2)',
-          borderRadius: '12px'
-        }}>
-          <p style={{ color: '#FCA5A5', fontSize: '16px', marginBottom: '16px' }}>
+        <div className="text-center py-15 px-5 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
+          <p className="text-red-400 dark:text-red-300 text-base mb-4">
             加载失败: {error}
           </p>
           <button
             onClick={refresh}
-            style={{
-              backgroundColor: '#EF4444',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '10px 20px',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer',
-            }}
+            className="bg-red-500 hover:bg-red-600 text-white border-none rounded-lg px-5 py-2.5 text-sm font-medium cursor-pointer transition-colors"
           >
             重试
           </button>
         </div>
       ) : plugins.length === 0 ? (
-        <div style={{ 
-          textAlign: 'center', 
-          padding: '60px 20px',
-          color: '#94A3B8'
-        }}>
-          <Puzzle size={48} style={{ margin: '0 auto 16px', opacity: 0.5 }} />
-          <p style={{ fontSize: '18px', marginBottom: '8px' }}>暂无插件内容</p>
-          <p style={{ fontSize: '14px' }}>请稍后再试或联系管理员</p>
+        <div className="text-center py-15 px-5 text-gray-500 dark:text-gray-400">
+          <Puzzle size={48} className="mx-auto mb-4 opacity-50" />
+          <p className="text-lg mb-2">暂无插件内容</p>
+          <p className="text-sm">请稍后再试或联系管理员</p>
         </div>
       ) : (
         <>
           {/* 统计信息 */}
-          <div style={{ 
-            marginBottom: '24px',
-            padding: '16px 20px',
-            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-            border: '1px solid rgba(16, 185, 129, 0.2)',
-            borderRadius: '12px'
-          }}>
-            <p style={{ 
-              margin: 0, 
-              color: '#6EE7B7', 
-              fontSize: '14px' 
-            }}>
+          <div className="mb-6 py-4 px-5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl">
+            <p className="m-0 text-emerald-300 dark:text-emerald-400 text-sm">
               共找到 <strong>{plugins.length}</strong> 个插件
             </p>
           </div>
 
           {/* 插件网格 */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: '24px',
-            marginBottom: '40px'
-          }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-10">
             {plugins.map((plugin) => (
               <ContentCard
                 key={plugin.id}

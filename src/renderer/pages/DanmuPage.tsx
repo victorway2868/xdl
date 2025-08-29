@@ -1,12 +1,14 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { ArrowLeft, Play, Square, Wifi, WifiOff, Gift, Heart, Users, MessageCircle, ThumbsUp, Crown, Settings, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Play, Square, Wifi, WifiOff, Gift, Heart, Users, MessageCircle, ThumbsUp, Crown, Settings, X } from 'lucide-react';
+
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../store/store';
 import { connect, disconnect, setRoomNum as setStoreRoomNum, Message } from '../store/features/danmakuSlice';
 
+import TitleBar from '../components/layout/TitleBar';
+import '../styles/themes.css';
+
 const DanmuPage = () => {
-  const navigate = useNavigate();
   const dispatch: AppDispatch = useDispatch();
 
   // 从Redux store中获取状态
@@ -124,120 +126,90 @@ const DanmuPage = () => {
   const StatusIcon = statusDisplay.icon;
 
   return (
-    <div className="h-[calc(100vh-40px)] bg-gray-900 text-white flex flex-col overflow-hidden">
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-          margin: 0;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #64748b;
-          border-radius: 1px;
-          margin: 0;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #94a3b8;
-        }
-        .custom-scrollbar::-webkit-scrollbar-corner {
-          background: transparent;
-        }
-        .custom-scrollbar {
-          scrollbar-width: thin;
-          scrollbar-color: #64748b transparent;
-          margin-right: 0;
-          padding-right: 0;
-        }
-      `}</style>
+    <div className="h-screen flex flex-col overflow-hidden bg-white dark:bg-slate-900 text-slate-800 dark:text-white transition-colors duration-300">
+      <TitleBar />
+      
       {/* 顶部导航栏 */}
-      <div className="flex items-center justify-between px-4 py-3 flex-shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 flex-shrink-0 bg-slate-100 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-600">
         <div className="flex items-center">
-          <button
-            onClick={() => navigate('/app')}
-            className="flex items-center text-gray-300 hover:text-white transition-colors mr-4"
-          >
-            <ArrowLeft size={20} className="mr-2" />
-            返回主页
-          </button>
           <div className="flex items-center space-x-4 text-sm">
             <label className="flex items-center cursor-pointer text-blue-400 hover:text-blue-300 transition-colors">
-              <input type="checkbox" checked={messageFilters.chat} onChange={(e) => handleFilterChange('chat', e.target.checked)} className="mr-2 w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500" />
+              <input type="checkbox" checked={messageFilters.chat} onChange={(e) => handleFilterChange('chat', e.target.checked)} className="mr-2 w-4 h-4 text-blue-600 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500" />
               <MessageCircle size={16} className="mr-1" />
               聊天: {messageStats.chatCount}
             </label>
             <label className="flex items-center cursor-pointer text-pink-400 hover:text-pink-300 transition-colors">
-              <input type="checkbox" checked={messageFilters.gift} onChange={(e) => handleFilterChange('gift', e.target.checked)} className="mr-2 w-4 h-4 text-pink-600 bg-gray-700 border-gray-600 rounded focus:ring-pink-500" />
+              <input type="checkbox" checked={messageFilters.gift} onChange={(e) => handleFilterChange('gift', e.target.checked)} className="mr-2 w-4 h-4 text-pink-600 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded focus:ring-pink-500" />
               <Gift size={16} className="mr-1" />
               礼物: {messageStats.giftCount}
             </label>
             <label className="flex items-center cursor-pointer text-red-400 hover:text-red-300 transition-colors">
-              <input type="checkbox" checked={messageFilters.follow} onChange={(e) => handleFilterChange('follow', e.target.checked)} className="mr-2 w-4 h-4 text-red-600 bg-gray-700 border-gray-600 rounded focus:ring-red-500" />
+              <input type="checkbox" checked={messageFilters.follow} onChange={(e) => handleFilterChange('follow', e.target.checked)} className="mr-2 w-4 h-4 text-red-600 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded focus:ring-red-500" />
               <Heart size={16} className="mr-1" />
               关注: {messageStats.followCount}
             </label>
             <label className="flex items-center cursor-pointer text-yellow-400 hover:text-yellow-300 transition-colors">
-              <input type="checkbox" checked={messageFilters.like} onChange={(e) => handleFilterChange('like', e.target.checked)} className="mr-2 w-4 h-4 text-yellow-600 bg-gray-700 border-gray-600 rounded focus:ring-yellow-500" />
+              <input type="checkbox" checked={messageFilters.like} onChange={(e) => handleFilterChange('like', e.target.checked)} className="mr-2 w-4 h-4 text-yellow-600 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded focus:ring-yellow-500" />
               <ThumbsUp size={16} className="mr-1" />
               点赞: {messageStats.likeActionCount}
             </label>
             <label className="flex items-center cursor-pointer text-green-400 hover:text-green-300 transition-colors">
-              <input type="checkbox" checked={messageFilters.member} onChange={(e) => handleFilterChange('member', e.target.checked)} className="mr-2 w-4 h-4 text-green-600 bg-gray-700 border-gray-600 rounded focus:ring-green-500" />
+              <input type="checkbox" checked={messageFilters.member} onChange={(e) => handleFilterChange('member', e.target.checked)} className="mr-2 w-4 h-4 text-green-600 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded focus:ring-green-500" />
               <Users size={16} className="mr-1" />
               进入: {messageStats.memberCount}
             </label>
           </div>
         </div>
-        <div className="flex items-center">
-          <button onClick={() => setShowSettings(true)} className="flex items-center text-gray-300 hover:text-white transition-colors px-3 py-2 rounded-md hover:bg-slate-700" title="设置">
+        <div className="flex items-center space-x-2">
+          <button onClick={() => setShowSettings(true)} className="flex items-center text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors px-3 py-2 rounded-md hover:bg-gray-200 dark:hover:bg-slate-700" title="设置">
             <Settings size={20} />
           </button>
         </div>
       </div>
 
       {/* 主要内容区域 */}
-      <div className="flex-1 grid grid-cols-12 gap-4 min-h-0 overflow-hidden px-4 pb-4">
+      <div className="flex-1 grid grid-cols-12 gap-6 min-h-0 overflow-hidden p-6">
         <div className="col-span-3 flex flex-col space-y-4 h-full overflow-hidden">
-          <div className="bg-slate-800 rounded-lg p-4">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm p-4">
             <div className="text-center mb-4">
-              <div className="w-16 h-16 bg-gray-600 rounded-full mx-auto mb-2 flex items-center justify-center">
-                {roomInfo.avatar ? <img src={roomInfo.avatar} alt="头像" className="w-full h-full rounded-full" /> : <span className="text-gray-400">头像</span>}
+              <div className="w-16 h-16 bg-slate-200 dark:bg-slate-600 rounded-full mx-auto mb-2 flex items-center justify-center border border-slate-300 dark:border-slate-500">
+                {roomInfo.avatar ? <img src={roomInfo.avatar} alt="头像" className="w-full h-full rounded-full" /> : <span className="text-slate-500 dark:text-slate-400">头像</span>}
               </div>
-              <h3 className="font-medium">{roomInfo.nickname}</h3>
-              <p className="text-sm text-gray-400 truncate">{roomInfo.title}</p>
+              <h3 className="font-medium text-slate-800 dark:text-white">{roomInfo.nickname}</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{roomInfo.title}</p>
             </div>
+            <div className="border-b border-slate-200 dark:border-slate-700 my-4"></div>
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <div className="text-center"><div className="text-gray-400">关注</div><div className="font-medium">{roomInfo.followCount}</div></div>
-              <div className="text-center"><div className="text-gray-400">观众</div><div className="font-medium">{roomInfo.memberCount}</div></div>
-              <div className="text-center"><div className="text-gray-400">总观看</div><div className="font-medium">{roomInfo.userCount}</div></div>
-              <div className="text-center"><div className="text-gray-400">点赞</div><div className="font-medium">{roomInfo.likeCount}</div></div>
+              <div className="text-center"><div className="text-slate-600 dark:text-slate-300">关注</div><div className="font-medium text-slate-800 dark:text-white">{roomInfo.followCount}</div></div>
+              <div className="text-center"><div className="text-slate-600 dark:text-slate-300">观众</div><div className="font-medium text-slate-800 dark:text-white">{roomInfo.memberCount}</div></div>
+              <div className="text-center"><div className="text-slate-600 dark:text-slate-300">总观看</div><div className="font-medium text-slate-800 dark:text-white">{roomInfo.userCount}</div></div>
+              <div className="text-center"><div className="text-slate-600 dark:text-slate-300">点赞</div><div className="font-medium text-slate-800 dark:text-white">{roomInfo.likeCount}</div></div>
             </div>
           </div>
-          <div className="bg-slate-800 rounded-lg p-2 flex-1 flex flex-col min-h-0 overflow-hidden">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-medium flex items-center"><Crown size={18} className="mr-2 text-purple-400" />观众榜</h3>
-              <span className="text-sm text-gray-400">{audienceList.length} 人</span>
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-medium flex items-center text-slate-800 dark:text-white"><Crown size={18} className="mr-2 text-purple-400" />观众榜</h3>
+              <span className="text-sm text-slate-500 dark:text-slate-400">{audienceList.length} 人</span>
             </div>
             <div className="flex-1 overflow-y-auto space-y-1 min-h-0 custom-scrollbar">
               {audienceList.slice(0, 100).map((audience, index) => (
-                <div key={`audience-${audience.nickname || 'anonymous'}-${audience.rank || index + 1}-${index}`} className="text-sm text-gray-300">
+                <div key={`audience-${audience.nickname || 'anonymous'}-${audience.rank || index + 1}-${index}`} className="text-sm text-slate-600 dark:text-slate-300">
                   {audience.rank || index + 1}. {audience.nickname || '匿名观众'}
                 </div>
               ))}
-              {audienceList.length === 0 && <div className="text-center text-gray-500 py-8">暂无观众数据</div>}
+              {audienceList.length === 0 && <div className="text-center text-slate-500 dark:text-slate-400 py-8">暂无观众数据</div>}
             </div>
           </div>
         </div>
 
         <div className="col-span-6 flex flex-col h-full overflow-hidden">
-          <div className="bg-slate-800 rounded-lg p-2 flex-1 flex flex-col min-h-0 overflow-hidden">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-lg font-medium flex items-center"><MessageCircle size={18} className="mr-2 text-blue-400" />弹幕消息</h3>
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-medium flex items-center text-slate-800 dark:text-white"><MessageCircle size={18} className="mr-2 text-blue-400" />弹幕消息</h3>
               <div className="flex items-center space-x-4 text-sm">
                 <span className="text-blue-400">聊天: {messageStats.chatCount}</span>
                 <span className="text-pink-400">礼物: {messageStats.giftCount}</span>
-                <span className="text-gray-400">显示: {filteredAllMessages.length}</span>
+                <span className="text-slate-600 dark:text-slate-400">显示: {filteredAllMessages.length}</span>
               </div>
             </div>
             <div ref={allMessagesScrollRef} className="flex-1 overflow-y-auto space-y-1 min-h-0 custom-scrollbar">
@@ -245,53 +217,61 @@ const DanmuPage = () => {
                 <div key={msg.id} className="flex items-start space-x-1.5">
                   {msg.type === 'chat' ? (
                     <>
-                      <div className="w-6 h-6 bg-blue-500 rounded-full flex-shrink-0 flex items-center justify-center text-xs">{msg.user.name[0]}</div>
+                      <div className="w-6 h-6 bg-blue-100 dark:bg-blue-500 text-blue-600 dark:text-white rounded-full flex-shrink-0 flex items-center justify-center text-xs">{msg.user.name[0]}</div>
                       <div className="flex-1">
                         <div className="flex items-center space-x-1.5">
                           <span className="text-blue-400 text-sm font-medium">{msg.user.name}</span>
-                          <span className="text-gray-500 text-xs">{new Date(msg.time).toLocaleTimeString()}</span>
+                          <span className="text-slate-500 dark:text-slate-400 text-xs">{new Date(msg.time).toLocaleTimeString()}</span>
                         </div>
-                        <div className="text-white">{msg.content}</div>
+                        <div className="text-slate-800 dark:text-white">{msg.content}</div>
                       </div>
                     </>
                   ) : msg.type === 'gift' ? (
                     <>
-                      <div className="w-6 h-6 bg-pink-500 rounded-full flex-shrink-0 flex items-center justify-center text-xs"><Gift size={12} /></div>
+                      <div className="w-6 h-6 bg-pink-100 dark:bg-pink-500 text-pink-600 dark:text-white rounded-full flex-shrink-0 flex items-center justify-center text-xs"><Gift size={12} /></div>
                       <div className="flex-1">
                         <div className="flex items-center space-x-1.5">
                           <span className="text-pink-400 text-sm font-medium">{msg.user.name}</span>
-                          <span className="text-gray-500 text-xs">{new Date(msg.time).toLocaleTimeString()}</span>
+                          <span className="text-slate-500 dark:text-slate-400 text-xs">{new Date(msg.time).toLocaleTimeString()}</span>
                         </div>
-                        <div className="text-white">送出了 <span className="text-pink-300">{msg.gift.name}</span> x{msg.gift.count}<span className="text-yellow-400 ml-2">({msg.gift.price} 抖币)</span></div>
+                        <div className="text-slate-800 dark:text-white">送出了 <span className="text-pink-300">{msg.gift.name}</span> x{msg.gift.count}<span className="text-yellow-400 ml-2">({msg.gift.price} 抖币)</span></div>
                       </div>
                     </>
                   ) : null}
                 </div>
               ))}
-              {filteredAllMessages.length === 0 && <div className="text-center text-gray-500 py-8">{messages.length === 0 ? '暂无弹幕消息' : '没有符合过滤条件的弹幕消息'}</div>}
+              {filteredAllMessages.length === 0 && <div className="text-center text-slate-500 dark:text-slate-400 py-8">{messages.length === 0 ? '暂无弹幕消息' : '没有符合过滤条件的弹幕消息'}</div>}
             </div>
           </div>
         </div>
 
         <div className="col-span-3 flex flex-col h-full overflow-hidden">
-          <div className="bg-slate-800 rounded-lg p-2 flex-1 flex flex-col min-h-0 overflow-hidden">
-            <div className="flex items-center mb-2"><h3 className="text-lg font-medium flex items-center"><Users size={18} className="mr-2 text-green-400" />社交信息</h3></div>
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
+            <div className="flex items-center mb-3"><h3 className="text-lg font-medium flex items-center text-slate-800 dark:text-white"><Users size={18} className="mr-2 text-green-400" />社交信息</h3></div>
             <div ref={socialMessagesScrollRef} className="flex-1 overflow-y-auto space-y-1 min-h-0 custom-scrollbar">
                             {filteredSocialMessages.map((msg: Message) => (
                 <div key={msg.id} className="flex items-start space-x-1.5">
-                  <div className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-xs ${msg.type === 'follow' ? 'bg-red-500' : msg.type === 'like' ? 'bg-yellow-500' : msg.type === 'member' ? 'bg-green-500' : 'bg-gray-500'}`}>
+                  <div className={`w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-xs ${
+                    msg.type === 'follow' 
+                      ? 'bg-red-100 dark:bg-red-500 text-red-600 dark:text-white'
+                      : msg.type === 'like' 
+                      ? 'bg-yellow-100 dark:bg-yellow-500 text-yellow-600 dark:text-white'
+                      : msg.type === 'member' 
+                      ? 'bg-green-100 dark:bg-green-500 text-green-600 dark:text-white'
+                      : 'bg-gray-100 dark:bg-gray-500 text-gray-600 dark:text-white'
+                  }`}>
                     {msg.type === 'follow' ? <Heart size={12} /> : msg.type === 'like' ? <ThumbsUp size={12} /> : msg.type === 'member' ? <Users size={12} /> : '?'}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center space-x-1.5">
-                      <span className={`text-sm font-medium ${msg.type === 'follow' ? 'text-red-400' : msg.type === 'like' ? 'text-yellow-400' : msg.type === 'member' ? 'text-green-400' : 'text-gray-400'}`}>{msg.user.name}</span>
-                      <span className="text-gray-500 text-xs">{new Date(msg.time).toLocaleTimeString()}</span>
+                      <span className={`text-sm font-medium ${msg.type === 'follow' ? 'text-red-400' : msg.type === 'like' ? 'text-yellow-400' : msg.type === 'member' ? 'text-green-400' : 'text-slate-400'}`}>{msg.user.name}</span>
+                      <span className="text-slate-500 dark:text-slate-400 text-xs">{new Date(msg.time).toLocaleTimeString()}</span>
                     </div>
-                                        <div className="text-white">{'content' in msg && msg.content}</div>
+                    <div className="text-slate-800 dark:text-white">{'content' in msg && msg.content}</div>
                   </div>
                 </div>
               ))}
-              {filteredSocialMessages.length === 0 && <div className="text-center text-gray-500 py-8">{messages.filter(m => ['follow', 'like', 'member'].includes(m.type)).length === 0 ? '暂无社交消息' : '没有符合过滤条件的社交消息'}</div>}
+              {filteredSocialMessages.length === 0 && <div className="text-center text-slate-500 dark:text-slate-400 py-8">{messages.filter(m => ['follow', 'like', 'member'].includes(m.type)).length === 0 ? '暂无社交消息' : '没有符合过滤条件的社交消息'}</div>}
             </div>
           </div>
         </div>
@@ -300,20 +280,20 @@ const DanmuPage = () => {
       {/* 设置弹窗 */}
       {showSettings && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 rounded-lg p-6 w-96 max-w-[90vw]">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg p-6 w-96 max-w-[90vw]">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium">设置</h3>
-              <button onClick={() => setShowSettings(false)} className="text-gray-400 hover:text-white transition-colors"><X size={20} /></button>
+              <h3 className="text-lg font-medium text-slate-800 dark:text-white">设置</h3>
+              <button onClick={() => setShowSettings(false)} className="text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors"><X size={20} /></button>
             </div>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">房间号</label>
+                <label className="block text-sm font-medium mb-2 text-slate-800 dark:text-white">房间号</label>
                 <input
                   type="text"
                   value={localRoomNum}
                   onChange={(e) => setLocalRoomNum(e.target.value)}
                   placeholder="请输入房间号"
-                  className="w-full bg-slate-700 text-white px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 border border-slate-300 dark:border-slate-600 placeholder-slate-500 dark:placeholder-slate-400"
                 />
               </div>
               <div className={`flex items-center text-sm ${statusDisplay.color}`}>
@@ -322,11 +302,11 @@ const DanmuPage = () => {
               </div>
               <div className="flex space-x-2">
                 {connectStatus === 1 ? (
-                  <button onClick={disconnectLive} className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md transition-colors flex items-center justify-center">
+                  <button onClick={disconnectLive} className="flex-1 bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white px-4 py-2 rounded-md transition-colors flex items-center justify-center">
                     <Square size={16} className="mr-2" />断开
                   </button>
                 ) : (
-                  <button onClick={connectLive} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors flex items-center justify-center">
+                  <button onClick={connectLive} className="flex-1 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors flex items-center justify-center">
                     <Play size={16} className="mr-2" />连接
                   </button>
                 )}

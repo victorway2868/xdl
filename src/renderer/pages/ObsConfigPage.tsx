@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+// import { useNavigate } from 'react-router-dom'; // 暂时未使用
+import { Settings } from 'lucide-react';
+import '../styles/themes.css';
 import { tabletModels, phoneModels, Device } from '@renderer/data/deviceModels';
 import { SystemInfo } from '@main/utils/hardwareInfo';
 
@@ -20,6 +22,7 @@ const getAspectRatioFromResolution = (resolution: string): string => {
 
 
 function ObsConfigPage() {
+  // const navigate = useNavigate(); // 暂时未使用
   const [deviceType, setDeviceType] = useState<'tablet' | 'phone' | 'computer' | 'custom'>('tablet');
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
 
@@ -216,42 +219,49 @@ function ObsConfigPage() {
   ));
 
   return (
-    <div className="min-h-full bg-gray-900 text-white p-4 flex flex-col h-full gap-4">
-      {/* Header and Tabs */}
-      <div className="flex border-b border-gray-700">
+    <div className="theme-page p-4 flex flex-col h-full gap-4 transition-colors duration-300">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <Settings size={28} className="text-indigo-500" />
+            <h1 className="text-3xl font-bold m-0 bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
+              OBS配置
+            </h1>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="tab-container">
         {['tablet', 'phone', 'computer', 'custom'].map(type => (
           <button
             key={type}
-            className={`px-6 py-2 text-sm font-medium transition-colors ${
-              deviceType === type
-                ? 'bg-indigo-600 text-white rounded-t-lg'
-                : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-            }`}
+            className={`tab-button ${deviceType === type ? 'tab-active' : ''}`}
             onClick={() => setDeviceType(type as any)}
           >
             { { tablet: '平板', phone: '手机', computer: '电脑', custom: '自定义' }[type] }
           </button>
         ))}
-        <Link to="/app" className="px-6 py-2 text-sm font-medium text-indigo-400 hover:text-indigo-300 ml-auto">
-          返回首页
-        </Link>
       </div>
 
       {/* Device Selection Area */}
-      <div className="mt-4 flex flex-col md:flex-row gap-6">
-        <div className="flex-1 flex flex-col gap-4">
+      <div className="mt-6 flex flex-col md:flex-row gap-8">
+        <div className="flex-1 theme-card-elevated p-6 rounded-lg">
+          <h3 className="text-lg font-semibold mb-4 theme-text-primary">设备选择</h3>
+          <div className="flex flex-col gap-4">
           {deviceType === 'tablet' && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">苹果 iPad:</label>
-                <select value={appleiPadId} onChange={e => handleDeviceSelect(e.target.value, 'apple-tablet')} className="w-full bg-gray-800 border border-gray-700 rounded-md py-2 px-3 text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <label className="theme-label">苹果 iPad:</label>
+                <select value={appleiPadId} onChange={e => handleDeviceSelect(e.target.value, 'apple-tablet')} className="w-full theme-select">
                   <option value="">请选择机型</option>
                   {renderDeviceOptions(tabletModels.filter(d => d.brand === 'Apple'))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">安卓平板:</label>
-                <select value={androidTabletId} onChange={e => handleDeviceSelect(e.target.value, 'android-tablet')} className="w-full bg-gray-800 border border-gray-700 rounded-md py-2 px-3 text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <label className="theme-label">安卓平板:</label>
+                <select value={androidTabletId} onChange={e => handleDeviceSelect(e.target.value, 'android-tablet')} className="w-full theme-select">
                   <option value="">请选择机型</option>
                   {renderDeviceOptions(tabletModels.filter(d => d.brand !== 'Apple'))}
                 </select>
@@ -261,15 +271,15 @@ function ObsConfigPage() {
           {deviceType === 'phone' && (
              <>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">苹果 手机:</label>
-                <select value={applePhoneId} onChange={e => handleDeviceSelect(e.target.value, 'apple-phone')} className="w-full bg-gray-800 border border-gray-700 rounded-md py-2 px-3 text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <label className="theme-label">苹果 手机:</label>
+                <select value={applePhoneId} onChange={e => handleDeviceSelect(e.target.value, 'apple-phone')} className="w-full theme-select">
                   <option value="">请选择机型</option>
                   {renderDeviceOptions(phoneModels.filter(d => d.brand === 'Apple'))}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">安卓 手机:</label>
-                <select value={androidPhoneId} onChange={e => handleDeviceSelect(e.target.value, 'android-phone')} className="w-full bg-gray-800 border border-gray-700 rounded-md py-2 px-3 text-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <label className="theme-label">安卓 手机:</label>
+                <select value={androidPhoneId} onChange={e => handleDeviceSelect(e.target.value, 'android-phone')} className="w-full theme-select">
                   <option value="">请选择机型</option>
                   {renderDeviceOptions(phoneModels.filter(d => d.brand !== 'Apple'))}
                 </select>
@@ -277,62 +287,65 @@ function ObsConfigPage() {
             </>
           )}
           {deviceType === 'computer' && (
-            <div className="p-4 bg-gray-800 rounded-md space-y-3">
-              <h3 className="text-lg font-medium text-indigo-300 mb-4">硬件信息</h3>
+            <div className="theme-card-secondary rounded-md p-4 space-y-3">
+              <h3 className="text-lg font-medium text-indigo-600 dark:text-indigo-300 mb-4">硬件信息</h3>
               {hardwareInfo ? (
                 <>
-                  <div className="flex justify-between items-center"><span className="text-gray-300 text-sm">CPU:</span><span className="text-gray-100 text-sm font-medium">{hardwareInfo.cpu}</span></div>
-                  <div className="flex justify-between items-center"><span className="text-gray-300 text-sm">显卡:</span><span className="text-gray-100 text-sm font-medium">{hardwareInfo.gpu}</span></div>
-                  <div className="flex justify-between items-center"><span className="text-gray-300 text-sm">内存:</span><span className="text-gray-100 text-sm font-medium">{hardwareInfo.memory}</span></div>
-                  <div className="flex justify-between items-center"><span className="text-gray-300 text-sm">主显示器:</span><span className="text-gray-100 text-sm font-medium">{hardwareInfo.resolution}</span></div>
+                  <div className="flex justify-between items-center"><span className="theme-text-secondary text-sm">CPU:</span><span className="theme-text-primary text-sm font-medium">{hardwareInfo.cpu}</span></div>
+                  <div className="flex justify-between items-center"><span className="theme-text-secondary text-sm">显卡:</span><span className="theme-text-primary text-sm font-medium">{hardwareInfo.gpu}</span></div>
+                  <div className="flex justify-between items-center"><span className="theme-text-secondary text-sm">内存:</span><span className="theme-text-primary text-sm font-medium">{hardwareInfo.memory}</span></div>
+                  <div className="flex justify-between items-center"><span className="theme-text-secondary text-sm">主显示器:</span><span className="theme-text-primary text-sm font-medium">{hardwareInfo.resolution}</span></div>
                 </>
               ) : <p>正在加载硬件信息...</p>}
             </div>
           )}
           {deviceType === 'custom' && (
-            <div className="p-4 bg-gray-800 rounded-md space-y-4">
+            <div className="theme-card-secondary rounded-md p-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">设备名称:</label>
-                <input type="text" value={customName} onChange={e => setCustomName(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-gray-300" />
+                <label className="theme-label">设备名称:</label>
+                <input type="text" value={customName} onChange={e => setCustomName(e.target.value)} className="w-full theme-input" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">分辨率 (宽x高):</label>
-                <input type="text" value={customResolution} onChange={e => setCustomResolution(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-gray-300" />
+                <label className="theme-label">分辨率 (宽x高):</label>
+                <input type="text" value={customResolution} onChange={e => setCustomResolution(e.target.value)} className="w-full theme-input" />
               </div>
             </div>
           )}
+          </div>
         </div>
 
         {/* Preview Box */}
-        <div className="flex items-center justify-center md:w-1/3">
+        <div className="flex items-center justify-center md:w-1/3 theme-card-elevated p-6 rounded-lg">
+          <h3 className="text-lg font-semibold mb-4 theme-text-primary absolute top-6 left-6">设备预览</h3>
           {selectedDevice ? (
-            <div className={`border border-gray-600 rounded-lg flex flex-col items-center justify-center p-4 bg-gray-800/50 ${deviceType === 'phone' ? 'w-[100px] h-[180px]' : 'w-[240px] h-[180px]'}`}>
+            <div className={`theme-card rounded-lg flex flex-col items-center justify-center p-4 transition-colors ${deviceType === 'phone' ? 'w-[100px] h-[180px]' : 'w-[240px] h-[180px]'}`}>
               <div className="text-center w-full overflow-hidden px-2">
-                <div className="text-gray-300 text-xs mb-2 truncate">{selectedDevice.brand} ({selectedDevice.os}/{selectedDevice.screenSize})</div>
-                <div className="text-indigo-300 font-semibold text-sm mb-2 truncate">{selectedDevice.name}</div>
-                <div className="text-gray-400 text-xs truncate">{selectedDevice.resolution}</div>
+                <div className="theme-text-secondary text-xs mb-2 truncate">{selectedDevice.brand} ({selectedDevice.os}/{selectedDevice.screenSize})</div>
+                <div className="text-indigo-600 dark:text-indigo-300 font-semibold text-sm mb-2 truncate">{selectedDevice.name}</div>
+                <div className="theme-text-muted text-xs truncate">{selectedDevice.resolution}</div>
               </div>
             </div>
-          ) : <div className="text-gray-500 text-sm">请选择设备以查看预览</div>}
+          ) : <div className="theme-text-muted text-sm">请选择设备以查看预览</div>}
         </div>
       </div>
 
       {/* Action Area */}
-      <div className="bg-gray-800/50 p-4 rounded-lg mt-4 space-y-4">
+      <div className="theme-card-elevated p-6 rounded-lg mt-6 space-y-6">
         {/* 一键配置 */}
         <div>
-          <button onClick={handleConfigureOBS} disabled={!selectedDevice || configStatus === 'configuring'} className="w-full px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed">
+          <h3 className="text-lg font-semibold mb-4 theme-text-primary">配置操作</h3>
+          <button onClick={handleConfigureOBS} disabled={!selectedDevice || configStatus === 'configuring'} className="w-full px-6 py-3 theme-btn-primary rounded-md disabled:opacity-50 disabled:cursor-not-allowed">
             {configStatus === 'configuring' ? '配置中...' : '一键配置OBS'}
           </button>
           {configSteps.length > 0 && (
-            <div className="mt-4 border border-gray-700 rounded-md p-3 bg-gray-900/50 space-y-2">
-              <h4 className="text-sm font-medium text-gray-300 mb-2">配置日志:</h4>
+            <div className="mt-4 theme-card-secondary rounded-md p-4 space-y-2">
+              <h4 className="text-sm font-medium theme-text-secondary mb-2">配置日志:</h4>
               {configSteps.map((step, index) => (
                 <div key={index} className="flex items-start text-xs">
                   <span className={`mr-2 ${step.success ? 'text-green-400' : 'text-red-400'}`}>{step.success ? '✔' : '✖'}</span>
                   <div className="flex-1">
                     <span className={`font-semibold ${step.success ? 'text-green-400' : 'text-red-400'}`}>{step.name}</span>
-                    {step.message && <p className="text-gray-400 mt-0.5">{step.message}</p>}
+                    {step.message && <p className="theme-text-muted mt-0.5">{step.message}</p>}
                   </div>
                 </div>
               ))}
@@ -343,8 +356,9 @@ function ObsConfigPage() {
         </div>
 
         {/* 备份和恢复 */}
-        <div className="border-t border-gray-700 pt-4">
-          <h3 className="text-sm font-medium text-gray-300 mb-3">配置备份与恢复</h3>
+        <div className="theme-divider"></div>
+        <div>
+          <h3 className="text-lg font-semibold mb-4 theme-text-primary">配置备份与恢复</h3>
           
           {/* 备份区域 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -352,7 +366,7 @@ function ObsConfigPage() {
               <button 
                 onClick={handleBackupConfig} 
                 disabled={backupStatus === 'backing-up'}
-                className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors disabled:bg-gray-600 disabled:cursor-not-allowed text-sm"
+                className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 {backupStatus === 'backing-up' ? '备份中...' : '备份当前配置'}
               </button>
@@ -405,7 +419,7 @@ function ObsConfigPage() {
                         <span className={`font-medium ${step.success ? 'text-green-400' : 'text-red-400'}`}>
                           {step.name}
                         </span>
-                        {step.message && <p className="text-gray-400 mt-0.5">{step.message}</p>}
+                        {step.message && <p className="theme-text-muted mt-0.5">{step.message}</p>}
                       </div>
                     </div>
                   ))}

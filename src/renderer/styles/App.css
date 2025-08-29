@@ -4,57 +4,70 @@
    统一字体颜色系统 - 解决字体不统一问题
    ================================= */
 
-/* 全局主题颜色变量系统 */
-:root {
-  /* 亮色主题字体颜色 */
-  --text-primary: #1e293b;      /* 主要文字 - 深色 */
-  --text-secondary: #475569;    /* 次要文字 - 中等深度 */
-  --text-tertiary: #64748b;     /* 辅助文字 - 较浅 */
-  --text-muted: #94a3b8;        /* 提示文字 - 最浅 */
+/* =================================
+   统一主题颜色变量系统 - 解决重复定义问题
+   ================================= */
 
-  /* 亮色主题背景颜色 */
-  --bg-primary: #ffffff;        /* 主背景 - 白色 */
+:root {
+  /* 亮色主题 - 文字颜色 (增强对比度) */
+  --text-primary: #0f172a;      /* 主要文字 - 更深色，确保最高对比度 */
+  --text-secondary: #334155;    /* 次要文字 - 加深以提高可读性 */
+  --text-tertiary: #475569;     /* 辅助文字 - 保持适度对比 */
+  --text-muted: #64748b;        /* 提示文字 - 仍保持可读性 */
+
+  /* 亮色主题 - 背景颜色 */
+  --bg-primary: #ffffff;        /* 主背景 - 纯白色 */
   --bg-secondary: #f8fafc;      /* 次要背景 - 浅灰 */
   --bg-tertiary: #f1f5f9;       /* 第三背景 - 更浅灰 */
 
-  /* 亮色主题按钮颜色 */
+  /* 亮色主题 - 按钮颜色 */
   --btn-primary-bg: #3b82f6;    /* 主按钮背景 - 蓝色 */
   --btn-primary-hover: #2563eb; /* 主按钮悬停 - 深蓝 */
-  --btn-secondary-bg: #e2e8f0;  /* 次要按钮背景 - 浅灰 */
-  --btn-secondary-hover: #cbd5e1; /* 次要按钮悬停 - 中灰 */
-  --btn-ghost-bg: rgba(59, 130, 246, 0.1);     /* 透明按钮背景 */
-  --btn-ghost-hover: rgba(59, 130, 246, 0.2);  /* 透明按钮悬停 */
+  --btn-secondary-bg: #e5e7eb;  /* 次要按钮背景 - 稍深的浅灰，提高对比度 */
+  --btn-secondary-hover: #d1d5db; /* 次要按钮悬停 - 更明显 */
+  --btn-ghost-bg: rgba(59, 130, 246, 0.08);     /* 透明按钮背景 */
+  --btn-ghost-hover: rgba(59, 130, 246, 0.15);  /* 透明按钮悬停 */
 
-  /* 亮色主题边框颜色 */
-  --border-primary: #e2e8f0;    /* 主边框 */
-  --border-secondary: rgba(59, 130, 246, 0.2); /* 次要边框 */
+  /* 亮色主题 - 边框颜色 (增强可见性) */
+  --border-primary: #d1d5db;    /* 主边框 - 保持清晰 */
+  --border-secondary: rgba(59, 130, 246, 0.25); /* 次要边框 - 稍微加深 */
   --border-hover: rgba(59, 130, 246, 0.4);     /* 悬停边框 */
+
+  /* 亮色主题 - 卡片相关 (增强边界) */
+  --card-bg: rgba(255, 255, 255, 0.98);        /* 卡片背景 - 更不透明 */
+  --card-border: rgba(203, 213, 225, 0.9);     /* 卡片边框 - 更明显 */
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15), 0 2px 4px -1px rgba(0, 0, 0, 0.1); /* 卡片阴影 - 加深 */
 }
 
 .dark {
-  /* 暗色主题字体颜色 */
-  --text-primary: #ffffff;      /* 主要文字 - 白色 */
+  /* 暗色主题 - 文字颜色 (优化对比度) */
+  --text-primary: #ffffff;      /* 主要文字 - 纯白色，确保最高对比度 */
   --text-secondary: #e2e8f0;    /* 次要文字 - 浅灰 */
   --text-tertiary: #cbd5e1;     /* 辅助文字 - 中灰 */
-  --text-muted: #94a3b8;        /* 提示文字 - 深灰 */
+  --text-muted: #94a3b8;        /* 提示文字 - 保持可读性 */
 
-  /* 暗色主题背景颜色 */
-  --bg-primary: #0f172a;        /* 主背景 - 深色 */
+  /* 暗色主题 - 背景颜色 */
+  --bg-primary: #0f172a;        /* 主背景 - 深蓝灰色 */
   --bg-secondary: #1e293b;      /* 次要背景 - 中深色 */
   --bg-tertiary: #334155;       /* 第三背景 - 较浅深色 */
 
-  /* 暗色主题按钮颜色 */
-  --btn-primary-bg: #3b82f6;    /* 主按钮背景 - 蓝色 */
+  /* 暗色主题 - 按钮颜色 */
+  --btn-primary-bg: #3b82f6;    /* 主按钮背景 - 蓝色保持一致 */
   --btn-primary-hover: #2563eb; /* 主按钮悬停 - 深蓝 */
   --btn-secondary-bg: #374151;  /* 次要按钮背景 - 深灰 */
   --btn-secondary-hover: #4b5563; /* 次要按钮悬停 - 中灰 */
-  --btn-ghost-bg: rgba(30, 41, 59, 0.8);       /* 透明按钮背景 */
-  --btn-ghost-hover: rgba(59, 130, 246, 0.2);  /* 透明按钮悬停 */
+  --btn-ghost-bg: rgba(30, 41, 59, 0.7);       /* 透明按钮背景 - 稍微加深 */
+  --btn-ghost-hover: rgba(59, 130, 246, 0.25); /* 透明按钮悬停 - 更明显 */
 
-  /* 暗色主题边框颜色 */
-  --border-primary: #374151;    /* 主边框 */
-  --border-secondary: rgba(59, 130, 246, 0.3); /* 次要边框 */
+  /* 暗色主题 - 边框颜色 (增强可见性) */
+  --border-primary: #475569;    /* 主边框 - 保持清晰 */
+  --border-secondary: rgba(59, 130, 246, 0.35); /* 次要边框 - 稍微加深 */
   --border-hover: rgba(59, 130, 246, 0.5);     /* 悬停边框 */
+
+  /* 暗色主题 - 卡片相关 (增强边界) */
+  --card-bg: rgba(30, 41, 59, 0.98);           /* 卡片背景 - 更不透明 */
+  --card-border: rgba(71, 85, 105, 0.9);       /* 卡片边框 - 更明显 */
+  --card-shadow: 0 10px 30px -4px rgba(0, 0, 0, 0.5), 0 4px 8px -2px rgba(0, 0, 0, 0.15); /* 卡片阴影 - 加深 */
 }
 
 /* 统一应用字体颜色 */
@@ -174,6 +187,256 @@ h1, h2, h3, h4, h5, h6,
   border-color: var(--border-hover);
   transform: translateY(-2px);
   box-shadow: 0 10px 15px -3px var(--border-secondary);
+}
+
+/* =================================
+   标签页样式系统 - 解决对比度问题
+   ================================= */
+
+/* 标签页容器 */
+.tab-container {
+  display: flex;
+  border-bottom: 1px solid var(--border-primary);
+  margin-bottom: 1rem;
+}
+
+/* 标签页按钮基础样式 */
+.tab-button {
+  padding: 0.5rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+/* 未选中状态 */
+.tab-button:not(.tab-active) {
+  color: var(--text-secondary);
+}
+
+.tab-button:not(.tab-active):hover {
+  color: var(--text-primary);
+  background-color: var(--btn-ghost-hover);
+}
+
+/* 选中状态 */
+.tab-button.tab-active {
+  color: #3b82f6; /* 蓝色，在亮色和暗色主题下都有良好对比度 */
+  background-color: rgba(59, 130, 246, 0.1);
+  border-bottom: 2px solid #3b82f6;
+}
+
+/* 针对亮色主题的额外优化 */
+:root .tab-button.tab-active {
+  color: #1d4ed8; /* 在亮色主题下使用更深的蓝色，确保对比度 */
+}
+
+/* 针对暗色主题的额外优化 */
+.dark .tab-button.tab-active {
+  color: #60a5fa; /* 在暗色主题下使用更亮的蓝色，确保对比度 */
+  background-color: rgba(96, 165, 250, 0.15);
+  border-bottom-color: #60a5fa;
+}
+
+/* =================================
+   音效按钮样式系统 - 替代硬编码颜色
+   ================================= */
+
+/* 音效按钮基础样式 */
+.sound-effect-card {
+  @apply rounded-lg p-2.5 cursor-pointer relative border transition-all duration-200;
+  background-color: var(--bg-secondary);
+  border-color: var(--border-primary);
+  color: var(--text-primary);
+}
+
+.sound-effect-card:hover {
+  background-color: var(--btn-ghost-hover);
+  border-color: var(--border-hover);
+}
+
+/* 停止音效特殊样式 */
+.sound-effect-card.stop-effect {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #dc2626;
+}
+
+.dark .sound-effect-card.stop-effect {
+  background-color: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.sound-effect-card.stop-effect:hover {
+  background-color: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.dark .sound-effect-card.stop-effect:hover {
+  background-color: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+/* 播放中状态 */
+.sound-effect-card.playing {
+  background-color: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #2563eb;
+  transform: scale(1.05);
+}
+
+.dark .sound-effect-card.playing {
+  background-color: rgba(59, 130, 246, 0.2);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #60a5fa;
+}
+
+/* 音效卡片文字 */
+.sound-effect-hotkey {
+  color: var(--text-muted);
+}
+
+/* =================================
+   通用主题工具类 - 替代所有硬编码
+   ================================= */
+
+/* 加载动画工具类 */
+.spinner-primary {
+  @apply w-8 h-8 border-3 border-blue-400/30 border-t-blue-500 rounded-full animate-spin;
+}
+
+.spinner-large {
+  @apply w-10 h-10 border-3 border-blue-400/30 border-t-blue-500 rounded-full animate-spin;
+}
+
+/* 状态指示器 */
+.status-success {
+  color: #10b981;
+}
+
+.status-error {
+  color: #ef4444;
+}
+
+.status-warning {
+  color: #f59e0b;
+}
+
+.status-info {
+  color: #3b82f6;
+}
+
+/* 模态框/弹窗样式 */
+.modal-overlay {
+  @apply fixed inset-0 bg-black/55 z-50 flex items-center justify-center;
+}
+
+.modal-content {
+  @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-2xl;
+  max-width: min(540px, 92vw);
+  width: 100%;
+  margin: 0 1rem;
+}
+
+/* 用户头像占位符 */
+.avatar-placeholder {
+  @apply w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center;
+  background: linear-gradient(to right, #60a5fa, #a855f7);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+/* 统计卡片 */
+.stats-card {
+  @apply rounded-lg px-3 py-1 text-center;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+}
+
+/* 用户信息文字样式 */
+.user-nickname {
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+
+.user-stats-text {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* 主要操作按钮 - 开始直播按钮 */
+.btn-start-stream {
+  @apply px-8 py-4 rounded-xl font-bold text-xl transition-all border-0 outline-none relative;
+  width: 20rem;
+  pointer-events: auto;
+  cursor: pointer;
+  color: white;
+  /* 亮色主题：更深的蓝色渐变，确保对比度 */
+  background: linear-gradient(to right, #1e40af, #3730a3);
+}
+
+.btn-start-stream:hover:not(:disabled) {
+  background: linear-gradient(to right, #1e3a8a, #312e81);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+}
+
+.btn-start-stream:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* 暗色主题下的开始直播按钮 */
+.dark .btn-start-stream {
+  background: linear-gradient(to right, #3b82f6, #6366f1);
+}
+
+.dark .btn-start-stream:hover:not(:disabled) {
+  background: linear-gradient(to right, #2563eb, #4f46e5);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+}
+
+/* 空状态样式 */
+.empty-state {
+  @apply text-center py-8;
+  color: var(--text-muted);
+}
+
+.empty-state-large {
+  @apply text-center py-16;
+  color: var(--text-muted);
+}
+
+/* 渐变文字 */
+.gradient-text-blue-purple {
+  @apply bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent;
+}
+
+.gradient-text-indigo-purple {
+  @apply bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent;
+}
+
+/* 图标颜色工具类 */
+.icon-primary {
+  color: #3b82f6;
+}
+
+.icon-success {
+  color: #10b981;
+}
+
+.icon-warning {
+  color: #f59e0b;
+}
+
+.icon-danger {
+  color: #ef4444;
 }
 
 /* 推荐卡片内部元素 */

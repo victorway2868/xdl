@@ -1,8 +1,226 @@
 /* 基于Tailwind的主题样式 - 使用Tailwind的暗色模式功能 */
 
-/* 平滑过渡动画 */
-* {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+/* =================================
+   优化的主题切换过渡动画
+   ================================= */
+
+/* 全局平滑过渡 - 优化性能和视觉效果 */
+*,
+*::before,
+*::after {
+  transition: 
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 特殊元素的过渡优化 */
+body,
+html {
+  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 按钮和交互元素的快速响应 */
+button,
+input,
+select,
+textarea {
+  transition: 
+    background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 阴影过渡优化 */
+.theme-card,
+.theme-card-secondary,
+.theme-card-elevated {
+  transition: 
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 全局主题应用 - 让所有页面自动继承主题 */
+.theme-page {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+/* 通用主题组件类 - 自动继承主题 */
+.theme-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text-primary);
+  box-shadow: var(--card-shadow);
+  backdrop-filter: blur(10px);
+}
+
+.theme-card-secondary {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
+  box-shadow: var(--card-shadow);
+}
+
+.theme-navbar {
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-primary);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* 暗色模式下的阴影调整 */
+.dark .theme-card,
+.dark .theme-card-secondary {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.dark .theme-navbar {
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+}
+
+/* 主题按钮样式 */
+.theme-btn-primary {
+  background-color: var(--btn-primary-bg);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.theme-btn-primary:hover {
+  background-color: var(--btn-primary-hover);
+}
+
+.theme-btn-secondary {
+  background-color: var(--btn-secondary-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.theme-btn-secondary:hover {
+  background-color: var(--btn-secondary-hover);
+}
+
+/* 增强的视觉层次结构 */
+.theme-card-elevated {
+  background-color: var(--bg-primary);
+  border: 2px solid var(--border-primary);
+  color: var(--text-primary);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border-radius: 0.5rem;
+}
+
+.dark .theme-card-elevated {
+  border-color: var(--border-primary);
+  box-shadow: 0 8px 25px -4px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+}
+
+/* 内容分隔线 */
+.theme-divider {
+  border-bottom: 1px solid var(--border-primary);
+  margin: 1rem 0;
+}
+
+/* 高对比度边框变体 */
+.theme-card-contrast {
+  background-color: var(--bg-primary);
+  border: 2px solid var(--border-secondary);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* 表单控件主题化 */
+.theme-input {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.theme-input:focus {
+  outline: none;
+  border-color: var(--border-hover);
+  box-shadow: 0 0 0 3px var(--border-secondary);
+}
+
+.theme-select {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  color: var(--text-primary);
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.theme-select:focus {
+  outline: none;
+  border-color: var(--border-hover);
+  box-shadow: 0 0 0 3px var(--border-secondary);
+}
+
+.theme-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+/* 复选框主题化 */
+.theme-checkbox {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 0.25rem;
+  transition: all 0.3s ease;
+}
+
+.theme-checkbox:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--border-secondary);
+}
+
+/* 按钮变体 */
+.theme-btn-ghost {
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.theme-btn-ghost:hover {
+  background-color: var(--btn-ghost-bg);
+  color: var(--text-primary);
+}
+
+/* 状态文字颜色 */
+.theme-text-empty {
+  color: var(--text-muted);
+  text-align: center;
+  padding: 2rem 0;
+}
+
+/* 时间戳文字 */
+.theme-text-timestamp {
+  color: var(--text-muted);
+  font-size: 0.75rem;
 }
 
 /* 自定义渐变背景 - Tailwind无法直接实现的复杂渐变 */
@@ -68,50 +286,45 @@
   background: rgba(59, 130, 246, 0.6);
 }
 
-/* 主题相关的通用样式类 */
+/* =================================
+   主题通用样式类 - 使用统一的CSS变量
+   ================================= */
+
 .theme-bg-primary {
-  background-color: var(--color-bg-primary);
+  background-color: var(--bg-primary);
 }
 
 .theme-bg-secondary {
-  background: var(--color-bg-secondary);
+  background-color: var(--bg-secondary);
 }
 
 .theme-bg-tertiary {
-  background-color: var(--color-bg-tertiary);
+  background-color: var(--bg-tertiary);
 }
 
 .theme-text-primary {
-  color: var(--color-text-primary);
+  color: var(--text-primary);
 }
 
 .theme-text-secondary {
-  color: var(--color-text-secondary);
+  color: var(--text-secondary);
 }
 
 .theme-text-muted {
-  color: var(--color-text-muted);
+  color: var(--text-muted);
 }
 
 .theme-border-primary {
-  border-color: var(--color-border-primary);
+  border-color: var(--border-primary);
 }
 
 .theme-border-secondary {
-  border-color: var(--color-border-secondary);
+  border-color: var(--border-secondary);
 }
 
-.theme-card {
-  background: var(--color-card-bg);
-  border: 1px solid var(--color-card-border);
-  box-shadow: var(--color-card-shadow);
-  backdrop-filter: blur(10px);
-}
+/* 注意：此处已有重复定义，移除避免冲突 */
 
-/* 主题过渡动画 */
-* {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-}
+/* 注意：主题过渡动画已在文件开头统一定义，此处移除重复 */
 
 /* 特殊元素的主题样式 */
 .home-page-container {
@@ -172,4 +385,108 @@
 
 [data-theme="light"] ::-webkit-scrollbar-thumb:hover {
   background: rgba(59, 130, 246, 0.6);
+}
+
+/* DanmuPage 特定主题样式 */
+[data-theme="dark"] .danmu-page {
+  background-color: #0f172a;
+  color: #ffffff;
+}
+
+[data-theme="light"] .danmu-page {
+  background-color: #ffffff;
+  color: #1e293b;
+}
+
+/* DanmuPage 卡片样式 */
+[data-theme="dark"] .danmu-card {
+  background-color: #1e293b;
+  border-color: #374151;
+}
+
+[data-theme="light"] .danmu-card {
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+/* DanmuPage 输入框样式 */
+[data-theme="dark"] .danmu-input {
+  background-color: #374151;
+  border-color: #4b5563;
+  color: #ffffff;
+}
+
+[data-theme="light"] .danmu-input {
+  background-color: #f8fafc;
+  border-color: #d1d5db;
+  color: #1e293b;
+}
+
+/* DanmuPage 按钮样式 */
+[data-theme="dark"] .danmu-button {
+  background-color: #374151;
+  color: #e5e7eb;
+  border-color: #4b5563;
+}
+
+[data-theme="dark"] .danmu-button:hover {
+  background-color: #4b5563;
+  color: #ffffff;
+}
+
+[data-theme="light"] .danmu-button {
+  background-color: #e5e7eb;
+  color: #374151;
+  border-color: #d1d5db;
+}
+
+[data-theme="light"] .danmu-button:hover {
+  background-color: #d1d5db;
+  color: #1f2937;
+}
+
+/* DanmuPage 自定义滚动条样式 */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 0;
+}
+
+[data-theme="light"] .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #64748b;
+  border-radius: 1px;
+  margin: 0;
+}
+
+[data-theme="light"] .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+[data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 1px;
+  margin: 0;
+}
+
+[data-theme="dark"] .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+.custom-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #64748b transparent;
+  margin-right: 0;
+  padding-right: 0;
+}
+
+/* 针对 Firefox 的暗色模式滚动条 */
+[data-theme="dark"] .custom-scrollbar {
+  scrollbar-color: #475569 transparent;
 }

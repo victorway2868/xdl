@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, Settings, Lock, Unlock, Download, RefreshCw, Square } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Settings, Lock, Unlock } from 'lucide-react';
+import '../styles/themes.css';
 
 interface SoundEffect {
     id: string;
@@ -15,6 +16,7 @@ interface SoundEffect {
 
 
 function AudioSettingsPage() {
+    const navigate = useNavigate();
     const [soundEffects, setSoundEffects] = useState<SoundEffect[]>([]);
     const [audioModalOpen, setAudioModalOpen] = useState(false);
     const [hotkeyModalOpen, setHotkeyModalOpen] = useState(false);
@@ -22,20 +24,11 @@ function AudioSettingsPage() {
     const [isLocked, setIsLocked] = useState(false);
     const [draggedEffect, setDraggedEffect] = useState<SoundEffect | null>(null);
     const [availableAudioFiles, setAvailableAudioFiles] = useState<string[]>([]);
-    const [isUpdating, setIsUpdating] = useState(false);
-    const [updateStatus, setUpdateStatus] = useState<string>('');
     const [playingEffect, setPlayingEffect] = useState<string | null>(null);
 
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // Use sessionStorage to track if updates have been checked in this session
-    const getHasCheckedUpdates = () => {
-        return sessionStorage.getItem('audioUpdatesChecked') === 'true';
-    };
-
-    const setHasCheckedUpdates = () => {
-        sessionStorage.setItem('audioUpdatesChecked', 'true');
-    };
+    // Note: Session storage for update checking removed as auto-update is no longer needed
 
     // 创建默认的停止音效
     const createStopEffect = (): SoundEffect => ({
@@ -86,11 +79,7 @@ function AudioSettingsPage() {
         // Load available audio files
         loadAvailableAudioFiles();
 
-        // Check for updates only on first visit per session
-        if (!getHasCheckedUpdates()) {
-            setHasCheckedUpdates();
-            checkForSoundPackUpdates();
-        }
+        // Note: Auto-update checking removed as per user request
     }, []);
 
     // Save sound effects when they change
@@ -119,68 +108,7 @@ function AudioSettingsPage() {
         }
     };
 
-    const checkForSoundPackUpdates = async () => {
-        try {
-            setIsUpdating(true);
-            setUpdateStatus('检查音效包更新...');
-
-            // Fetch sound packs info from server via main process
-            const soundPacks = await window.electronAPI?.checkSoundPackUpdates?.();
-            if (!soundPacks) {
-                throw new Error('Failed to fetch sound packs info');
-            }
-
-            // Get list of existing local sound pack folders
-            const localPacks = await window.electronAPI?.getLocalSoundPacks?.() || [];
-
-            // Find packs that need to be downloaded
-            const packsToDownload = soundPacks.files.filter(pack =>
-                !localPacks.includes(pack.name)
-            );
-
-            if (packsToDownload.length === 0) {
-                setUpdateStatus('所有音效包已是最新');
-                setTimeout(() => {
-                    setIsUpdating(false);
-                    setUpdateStatus('');
-                }, 2000);
-                return;
-            }
-
-            setUpdateStatus(`发现 ${packsToDownload.length} 个新音效包，开始下载...`);
-
-            // Download new packs
-            let successCount = 0;
-            for (const pack of packsToDownload) {
-                setUpdateStatus(`正在下载: ${pack.name}...`);
-
-                const success = await window.electronAPI?.downloadSoundPack?.(pack.name, pack.url);
-                if (success) {
-                    successCount++;
-                } else {
-                    console.error(`Failed to download sound pack: ${pack.name}`);
-                }
-            }
-
-            setUpdateStatus(`音效包更新完成 (${successCount}/${packsToDownload.length})`);
-
-            // Reload available audio files
-            await loadAvailableAudioFiles();
-
-            setTimeout(() => {
-                setIsUpdating(false);
-                setUpdateStatus('');
-            }, 2000);
-
-        } catch (error) {
-            console.error('Failed to check for sound pack updates:', error);
-            setUpdateStatus('更新检查失败: ' + (error as Error).message);
-            setTimeout(() => {
-                setIsUpdating(false);
-                setUpdateStatus('');
-            }, 3000);
-        }
-    };
+    // Note: checkForSoundPackUpdates function removed as auto-update is no longer needed
 
     const handleAddAudio = (file: string) => {
         // Extract filename without extension
@@ -356,53 +284,33 @@ function AudioSettingsPage() {
     };
 
     return (
-        <div className="h-full p-3 bg-gray-900 text-white">
-            <div className="flex justify-between items-center mb-3">
-                <h2 className="text-base font-semibold flex items-center">
-                    <Settings className="w-4 h-4 mr-1.5 text-blue-400" />
-                    主播音效
-                </h2>
-                <div className="flex items-center gap-2">
-                    {isUpdating && (
-                        <div className="flex items-center gap-2 text-sm text-blue-400">
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                            <span>{updateStatus}</span>
-                        </div>
-                    )}
-                    {playingEffect && (
-                        <button
-                            onClick={() => {
-                                if (currentAudio) {
-                                    currentAudio.pause();
-                                    currentAudio.currentTime = 0;
-                                    setCurrentAudio(null);
-                                    setPlayingEffect(null);
-                                }
-                            }}
-                            className="flex items-center gap-1 px-2 py-1 text-sm bg-red-600 hover:bg-red-700 rounded"
-                            title="停止播放"
-                        >
-                            <Square className="w-3 h-3" />
-                            停止
-                        </button>
-                    )}
-                    <button
-                        onClick={checkForSoundPackUpdates}
-                        disabled={isUpdating}
-                        className="flex items-center gap-1 px-2 py-1 text-sm bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 rounded"
-                    >
-                        <Download className="w-3 h-3" />
-                        更新音效包
-                    </button>
-                    <Link to="/app" className="text-indigo-400 hover:text-indigo-300 text-sm">返回首页</Link>
-                    <button
-                        className={`p-1.5 rounded-full ${isLocked ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
-                        onClick={() => setIsLocked(!isLocked)}
-                    >
-                        {isLocked ? <Lock size={16} /> : <Unlock size={16} />}
-                    </button>
+        <div className="h-full p-6 theme-page transition-colors duration-300">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3">
+                        <Settings size={28} className="text-blue-500" />
+                        <h1 className="text-3xl font-bold m-0 bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+                            音效设置
+                        </h1>
+                    </div>
                 </div>
+                
+                {/* Lock Toggle Button - moved to header */}
+                <button
+                    className={`px-5 py-3 rounded-xl border-2 transition-colors text-xl font-semibold ${
+                        isLocked 
+                            ? 'bg-red-100 hover:bg-red-200 border-red-300 text-red-700 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:border-red-700 dark:text-red-300' 
+                            : 'bg-green-100 hover:bg-green-200 border-green-300 text-green-700 dark:bg-green-900/30 dark:hover:bg-green-900/50 dark:border-green-700 dark:text-green-300'
+                    }`}
+                    onClick={() => setIsLocked(!isLocked)}
+                    title={isLocked ? '点击解锁音效排序' : '点击锁定音效排序'}
+                >
+                    {isLocked ? <Lock size={26} /> : <Unlock size={26} />}
+                </button>
             </div>
+
+
 
             <div
                 ref={containerRef}
@@ -411,10 +319,9 @@ function AudioSettingsPage() {
                 {soundEffects.map((effect) => (
                     <div
                         key={effect.id}
-                        className={`rounded-lg p-2.5 cursor-pointer relative border transition-all duration-200 ${effect.id === 'stop-effect'
-                                ? 'bg-red-800 hover:bg-red-700 border-red-600' // 停止音效特殊样式
-                                : 'bg-gray-800 hover:bg-gray-700 border-gray-700'
-                            } ${playingEffect === effect.id ? 'bg-blue-700 border-blue-500 scale-105' : ''}`}
+                        className={`sound-effect-card ${
+                            effect.id === 'stop-effect' ? 'stop-effect' : ''
+                        } ${playingEffect === effect.id ? 'playing' : ''}`}
                         draggable={!isLocked && effect.id !== 'stop-effect'} // 停止音效不可拖拽
                         onDragStart={(e) => handleDragStart(effect, e)}
                         onDragEnd={handleDragEnd}
@@ -426,12 +333,12 @@ function AudioSettingsPage() {
                             <p className="text-xs font-medium truncate mb-1">
                                 {effect.id === 'stop-effect' ? '🛑 ' : ''}{effect.name}
                             </p>
-                            <p className="text-xs text-gray-400">{effect.hotkey || '无快捷键'}</p>
+                            <p className="text-xs sound-effect-hotkey">{effect.hotkey || '无快捷键'}</p>
                         </div>
 
                         {!isLocked && (
                             <button
-                                className="absolute top-1 right-1 text-gray-400 hover:text-white"
+                                className="absolute top-1 right-1 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setCurrentEffect(effect);
@@ -445,7 +352,7 @@ function AudioSettingsPage() {
                 ))}
 
                 <button
-                    className="bg-gray-800 rounded-lg p-2.5 flex items-center justify-center hover:bg-gray-700 h-[72px] border border-gray-700 border-dashed"
+                    className="bg-gray-100 dark:bg-gray-800 rounded-lg p-2.5 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 h-[72px] border border-gray-300 dark:border-gray-700 border-dashed text-gray-600 dark:text-gray-400 transition-colors"
                     onClick={() => setAudioModalOpen(true)}
                 >
                     <Plus size={20} />
@@ -481,11 +388,11 @@ const AudioPreviewModal: React.FC<AudioPreviewModalProps> = ({ isOpen, onClose, 
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-gray-800 rounded-lg p-4 w-96 max-w-full max-h-[80vh] flex flex-col">
-                <h3 className="text-white font-medium mb-3">选择音频文件</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 w-96 max-w-full max-h-[80vh] flex flex-col transition-colors">
+                <h3 className="text-gray-900 dark:text-white font-medium mb-3">选择音频文件</h3>
                 <div className="flex-1 overflow-y-auto">
                     {audioFiles.length === 0 ? (
-                        <div className="text-center text-gray-400 py-8">
+                        <div className="text-center text-gray-500 dark:text-gray-400 py-8">
                             <p>暂无可用音效文件</p>
                             <p className="text-sm mt-2">请先更新音效包</p>
                         </div>
@@ -493,7 +400,7 @@ const AudioPreviewModal: React.FC<AudioPreviewModalProps> = ({ isOpen, onClose, 
                         audioFiles.map((file, index) => (
                             <div
                                 key={index}
-                                className="p-2 hover:bg-gray-700 rounded cursor-pointer mb-1 flex items-center justify-between"
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer mb-1 flex items-center justify-between text-gray-900 dark:text-white transition-colors"
                                 onClick={() => {
                                     onSelect(file);
                                     onClose();
@@ -501,7 +408,7 @@ const AudioPreviewModal: React.FC<AudioPreviewModalProps> = ({ isOpen, onClose, 
                             >
                                 <span className="truncate">{file.split('/').pop()}</span>
                                 <button
-                                    className="ml-2 text-blue-400 hover:text-blue-300"
+                                    className="ml-2 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
                                     onClick={async (e) => {
                                         e.stopPropagation();
                                         try {
@@ -523,7 +430,7 @@ const AudioPreviewModal: React.FC<AudioPreviewModalProps> = ({ isOpen, onClose, 
                 </div>
                 <div className="mt-4 flex justify-end">
                     <button
-                        className="bg-gray-700 text-white px-4 py-2 rounded"
+                        className="bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-white px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors"
                         onClick={onClose}
                     >
                         取消
@@ -630,16 +537,16 @@ const HotkeySettingModal: React.FC<HotkeySettingModalProps> = ({ isOpen, onClose
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-gray-800 rounded-lg p-4 w-96 max-w-full">
-                <h3 className="text-white font-medium mb-3">设置快捷键</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 w-96 max-w-full transition-colors">
+                <h3 className="text-gray-900 dark:text-white font-medium mb-3">设置快捷键</h3>
                 <div className="mb-3">
                     <div className="mb-3">
-                        <div className={`p-4 bg-gray-700 text-white rounded border text-center ${isRecording ? 'border-blue-500 bg-blue-900/20' : 'border-gray-600'
+                        <div className={`p-4 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded border text-center transition-colors ${isRecording ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600'
                             }`}>
                             {currentHotkey ? (
                                 <div className="text-lg font-medium">{currentHotkey}</div>
                             ) : (
-                                <div className="text-gray-400">
+                                <div className="text-gray-500 dark:text-gray-400">
                                     {isRecording ? "按下任意键盘组合键..." : "等待录制..."}
                                 </div>
                             )}
@@ -647,18 +554,18 @@ const HotkeySettingModal: React.FC<HotkeySettingModalProps> = ({ isOpen, onClose
                     </div>
 
                     {isRecording && (
-                        <div className="text-xs text-blue-400 mb-2 animate-pulse text-center">
+                        <div className="text-xs text-blue-500 dark:text-blue-400 mb-2 animate-pulse text-center">
                             🎯 正在录制快捷键，请按下键盘组合键...
                         </div>
                     )}
 
-                    <div className="text-xs text-gray-400 text-center">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
                         <div>💡 支持：F1-F12, Ctrl+A, Alt+F1, Shift+Space, 小键盘 等</div>
                     </div>
                 </div>
                 <div className="flex justify-end gap-2">
                     <button
-                        className="bg-gray-700 text-white px-4 py-1 rounded"
+                        className="bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-white px-4 py-1 rounded hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors"
                         onClick={() => {
                             resetState();
                             onClose();
@@ -667,7 +574,7 @@ const HotkeySettingModal: React.FC<HotkeySettingModalProps> = ({ isOpen, onClose
                         取消
                     </button>
                     <button
-                        className="bg-blue-600 text-white px-4 py-1 rounded disabled:bg-gray-600"
+                        className="bg-blue-600 text-white px-4 py-1 rounded disabled:bg-gray-400 dark:disabled:bg-gray-600 hover:bg-blue-700 transition-colors"
                         disabled={!currentHotkey.trim()}
                         onClick={() => {
                             onApply(currentHotkey.trim());

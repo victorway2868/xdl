@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Music, UserCheck, Sun, Moon, Minus, Square } from 'lucide-react';
+import { X, Music, UserCheck, Sun, Moon, Minus, Square, Home } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
 import appIcon from '/icons/icon-32x32.ico';
@@ -66,6 +66,21 @@ const TitleBar: React.FC = () => {
 
       {/* Action Buttons */}
       <div className="flex items-center no-drag">
+        {/* Home Button */}
+        <button
+          onClick={() => navigate('/app')}
+          className="flex items-center justify-center px-2.5 h-[30px] rounded-md
+                     border border-transparent bg-transparent
+                     hover:bg-green-500/20 hover:border-green-500/30
+                     transition-all duration-300 outline-none"
+          title="返回主页"
+        >
+          <Home
+            size={16}
+            className="text-green-400"
+          />
+        </button>
+
         {/* Music Button */}
         <button
           onClick={() => navigate('/app/audio-settings')}
@@ -73,7 +88,7 @@ const TitleBar: React.FC = () => {
                      border border-transparent bg-transparent
                      hover:bg-blue-500/20 hover:border-blue-500/30
                      transition-all duration-300 outline-none"
-          title={isMuted ? "打开音效" : "关闭音效"}
+                     title="音效助手"
         >
           <Music
             size={16}
