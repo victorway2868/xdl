@@ -113,27 +113,21 @@ const DanmuPage = () => {
     speechSynthesis.speak(utterance);
   }, [voiceSettings, voices, speechSynthesis]);
 
-  // 触发快捷键函数
-  const triggerHotkeys = useCallback(async (keys: string[]) => {
-    if (keys.length === 0) return;
-    
-    try {
-      // 调用主进程的快捷键执行函数
-      await window.electronAPI?.executeCustomHotkey?.(keys);
-    } catch (error) {
-      console.error('Failed to execute hotkey:', error);
-    }
-  }, []);
+
 
   // 保存设置到localStorage
   const saveVoiceSettings = useCallback((newSettings: typeof voiceSettings) => {
     setVoiceSettings(newSettings);
     localStorage.setItem('voiceSettings', JSON.stringify(newSettings));
+    // 通知全局更新
+    window.dispatchEvent(new CustomEvent('voiceSettingsUpdated'));
   }, []);
 
   const saveHotkeySettings = useCallback((newSettings: typeof hotkeySettings) => {
     setHotkeySettings(newSettings);
     localStorage.setItem('hotkeySettings', JSON.stringify(newSettings));
+    // 通知全局更新
+    window.dispatchEvent(new CustomEvent('hotkeySettingsUpdated'));
   }, []);
 
   // 处理快捷键录制
@@ -239,59 +233,7 @@ const DanmuPage = () => {
     }
   }, [filteredSocialMessages]);
 
-  // 监听新消息进行语音播报和快捷键触发
-  useEffect(() => {
-    if (messages.length === 0) return;
-    
-    const latestMessage = messages[messages.length - 1];
-    
-    // 语音播报
-    if (voiceSettings.enabled) {
-      const eventConfig = voiceSettings.events[latestMessage.type as keyof typeof voiceSettings.events];
-      if (eventConfig?.enabled) {
-        let textToSpeak = '';
-        
-        switch (latestMessage.type) {
-          case 'chat':
-            textToSpeak = `${eventConfig.prefix}${latestMessage.user.name}说：${latestMessage.content}`;
-            break;
-          case 'gift':
-            textToSpeak = `${eventConfig.prefix}${latestMessage.user.name}送出了${latestMessage.gift.name}`;
-            break;
-          case 'follow':
-            textToSpeak = `${eventConfig.prefix}${latestMessage.user.name}关注了直播间`;
-            break;
-          case 'like':
-            textToSpeak = `${eventConfig.prefix}${latestMessage.user.name}`;
-            break;
-          case 'member':
-            textToSpeak = `${eventConfig.prefix}${latestMessage.user.name}进入了直播间`;
-            break;
-        }
-        
-        if (textToSpeak) {
-          speakText(textToSpeak);
-        }
-      }
-    }
-    
-    // 快捷键触发
-    if (latestMessage.type === 'gift') {
-      const giftTrigger = hotkeySettings.giftTriggers.find(
-        (trigger: any) => trigger.giftName === latestMessage.gift.name
-      );
-      if (giftTrigger) {
-        triggerHotkeys(giftTrigger.keys);
-      }
-    } else if (latestMessage.type === 'chat') {
-      const keywordTrigger = hotkeySettings.keywordTriggers.find(
-        (trigger: any) => latestMessage.content.includes(trigger.keyword)
-      );
-      if (keywordTrigger) {
-        triggerHotkeys(keywordTrigger.keys);
-      }
-    }
-  }, [messages, voiceSettings, hotkeySettings, speakText, triggerHotkeys]);
+
 
   const statusDisplay = getStatusDisplay();
   const StatusIcon = statusDisplay.icon;
