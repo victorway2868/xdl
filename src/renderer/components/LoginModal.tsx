@@ -1,4 +1,6 @@
 import React from 'react';
+import { X } from 'lucide-react';
+import '../styles/themes.css';
 
 interface Props {
   isOpen: boolean;
@@ -9,30 +11,34 @@ interface Props {
 
 const LoginModal: React.FC<Props> = ({ isOpen, onClose, onWebLogin, onCompanionLogin }) => {
   if (!isOpen) return null;
+  
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-4 w-80 border border-slate-700 shadow-2xl">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-blue-300">选择登录方式</h2>
+    <div className="modal-overlay">
+      <div className="modal-content login-modal">
+        {/* 标题栏 */}
+        <div className="modal-header">
+          <h2 className="modal-title">选择登录方式</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white rounded-full p-1 hover:bg-gray-700"
+            className="modal-close-btn"
+            aria-label="关闭弹窗"
           >
-            <span aria-hidden>✕</span>
+            <X size={20} />
           </button>
         </div>
 
-        <div className="flex flex-col gap-3">
+        {/* 登录选项 */}
+        <div className="login-options">
           <button
             onClick={onWebLogin}
-            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium transition-colors"
+            className="btn-login-option btn-login-web"
           >
             抖音网页登录
           </button>
 
           <button
             onClick={onCompanionLogin}
-            className="w-full py-2.5 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-medium transition-colors"
+            className="btn-login-option btn-login-companion"
           >
             抖音直播伴侣
           </button>

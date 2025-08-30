@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Plus, Settings, Lock, Unlock } from 'lucide-react';
 import '../styles/themes.css';
 
@@ -16,7 +15,6 @@ interface SoundEffect {
 
 
 function AudioSettingsPage() {
-    const navigate = useNavigate();
     const [soundEffects, setSoundEffects] = useState<SoundEffect[]>([]);
     const [audioModalOpen, setAudioModalOpen] = useState(false);
     const [hotkeyModalOpen, setHotkeyModalOpen] = useState(false);
@@ -134,87 +132,39 @@ function AudioSettingsPage() {
         }
     };
 
-    // 添加音频播放状态管理
-    const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
-    const currentAudioRef = useRef<HTMLAudioElement | null>(null);
-    const playingEffectRef = useRef<string | null>(null);
-
-    const handlePlaySound = async (effect: SoundEffect) => {
-        // 如果是停止音效，只停止当前播放
-        if (effect.id === 'stop-effect') {
-            if (currentAudioRef.current) {
-                currentAudioRef.current.pause();
-                currentAudioRef.current.currentTime = 0;
-                currentAudioRef.current = null;
-                setCurrentAudio(null);
-                setPlayingEffect(null);
-                playingEffectRef.current = null;
-            }
-            return;
-        }
-
-        if (!effect.filePath) return;
-
-        try {
-            // 停止当前播放的音频
-            if (currentAudioRef.current) {
-                currentAudioRef.current.pause();
-                currentAudioRef.current.currentTime = 0;
-                currentAudioRef.current = null;
-                setCurrentAudio(null);
-                setPlayingEffect(null);
-                playingEffectRef.current = null;
-            }
-
-            // 如果点击的是正在播放的音效，则只停止播放
-            if (playingEffectRef.current === effect.id) {
-                return;
-            }
-
-            // 获取音频文件的完整路径
-            const audioUrl = await window.electronAPI?.getAudioFileUrl?.(effect.filePath);
-            if (!audioUrl) {
-                console.error('Failed to get audio file URL:', effect.filePath);
-                return;
-            }
-
-            // 创建新的音频对象
-            const audio = new Audio(audioUrl);
-
-            // 设置音频事件监听器
-            audio.onloadstart = () => {
-                setPlayingEffect(effect.id);
-                setCurrentAudio(audio);
-                currentAudioRef.current = audio;
-                playingEffectRef.current = effect.id;
-            };
-
-            audio.onended = () => {
-                setPlayingEffect(null);
-                setCurrentAudio(null);
-                currentAudioRef.current = null;
-                playingEffectRef.current = null;
-            };
-
-            audio.onerror = (e) => {
-                console.error('Audio playback error:', e);
-                setPlayingEffect(null);
-                setCurrentAudio(null);
-                currentAudioRef.current = null;
-                playingEffectRef.current = null;
-            };
-
-            // 开始播放
-            await audio.play();
-
-        } catch (error) {
-            console.error('Failed to play sound:', error);
+    // 使用全局音效播放机制，通过自定义事件与MainLayout通信
+    const handlePlaySound = (effect: SoundEffect) => {
+        // 触发全局音效播放事件，让MainLayout统一处理
+        window.dispatchEvent(new CustomEvent('playSound', { 
+            detail: { effect } 
+        }));
+        
+        // 更新本地播放状态用于UI显示
+        setPlayingEffect(effect.id === 'stop-effect' ? null : effect.id);
+        
+        // 如果是停止音效或者点击正在播放的音效，清除播放状态
+        if (effect.id === 'stop-effect' || playingEffect === effect.id) {
             setPlayingEffect(null);
-            setCurrentAudio(null);
-            currentAudioRef.current = null;
-            playingEffectRef.current = null;
         }
     };
+
+    // 监听全局音效播放状态变化
+    useEffect(() => {
+        const handleGlobalAudioStateChange = (event: CustomEvent) => {
+            const { effectId, isPlaying } = event.detail;
+            if (isPlaying) {
+                setPlayingEffect(effectId);
+            } else {
+                setPlayingEffect(null);
+            }
+        };
+
+        window.addEventListener('globalAudioStateChange', handleGlobalAudioStateChange as EventListener);
+
+        return () => {
+            window.removeEventListener('globalAudioStateChange', handleGlobalAudioStateChange as EventListener);
+        };
+    }, []);
 
     const handleDragStart = (effect: SoundEffect, e: React.DragEvent) => {
         if (isLocked || effect.id === 'stop-effect') return; // 停止音效不允许拖拽

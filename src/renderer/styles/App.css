@@ -333,14 +333,143 @@ h1, h2, h3, h4, h5, h6,
 
 /* 模态框/弹窗样式 */
 .modal-overlay {
-  @apply fixed inset-0 bg-black/55 z-50 flex items-center justify-center;
+  @apply fixed inset-0 z-50 flex items-center justify-center;
+  background-color: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
 }
 
 .modal-content {
-  @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-2xl;
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  color: var(--text-primary);
+  box-shadow: var(--card-shadow);
+  border-radius: 12px;
+  padding: 1.5rem;
   max-width: min(540px, 92vw);
   width: 100%;
   margin: 0 1rem;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 登录弹窗特定样式 */
+.login-modal {
+  max-width: 320px;
+  padding: 1rem;
+}
+
+/* 弹窗标题栏 */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.modal-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* 弹窗关闭按钮 */
+.modal-close-btn {
+  @apply rounded-full p-1.5 transition-all;
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: none;
+  cursor: pointer;
+}
+
+.modal-close-btn:hover {
+  background-color: var(--btn-ghost-hover);
+  color: var(--text-primary);
+  transform: scale(1.1);
+}
+
+/* 登录选项容器 */
+.login-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* 登录选项按钮基础样式 */
+.btn-login-option {
+  @apply w-full py-2.5 rounded-lg font-medium transition-all;
+  border: 2px solid transparent;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-login-option::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-login-option:hover::before {
+  left: 100%;
+}
+
+/* 网页登录按钮 */
+.btn-login-web {
+  background: linear-gradient(to right, #3b82f6, #2563eb);
+  color: white;
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
+}
+
+.btn-login-web:hover {
+  background: linear-gradient(to right, #2563eb, #1d4ed8);
+  border-color: rgba(37, 99, 235, 0.5);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+  transform: translateY(-1px);
+}
+
+/* 直播伴侣登录按钮 */
+.btn-login-companion {
+  background: linear-gradient(to right, #8b5cf6, #7c3aed);
+  color: white;
+  border-color: rgba(139, 92, 246, 0.3);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.25);
+}
+
+.btn-login-companion:hover {
+  background: linear-gradient(to right, #7c3aed, #6d28d9);
+  border-color: rgba(124, 58, 237, 0.5);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
+  transform: translateY(-1px);
+}
+
+/* 暗色主题下的登录按钮优化 */
+.dark .btn-login-web {
+  background: linear-gradient(to right, #60a5fa, #3b82f6);
+  box-shadow: 0 2px 8px rgba(96, 165, 250, 0.3);
+}
+
+.dark .btn-login-web:hover {
+  background: linear-gradient(to right, #3b82f6, #2563eb);
+  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.4);
+}
+
+.dark .btn-login-companion {
+  background: linear-gradient(to right, #a78bfa, #8b5cf6);
+  box-shadow: 0 2px 8px rgba(167, 139, 250, 0.3);
+}
+
+.dark .btn-login-companion:hover {
+  background: linear-gradient(to right, #8b5cf6, #7c3aed);
+  box-shadow: 0 4px 12px rgba(167, 139, 250, 0.4);
 }
 
 /* 用户头像占位符 */

@@ -234,6 +234,10 @@ const MainLayout: React.FC = () => {
         globalAudioRef.current.currentTime = 0;
         globalAudioRef.current = null;
       }
+      // 发出全局音频状态变化事件
+      window.dispatchEvent(new CustomEvent('globalAudioStateChange', { 
+        detail: { effectId: null, isPlaying: false } 
+      }));
       return;
     }
 
@@ -258,13 +262,26 @@ const MainLayout: React.FC = () => {
       const audio = new Audio(audioUrl);
       globalAudioRef.current = audio;
 
+      // 发出播放开始事件
+      window.dispatchEvent(new CustomEvent('globalAudioStateChange', { 
+        detail: { effectId: effect.id, isPlaying: true } 
+      }));
+
       audio.onended = () => {
         globalAudioRef.current = null;
+        // 发出播放结束事件
+        window.dispatchEvent(new CustomEvent('globalAudioStateChange', { 
+          detail: { effectId: null, isPlaying: false } 
+        }));
       };
 
       audio.onerror = (e) => {
         console.error('Audio playback error:', e);
         globalAudioRef.current = null;
+        // 发出播放错误事件
+        window.dispatchEvent(new CustomEvent('globalAudioStateChange', { 
+          detail: { effectId: null, isPlaying: false } 
+        }));
       };
 
       // 开始播放
@@ -273,6 +290,10 @@ const MainLayout: React.FC = () => {
     } catch (error) {
       console.error('Failed to play sound:', error);
       globalAudioRef.current = null;
+      // 发出播放错误事件
+      window.dispatchEvent(new CustomEvent('globalAudioStateChange', { 
+        detail: { effectId: null, isPlaying: false } 
+      }));
     }
   };
 
@@ -291,6 +312,20 @@ const MainLayout: React.FC = () => {
       unsubscribe?.();
     };
   }, [soundEffects]);
+
+  // 监听来自AudioSettingsPage的播放请求
+  useEffect(() => {
+    const handlePlaySoundRequest = (event: CustomEvent) => {
+      const { effect } = event.detail;
+      handlePlaySound(effect);
+    };
+
+    window.addEventListener('playSound', handlePlaySoundRequest as EventListener);
+
+    return () => {
+      window.removeEventListener('playSound', handlePlaySoundRequest as EventListener);
+    };
+  }, []);
 
   // 更新全局快捷键
   useEffect(() => {
