@@ -109,11 +109,15 @@ const HomePage = () => {
     };
   }, []);
 
-  // 组件卸载时清理：停止轮询并尝试停止心跳
+  // 组件卸载时清理：仅停止前端轮询，不停止心跳（避免页面切换时误结束直播）
   useEffect(() => {
     return () => {
-      try { /* 停止前端轮询 */ stopPolling(); } catch {}
-      try { /* 尝试停止心跳 */ window.electronAPI.getDouyinApiInfo('stop'); } catch {}
+      try { 
+        /* 仅停止前端轮询，保持心跳继续维持直播状态 */ 
+        stopPolling(); 
+      } catch {}
+      // 注意：不在这里调用 getDouyinApiInfo('stop')，避免页面切换时误结束直播
+      // 心跳停止应该只在用户主动点击"停止直播"按钮时执行
     };
   }, []);
 
