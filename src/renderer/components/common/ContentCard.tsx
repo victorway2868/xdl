@@ -50,27 +50,27 @@ const ContentCard: React.FC<ContentCardProps> = ({ item, size = 'medium', onActi
   const platform = platformConfig[item.platform as keyof typeof platformConfig] || platformConfig.default;
   const PlatformIcon = platform.icon;
 
-  // 尺寸配置
+  // 尺寸配置 - 优化为响应式和紧凑设计
   const sizeConfig = {
     small: {
-      width: '200px',
-      height: '140px',
-      imageHeight: '110px', // 增加封面图高度
-      titleSize: '14px',
+      width: '100%', // 改为响应式宽度
+      height: '160px', // 稍微增加高度以适应更好的比例
+      imageHeight: '120px', // 增加封面图高度
+      titleSize: '13px', // 稍微减小字体以适应紧凑布局
       descLines: 2,
     },
     medium: {
-      width: '280px',
+      width: '100%', // 改为响应式宽度
       height: '200px',
-      imageHeight: '160px', // 增加封面图高度
-      titleSize: '16px',
+      imageHeight: '160px',
+      titleSize: '15px',
       descLines: 3,
     },
     large: {
-      width: '320px',
+      width: '100%', // 改为响应式宽度
       height: '240px',
-      imageHeight: '200px', // 增加封面图高度
-      titleSize: '18px',
+      imageHeight: '200px',
+      titleSize: '17px',
       descLines: 4,
     },
   };
@@ -212,26 +212,32 @@ const ContentCard: React.FC<ContentCardProps> = ({ item, size = 'medium', onActi
 
       </div>
 
-      {/* 内容区域 */}
-      <div style={{ padding: '8px', height: `calc(100% - ${config.imageHeight})` }}>
+      {/* 内容区域 - 优化为紧凑布局 */}
+      <div style={{ 
+        padding: size === 'small' ? '6px 8px' : '8px', 
+        height: `calc(100% - ${config.imageHeight})`,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center'
+      }}>
         <h3
           style={{
             fontSize: config.titleSize,
             fontWeight: '600',
             color: '#F1F5F9',
             margin: '0',
-            lineHeight: '1.2',
+            lineHeight: size === 'small' ? '1.1' : '1.2',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
+            display: '-webkit-box',
+            WebkitLineClamp: size === 'small' ? 2 : 1, // 小尺寸允许2行标题
+            WebkitBoxOrient: 'vertical',
+            whiteSpace: size === 'small' ? 'normal' : 'nowrap',
           }}
+          title={item.title} // 添加tooltip显示完整标题
         >
           {item.title}
         </h3>
-        
-
-
-
       </div>
     </div>
   );

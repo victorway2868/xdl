@@ -547,7 +547,7 @@ const HomePage = () => {
                 </div>
                 <button
                   onClick={handleStopStreaming}
-                  className="px-8 py-4 rounded-xl font-bold text-xl bg-gradient-to-r from-red-500 to-red-600 text-white border-0 cursor-pointer outline-none hover:from-red-600 hover:to-red-700 transition-all"
+                  className="btn-stop-stream"
                 >
                   停止直播
                 </button>
@@ -569,9 +569,7 @@ const HomePage = () => {
                     {(platform === '抖音' && (streamMethod === '手机开播' || streamMethod === '自动开播')) && (
                       <button 
                         onClick={handleLoginClick} 
-                        className={`btn-base px-3 py-1.5 text-xs font-medium transition-all ${
-                          isLoggedIn ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'
-                        } text-white`}
+                        className={isLoggedIn ? 'btn-logout' : 'btn-login'}
                       >
                         <span>{isLoggedIn ? '退出登录' : '登录平台'}</span>
                       </button>

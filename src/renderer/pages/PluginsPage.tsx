@@ -86,13 +86,13 @@ const PluginsPage: React.FC = () => {
         </div>
       ) : (
         <>
-          {/* 插件网格 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-10">
+          {/* 插件网格 - 优化紧凑布局 */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4 mb-10">
             {plugins.map((plugin) => (
               <ContentCard
                 key={plugin.id}
                 item={plugin}
-                size="medium"
+                size="small"
                 onAction={handleCardAction}
               />
             ))}
