@@ -58,6 +58,7 @@ export interface IpcApi {
   killMediaSDKServer: () => Promise<{ success: boolean; message: string }>;
 
   endLiveHotkey: () => Promise<{ success: boolean; message?: string }>;
+  executeCustomHotkey: (keys: string[]) => Promise<{ success: boolean; message?: string }>;
 
   // OBS Configuration
   installFonts: () => Promise<{ success: boolean; message?: string; error?: string }>;

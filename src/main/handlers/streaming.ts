@@ -5,7 +5,7 @@ import os from 'os';
 import { promisify } from 'util';
 import { loginDouyinCompanion } from '../modules/douyinCompanionLogin';
 import { configureHotkeySettings } from '../modules/douyinHotkey';
-import { executeStartLiveHotkey, executeEndLiveHotkey } from '../modules/keyboardShortcut';
+import { executeStartLiveHotkey, executeEndLiveHotkey, executeCustomHotkey } from '../modules/keyboardShortcut';
 import { checkMediaSDKServerRunning, killMediaSDKServer } from '../modules/mediaSdkProcess';
 import { setOBSStreamSettings, startOBSStreaming, stopOBSStreaming } from '../modules/obsWebSocket';
 import { main as douyinApiMain, startPingAnchor, stopPingAnchor, webcastStop } from '../modules/douyinRtmpApi';
@@ -142,6 +142,16 @@ export function registerStreamingHandlers(): void {
     try {
       try { await configureHotkeySettings(); } catch {}
       await executeEndLiveHotkey();
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, message: e?.message || String(e) };
+    }
+  });
+
+  // 执行自定义快捷键
+  ipcMain.handle('execute-custom-hotkey', async (_, keys: string[]) => {
+    try {
+      await executeCustomHotkey(keys);
       return { success: true };
     } catch (e: any) {
       return { success: false, message: e?.message || String(e) };

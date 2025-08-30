@@ -115,6 +115,12 @@ const electronAPI: IpcApi = {
   unregisterGlobalHotkey: (hotkey: string) => ipcRenderer.invoke('unregister-global-hotkey', hotkey),
   updateGlobalHotkeys: (soundEffects: Array<{id: string, hotkey: string, filePath?: string}>) => ipcRenderer.invoke('update-global-hotkeys', soundEffects),
   clearAllGlobalHotkeys: () => ipcRenderer.invoke('clear-all-global-hotkeys'),
+  executeCustomHotkey: (keys: string[]) => ipcRenderer.invoke('execute-custom-hotkey', keys),
+  onHotkeyTriggered: (cb: (payload: { hotkey: string }) => void) => {
+    const unsubscribe = () => ipcRenderer.removeAllListeners('hotkey-triggered');
+    ipcRenderer.on('hotkey-triggered', (_, payload) => cb(payload));
+    return unsubscribe;
+  },
 
   // Auto Update APIs
   checkForUpdates: () =>
