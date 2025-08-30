@@ -445,25 +445,27 @@ const AudioPreviewModal: React.FC<AudioPreviewModalProps> = ({ isOpen, onClose, 
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="modal-overlay" style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)' }}>
             <div 
-                className={`bg-white dark:bg-gray-800 rounded-lg p-4 w-96 max-w-full max-h-[80vh] flex flex-col transition-colors ${
-                    isDragOver ? 'ring-2 ring-blue-500 bg-blue-50/50 dark:bg-blue-900/10' : ''
+                className={`modal-content ${
+                    isDragOver ? 'ring-2 ring-blue-500' : ''
                 }`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
             >
-                <h3 className="text-gray-900 dark:text-white font-medium mb-3">
-                    选择音频文件(支持拖拽音频文件到这里)
-                </h3>
+                <div className="modal-header">
+                    <h3 className="modal-title">
+                        选择音频文件(支持拖拽音频文件到这里)
+                    </h3>
+                </div>
                 
                 {/* 上传状态显示 */}
                 {(isUploading || uploadStatus) && (
-                    <div className="mb-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700">
+                    <div className="mb-3 p-2 rounded-lg theme-bg-tertiary">
                         {isUploading && (
-                            <div className="text-blue-500 dark:text-blue-400 text-sm animate-pulse text-center">
+                            <div className="status-info text-sm animate-pulse text-center">
                                 {uploadStatus}
                             </div>
                         )}
@@ -471,8 +473,8 @@ const AudioPreviewModal: React.FC<AudioPreviewModalProps> = ({ isOpen, onClose, 
                         {!isUploading && uploadStatus && (
                             <div className={`text-sm text-center ${
                                 uploadStatus.includes('成功') 
-                                    ? 'text-green-600 dark:text-green-400' 
-                                    : 'text-red-600 dark:text-red-400'
+                                    ? 'status-success' 
+                                    : 'status-error'
                             }`}>
                                 {uploadStatus}
                             </div>
@@ -482,19 +484,23 @@ const AudioPreviewModal: React.FC<AudioPreviewModalProps> = ({ isOpen, onClose, 
 
                 {/* 拖拽悬停提示 */}
                 {isDragOver && (
-                    <div className="mb-3 p-3 border-2 border-blue-500 border-dashed rounded-lg bg-blue-50 dark:bg-blue-900/20 text-center">
-                        <div className="text-blue-600 dark:text-blue-400">
+                    <div className="mb-3 p-3 border-2 border-dashed rounded-lg text-center theme-border-secondary" 
+                         style={{ 
+                             borderColor: 'var(--border-hover)', 
+                             backgroundColor: 'var(--btn-ghost-bg)' 
+                         }}>
+                        <div className="status-info">
                             <div className="text-xl mb-1">🎵</div>
                             <p className="text-sm font-medium">释放文件以添加到音效库</p>
-                            <p className="text-xs">支持格式：MP3, WAV, OGG, M4A, AAC</p>
+                            <p className="text-xs theme-text-muted">支持格式：MP3, WAV, OGG, M4A, AAC</p>
                         </div>
                     </div>
                 )}
 
                 {/* 音频文件列表 */}
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
                     {audioFiles.length === 0 ? (
-                        <div className="text-center text-gray-500 dark:text-gray-400 py-8">
+                        <div className="theme-text-empty">
                             <p>暂无可用音效文件</p>
                             <p className="text-sm mt-2">拖拽音频文件或更新音效包</p>
                         </div>
@@ -502,15 +508,25 @@ const AudioPreviewModal: React.FC<AudioPreviewModalProps> = ({ isOpen, onClose, 
                         audioFiles.map((file, index) => (
                             <div
                                 key={index}
-                                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer mb-1 flex items-center justify-between text-gray-900 dark:text-white transition-colors"
+                                className="p-2 rounded cursor-pointer mb-1 flex items-center justify-between theme-text-primary transition-all hover:theme-bg-tertiary"
                                 onClick={() => {
                                     onSelect(file);
                                     onClose();
                                 }}
+                                style={{ 
+                                    backgroundColor: 'transparent',
+                                    transition: 'background-color 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'var(--bg-tertiary)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = 'transparent';
+                                }}
                             >
                                 <span className="truncate">{file.split('/').pop()}</span>
                                 <button
-                                    className="ml-2 text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
+                                    className="ml-2 status-info hover:opacity-80 transition-opacity"
                                     onClick={async (e) => {
                                         e.stopPropagation();
                                         try {
@@ -533,7 +549,7 @@ const AudioPreviewModal: React.FC<AudioPreviewModalProps> = ({ isOpen, onClose, 
                 
                 <div className="mt-4 flex justify-end">
                     <button
-                        className="bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-white px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors"
+                        className="theme-btn-secondary"
                         onClick={onClose}
                     >
                         取消
@@ -639,17 +655,24 @@ const HotkeySettingModal: React.FC<HotkeySettingModalProps> = ({ isOpen, onClose
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 w-96 max-w-full transition-colors">
-                <h3 className="text-gray-900 dark:text-white font-medium mb-3">设置快捷键</h3>
+        <div className="modal-overlay" style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)' }}>
+            <div className="modal-content">
+                <div className="modal-header">
+                    <h3 className="modal-title">设置快捷键</h3>
+                </div>
+                
                 <div className="mb-3">
                     <div className="mb-3">
-                        <div className={`p-4 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded border text-center transition-colors ${isRecording ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600'
-                            }`}>
+                        <div className={`p-4 rounded border text-center theme-bg-tertiary theme-text-primary ${
+                            isRecording ? 'theme-border-secondary' : 'theme-border-primary'
+                        }`} style={{
+                            borderColor: isRecording ? 'var(--border-hover)' : 'var(--border-primary)',
+                            backgroundColor: isRecording ? 'var(--btn-ghost-bg)' : 'var(--bg-tertiary)'
+                        }}>
                             {currentHotkey ? (
                                 <div className="text-lg font-medium">{currentHotkey}</div>
                             ) : (
-                                <div className="text-gray-500 dark:text-gray-400">
+                                <div className="theme-text-muted">
                                     {isRecording ? "按下任意键盘组合键..." : "等待录制..."}
                                 </div>
                             )}
@@ -657,18 +680,19 @@ const HotkeySettingModal: React.FC<HotkeySettingModalProps> = ({ isOpen, onClose
                     </div>
 
                     {isRecording && (
-                        <div className="text-xs text-blue-500 dark:text-blue-400 mb-2 animate-pulse text-center">
+                        <div className="text-xs status-info mb-2 animate-pulse text-center">
                             🎯 正在录制快捷键，请按下键盘组合键...
                         </div>
                     )}
 
-                    <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                    <div className="text-xs theme-text-muted text-center">
                         <div>💡 支持：F1-F12, Ctrl+A, Alt+F1, Shift+Space, 小键盘 等</div>
                     </div>
                 </div>
+                
                 <div className="flex justify-end gap-2">
                     <button
-                        className="bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-white px-4 py-1 rounded hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors"
+                        className="theme-btn-secondary"
                         onClick={() => {
                             resetState();
                             onClose();
@@ -677,12 +701,16 @@ const HotkeySettingModal: React.FC<HotkeySettingModalProps> = ({ isOpen, onClose
                         取消
                     </button>
                     <button
-                        className="bg-blue-600 text-white px-4 py-1 rounded disabled:bg-gray-400 dark:disabled:bg-gray-600 hover:bg-blue-700 transition-colors"
+                        className="theme-btn-primary"
                         disabled={!currentHotkey.trim()}
                         onClick={() => {
                             onApply(currentHotkey.trim());
                             resetState();
                             onClose();
+                        }}
+                        style={{
+                            opacity: !currentHotkey.trim() ? 0.5 : 1,
+                            cursor: !currentHotkey.trim() ? 'not-allowed' : 'pointer'
                         }}
                     >
                         确定
