@@ -74,11 +74,7 @@ const electronAPI: IpcApi = {
     ipcRenderer.on('status-notification', listener);
     return () => ipcRenderer.removeListener('status-notification', listener);
   },
-  onHotkeyTriggered: (cb: (payload: { hotkey: string }) => void) => {
-    const listener = (_event: any, payload: { hotkey: string }) => cb(payload);
-    ipcRenderer.on('hotkey-triggered', listener);
-    return () => ipcRenderer.removeListener('hotkey-triggered', listener);
-  },
+
   // OBS
   setOBSStreamSettings: (streamUrl: string, streamKey: string) => ipcRenderer.invoke('set-obs-stream-settings', { streamUrl, streamKey }),
   startOBSStreaming: () => ipcRenderer.invoke('start-obs-streaming'),
