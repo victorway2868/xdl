@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store/store';
 import { fetchSoftwareVersion } from '../store/features/softwareSlice';
@@ -35,13 +35,25 @@ const HomePage = () => {
     }
   }, [contentData, contentLoading]);
 
-  // Local component state
+  // Helper function to get saved streaming settings
+  const getSavedStreamingSettings = () => {
+    try {
+      const saved = localStorage.getItem('streamingSettings');
+      return saved ? JSON.parse(saved) : {};
+    } catch (error) {
+      console.warn('Error reading streaming settings from localStorage:', error);
+      return {};
+    }
+  };
 
-  const [platform, setPlatform] = useState('抖音');
-  const [streamMethod, setStreamMethod] = useState('直播伴侣');
-  const [streamUrl, setStreamUrl] = useState('');
-  const [streamKey, setStreamKey] = useState('');
-  const [isStreaming, setIsStreaming] = useState(false);
+  // Local component state - with persistence
+  const savedSettings = getSavedStreamingSettings();
+  
+  const [platform, setPlatform] = useState(savedSettings.platform || '抖音');
+  const [streamMethod, setStreamMethod] = useState(savedSettings.streamMethod || '直播伴侣');
+  const [streamUrl, setStreamUrl] = useState(savedSettings.streamUrl || '');
+  const [streamKey, setStreamKey] = useState(savedSettings.streamKey || '');
+  const [isStreaming, setIsStreaming] = useState(savedSettings.isStreaming || false);
   const [isLoading, setIsLoading] = useState(false); // For stream actions, not user login
 
   const [error, setError] = useState<string | null>(null); // For stream actions
@@ -136,10 +148,35 @@ const HomePage = () => {
   
   const recommendedWorks = getRecommendations();
 
+  // Save streaming settings to localStorage
+  const saveStreamingSettings = useCallback((updates: Partial<{
+    platform: string;
+    streamMethod: string;
+    streamUrl: string;
+    streamKey: string;
+    isStreaming: boolean;
+  }>) => {
+    try {
+      const current = localStorage.getItem('streamingSettings');
+      const currentSettings = current ? JSON.parse(current) : {};
+      const newSettings = { ...currentSettings, ...updates };
+      localStorage.setItem('streamingSettings', JSON.stringify(newSettings));
+    } catch (error) {
+      console.warn('Error saving streaming settings to localStorage:', error);
+    }
+  }, []);
+
   // Handlers
 
-  const handlePlatformChange = (newPlatform: string) => setPlatform(newPlatform);
-  const handleMethodChange = (newMethod: string) => setStreamMethod(newMethod);
+  const handlePlatformChange = (newPlatform: string) => {
+    setPlatform(newPlatform);
+    saveStreamingSettings({ platform: newPlatform });
+  };
+  
+  const handleMethodChange = (newMethod: string) => {
+    setStreamMethod(newMethod);
+    saveStreamingSettings({ streamMethod: newMethod });
+  };
 
   // 手机开播轮询逻辑（前端控制）
   const pollOnce = async () => {
@@ -162,6 +199,11 @@ const HomePage = () => {
         setStreamUrl(res.streamUrl);
         setStreamKey(res.streamKey);
         setIsStreaming(true);
+        saveStreamingSettings({ 
+          streamUrl: res.streamUrl, 
+          streamKey: res.streamKey, 
+          isStreaming: true 
+        });
         // 配置 OBS
         try {
           const setRes = await window.electronAPI.setOBSStreamSettings(res.streamUrl, res.streamKey);
@@ -248,6 +290,11 @@ const HomePage = () => {
         setStreamUrl(info.streamUrl);
         setStreamKey(info.streamKey);
         setIsStreaming(true); // 立即切换到显示推流码的界面
+        saveStreamingSettings({ 
+          streamUrl: info.streamUrl, 
+          streamKey: info.streamKey, 
+          isStreaming: true 
+        });
         // ----------------------------------------
 
         // 后续步骤继续在后台执行
@@ -326,6 +373,11 @@ const HomePage = () => {
         setIsLoading(false);
         setShowStatus4Image(false);
         setShowStatus2Image(false);
+        saveStreamingSettings({ 
+          streamUrl: '', 
+          streamKey: '', 
+          isStreaming: false 
+        });
       }, 800);
     }
   };
@@ -343,6 +395,15 @@ const HomePage = () => {
   const handleLoginClick = () => {
     if (isLoggedIn) {
       dispatch(logout());
+      // 清除流媒体状态
+      setIsStreaming(false);
+      setStreamUrl('');
+      setStreamKey('');
+      saveStreamingSettings({ 
+        streamUrl: '', 
+        streamKey: '', 
+        isStreaming: false 
+      });
     } else {
       setShowLoginModal(true);
     }
