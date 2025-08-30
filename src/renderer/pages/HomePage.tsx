@@ -571,7 +571,7 @@ const HomePage = () => {
                         onClick={handleLoginClick} 
                         className={isLoggedIn ? 'btn-logout' : 'btn-login'}
                       >
-                        <span>{isLoggedIn ? '退出登录' : '登录平台'}</span>
+                        <span>{isLoggedIn ? '退出' : '登录'}</span>
                       </button>
                     )}
                   </div>

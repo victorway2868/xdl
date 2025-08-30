@@ -506,43 +506,35 @@ h1, h2, h3, h4, h5, h6,
   pointer-events: auto;
   cursor: pointer;
   color: white;
-  /* 亮色主题：更深的蓝色渐变，确保对比度 */
-  background: linear-gradient(to right, #1e40af, #3730a3);
+  background-color: var(--btn-primary-bg);
+  border: 1px solid var(--btn-primary-bg);
+  box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.25);
 }
 
 .btn-start-stream:hover:not(:disabled) {
-  background: linear-gradient(to right, #1e3a8a, #312e81);
+  background-color: var(--btn-primary-hover);
+  border-color: var(--btn-primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.35);
 }
 
 .btn-start-stream:disabled {
   cursor: not-allowed;
   opacity: 0.7;
+  transform: none;
 }
 
-/* 暗色主题下的开始直播按钮 */
-.dark .btn-start-stream {
-  background: linear-gradient(to right, #3b82f6, #6366f1);
-}
-
-.dark .btn-start-stream:hover:not(:disabled) {
-  background: linear-gradient(to right, #2563eb, #4f46e5);
-  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
-}
-
-/* 停止直播按钮 - 高对比度红色样式 */
+/* 停止直播按钮 - 使用主题变量的红色样式 */
 .btn-stop-stream {
   @apply px-8 py-4 rounded-xl font-bold text-xl transition-all border-0 outline-none cursor-pointer;
   color: white;
-  /* 亮色主题：深红色渐变，确保在浅色背景下有足够对比度 */
-  background: linear-gradient(to right, #dc2626, #b91c1c);
+  background-color: #dc2626;
   border: 2px solid rgba(220, 38, 38, 0.3);
   box-shadow: 0 4px 14px 0 rgba(220, 38, 38, 0.25);
 }
 
 .btn-stop-stream:hover {
-  background: linear-gradient(to right, #b91c1c, #991b1b);
+  background-color: #b91c1c;
   border-color: rgba(185, 28, 28, 0.5);
   box-shadow: 0 6px 20px 0 rgba(220, 38, 38, 0.4);
   transform: translateY(-1px);
@@ -550,31 +542,30 @@ h1, h2, h3, h4, h5, h6,
 
 /* 暗色主题下的停止直播按钮 */
 .dark .btn-stop-stream {
-  background: linear-gradient(to right, #ef4444, #dc2626);
+  background-color: #ef4444;
   border-color: rgba(239, 68, 68, 0.4);
   box-shadow: 0 4px 14px 0 rgba(239, 68, 68, 0.3);
 }
 
 .dark .btn-stop-stream:hover {
-  background: linear-gradient(to right, #dc2626, #b91c1c);
+  background-color: #dc2626;
   border-color: rgba(220, 38, 38, 0.6);
   box-shadow: 0 6px 20px 0 rgba(239, 68, 68, 0.5);
 }
 
-/* 登录/退出按钮样式 - 高对比度 */
+/* 登录/退出按钮样式 - 使用主题变量 */
 .btn-login {
   @apply px-3 py-1.5 text-xs font-medium transition-all rounded-md border-2;
   color: white;
-  /* 登录状态：蓝色 */
-  background: linear-gradient(to right, #2563eb, #1d4ed8);
-  border-color: rgba(37, 99, 235, 0.4);
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+  background-color: var(--btn-primary-bg);
+  border-color: var(--btn-primary-bg);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25);
 }
 
 .btn-login:hover {
-  background: linear-gradient(to right, #1d4ed8, #1e40af);
-  border-color: rgba(29, 78, 216, 0.6);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+  background-color: var(--btn-primary-hover);
+  border-color: var(--btn-primary-hover);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
   transform: translateY(-1px);
 }
 
@@ -582,41 +573,16 @@ h1, h2, h3, h4, h5, h6,
 .btn-logout {
   @apply px-3 py-1.5 text-xs font-medium transition-all rounded-md border-2;
   color: white;
-  background: linear-gradient(to right, #dc2626, #b91c1c);
+  background-color: #dc2626;
   border-color: rgba(220, 38, 38, 0.4);
   box-shadow: 0 2px 8px rgba(220, 38, 38, 0.25);
 }
 
 .btn-logout:hover {
-  background: linear-gradient(to right, #b91c1c, #991b1b);
+  background-color: #b91c1c;
   border-color: rgba(185, 28, 28, 0.6);
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
   transform: translateY(-1px);
-}
-
-/* 暗色主题下的登录/退出按钮 */
-.dark .btn-login {
-  background: linear-gradient(to right, #3b82f6, #2563eb);
-  border-color: rgba(59, 130, 246, 0.5);
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-}
-
-.dark .btn-login:hover {
-  background: linear-gradient(to right, #2563eb, #1d4ed8);
-  border-color: rgba(37, 99, 235, 0.7);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-}
-
-.dark .btn-logout {
-  background: linear-gradient(to right, #ef4444, #dc2626);
-  border-color: rgba(239, 68, 68, 0.5);
-  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
-}
-
-.dark .btn-logout:hover {
-  background: linear-gradient(to right, #dc2626, #b91c1c);
-  border-color: rgba(220, 38, 38, 0.7);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
 }
 
 /* 空状态样式 */
