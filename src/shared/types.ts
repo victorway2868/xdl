@@ -23,6 +23,7 @@ export interface User {
 export interface DouyinUserInfo {
   nickname: string;
   userId: string;
+  liveid: string;
   avatarUrl: string;
   followerCount: number;
   followingCount: number;

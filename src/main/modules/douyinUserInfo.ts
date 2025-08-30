@@ -8,6 +8,7 @@ const AGENT_VALUE = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.3
 export interface DouyinUserInfo {
   nickname: string;
   userId: string;
+  liveid: string;
   avatarUrl: string;
   followerCount: number;
   followingCount: number;
@@ -37,6 +38,7 @@ async function fetchDouyinUserInfo(cookie: string): Promise<DouyinUserInfo | nul
       const userInfo: DouyinUserInfo = {
         nickname: userData.nickname || '未知',
         userId: userData.id || '未知',
+        liveid: userData.short_id || '未知',        
         avatarUrl: (userData.avatar_thumb && userData.avatar_thumb.url_list && userData.avatar_thumb.url_list[0]) || '未知',
         followerCount: (userData.follow_info && userData.follow_info.follower_count) || 0,
         followingCount: (userData.follow_info && userData.follow_info.following_count) || 0,

@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store/store';
 import { fetchSoftwareVersion } from '../store/features/softwareSlice';
 import { fetchDouyinUserInfo, logout, loginWithDouyinWeb, loginWithDouyinCompanion } from '../store/features/user/userSlice';
+import { autoConnect, disconnect } from '../store/features/danmakuSlice';
 import { User, Copy, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import LoginModal from '../components/LoginModal';
@@ -208,6 +209,16 @@ const HomePage = () => {
           streamKey: res.streamKey, 
           isStreaming: true 
         });
+
+        // 延迟15秒后自动连接弹幕
+        setTimeout(() => {
+          if (douyinUserInfo?.liveid && douyinUserInfo.liveid !== '未知') {
+            console.log('Auto connecting danmaku with liveid (API route):', douyinUserInfo.liveid);
+            dispatch(autoConnect({ liveid: douyinUserInfo.liveid }));
+          } else {
+            console.warn('Cannot auto connect danmaku: liveid not available');
+          }
+        }, 15000);
         // 配置 OBS
         try {
           const setRes = await window.electronAPI.setOBSStreamSettings(res.streamUrl, res.streamKey);
@@ -299,6 +310,16 @@ const HomePage = () => {
           streamKey: info.streamKey, 
           isStreaming: true 
         });
+
+        // 延迟15秒后自动连接弹幕
+        setTimeout(() => {
+          if (douyinUserInfo?.liveid && douyinUserInfo.liveid !== '未知') {
+            console.log('Auto connecting danmaku with liveid:', douyinUserInfo.liveid);
+            dispatch(autoConnect({ liveid: douyinUserInfo.liveid }));
+          } else {
+            console.warn('Cannot auto connect danmaku: liveid not available');
+          }
+        }, 15000);
         // ----------------------------------------
 
         // 后续步骤继续在后台执行
@@ -345,6 +366,9 @@ const HomePage = () => {
 
       // 停止前端轮询
       stopPolling();
+
+      // 自动断开弹幕连接
+      dispatch(disconnect());
 
       if (streamMethod === '直播伴侣') {
         // 1) 触发直播伴侣的"结束直播"热键（Shift+L）

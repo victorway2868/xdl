@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Play, Square, Wifi, WifiOff, Gift, Heart, Users, MessageCircle, ThumbsUp, Crown, Settings, X, Volume2, VolumeX, Keyboard, Plus, Trash2 } from 'lucide-react';
+import { Square, Wifi, WifiOff, Gift, Heart, Users, MessageCircle, ThumbsUp, Crown, Settings, X, Volume2, VolumeX, Keyboard, Plus, Trash2 } from 'lucide-react';
 
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../store/store';
-import { connect, disconnect, setRoomNum as setStoreRoomNum, Message } from '../store/features/danmakuSlice';
+import { disconnect, Message } from '../store/features/danmakuSlice';
 
 
 import '../styles/themes.css';
@@ -21,9 +21,8 @@ const DanmuPage = () => {
   } = useSelector((state: RootState) => state.danmaku);
 
   // 本地UI状态
-  const [localRoomNum, setLocalRoomNum] = useState('');
   const [showSettings, setShowSettings] = useState(false);
-  const [activeSettingsTab, setActiveSettingsTab] = useState('connection'); // 'connection', 'voice', 'hotkey'
+  const [activeSettingsTab, setActiveSettingsTab] = useState('voice'); // 'connection', 'voice', 'hotkey'
   const [hotkeyModalOpen, setHotkeyModalOpen] = useState(false);
   const [currentHotkeyEdit, setCurrentHotkeyEdit] = useState<{type: 'gift' | 'keyword', index: number} | null>(null);
 
@@ -148,24 +147,6 @@ const DanmuPage = () => {
     
     setCurrentHotkeyEdit(null);
   }, [currentHotkeyEdit, hotkeySettings, saveHotkeySettings]);
-
-  // 验证房间号
-    const verifyRoomNumber = useCallback((value: string) => {
-    const roomNumRegex = /^\d+$/;
-    const flag = roomNumRegex.test(value) && value.length > 0;
-    return flag ? { flag, message: '' } : { flag, message: '房间号错误' };
-  }, []);
-
-  // 连接房间
-  const connectLive = useCallback(() => {
-    const validation = verifyRoomNumber(localRoomNum);
-    if (!validation.flag) {
-      alert(validation.message);
-      return;
-    }
-    dispatch(setStoreRoomNum(localRoomNum));
-    dispatch(connect(localRoomNum));
-  }, [localRoomNum, dispatch, verifyRoomNumber]);
 
   // 断开连接
   const disconnectLive = useCallback(() => {
@@ -412,7 +393,7 @@ const DanmuPage = () => {
                     }`}
                   >
                     <Wifi size={16} className="mr-2" />
-                    连接设置
+                    自动连接
                   </button>
                   <button
                     onClick={() => setActiveSettingsTab('voice')}
@@ -443,30 +424,31 @@ const DanmuPage = () => {
               <div className="flex-1 overflow-y-auto p-6">
                 {activeSettingsTab === 'connection' && (
                   <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2 text-slate-800 dark:text-white">房间号</label>
-                      <input
-                        type="text"
-                        value={localRoomNum}
-                        onChange={(e) => setLocalRoomNum(e.target.value)}
-                        placeholder="请输入房间号"
-                        className="w-full bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 border border-slate-300 dark:border-slate-600 placeholder-slate-500 dark:placeholder-slate-400"
-                      />
-                    </div>
-                    <div className={`flex items-center text-sm ${statusDisplay.color}`}>
-                      <StatusIcon size={16} className="mr-2" />
-                      {statusDisplay.text}
-                    </div>
-                    <div className="flex space-x-2">
-                      {connectStatus === 1 ? (
-                        <button onClick={disconnectLive} className="flex-1 bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white px-4 py-2 rounded-md transition-colors flex items-center justify-center">
-                          <Square size={16} className="mr-2" />断开
-                        </button>
-                      ) : (
-                        <button onClick={connectLive} className="flex-1 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors flex items-center justify-center">
-                          <Play size={16} className="mr-2" />连接
-                        </button>
+                    <div className="text-center py-8">
+                      <div className="mb-4">
+                        <Wifi size={48} className="mx-auto text-blue-500 dark:text-blue-400" />
+                      </div>
+                      <h3 className="text-lg font-medium text-slate-800 dark:text-white mb-2">自动弹幕连接</h3>
+                      <p className="text-slate-600 dark:text-slate-400 mb-4">弹幕系统已升级为自动连接模式</p>
+                      <div className={`inline-flex items-center px-3 py-2 rounded-md text-sm ${statusDisplay.color}`}>
+                        <StatusIcon size={16} className="mr-2" />
+                        {statusDisplay.text}
+                      </div>
+                      {connectStatus === 1 && (
+                        <div className="mt-4">
+                          <button onClick={disconnectLive} className="bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white px-4 py-2 rounded-md transition-colors flex items-center justify-center mx-auto">
+                            <Square size={16} className="mr-2" />手动断开
+                          </button>
+                        </div>
                       )}
+                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                      <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">自动连接说明</h4>
+                      <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1">
+                        <li>• 开始直播时自动连接弹幕（延迟12秒）</li>
+                        <li>• 停止直播时自动断开弹幕</li>
+                        <li>• 使用您的抖音用户信息自动获取房间号</li>
+                      </ul>
                     </div>
                   </div>
                 )}

@@ -161,6 +161,11 @@ const danmakuSlice = createSlice({
     disconnect: () => { 
       // 这个 action 将被中间件捕获以关闭连接
     },
+    // 自动连接弹幕，使用用户的liveid
+    autoConnect: (state, action: PayloadAction<{ liveid: string }>) => {
+      state.connectStatus = 1; // 立即设置为连接中
+      state.roomNum = action.payload.liveid;
+    },
   },
 });
 
@@ -173,6 +178,7 @@ export const {
   resetDanmakuState,
   connect,
   disconnect,
+  autoConnect,
 } = danmakuSlice.actions;
 
 export default danmakuSlice.reducer;
