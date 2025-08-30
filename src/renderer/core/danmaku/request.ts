@@ -110,8 +110,10 @@ export const fetchImInfo = async function (roomId: string, uniqueId: string) {
       live_pc: roomId,
       a_bogus: aBogus
     });
-    // 始终使用代理路径，由 Vite 开发服务器处理
-    const url = `/dylive/webcast/im/fetch/?${makeUrlParams(params)}`;
+    // 开发环境使用代理路径，生产环境直连抖音API
+    const url = location.protocol === 'file:' 
+      ? `https://live.douyin.com/webcast/im/fetch/?${makeUrlParams(params)}`
+      : `/dylive/webcast/im/fetch/?${makeUrlParams(params)}`;
     console.log('fetchImInfo - using proxy url:', url);
     // 不清楚接口是否有 referer 验证，需要的话，得在服务器跨域配置处设置，这里配置无效
     // const headers = {
