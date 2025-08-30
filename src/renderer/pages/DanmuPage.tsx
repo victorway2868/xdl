@@ -5,7 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '../store/store';
 import { connect, disconnect, setRoomNum as setStoreRoomNum, Message } from '../store/features/danmakuSlice';
 
-import TitleBar from '../components/layout/TitleBar';
+
 import '../styles/themes.css';
 
 const DanmuPage = () => {
@@ -93,13 +93,11 @@ const DanmuPage = () => {
     }
   }, [speechSynthesis]);
 
-  // 语音播报函数
+  // 语音测试函数（仅用于设置测试，不干扰全局播报）
   const speakText = useCallback((text: string) => {
     if (!voiceSettings.enabled || !text.trim()) return;
     
-    // 停止当前播放
-    speechSynthesis.cancel();
-    
+    // 创建单独的语音实例，不使用cancel()避免干扰全局播报
     const utterance = new SpeechSynthesisUtterance(text);
     
     if (voices.length > 0 && voices[voiceSettings.voice]) {
@@ -110,6 +108,7 @@ const DanmuPage = () => {
     utterance.pitch = voiceSettings.pitch;
     utterance.volume = voiceSettings.volume;
     
+    // 直接播放，不调用cancel()
     speechSynthesis.speak(utterance);
   }, [voiceSettings, voices, speechSynthesis]);
 
@@ -239,8 +238,7 @@ const DanmuPage = () => {
   const StatusIcon = statusDisplay.icon;
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-white dark:bg-slate-900 text-slate-800 dark:text-white transition-colors duration-300">
-      <TitleBar />
+    <div className="h-full flex flex-col overflow-hidden bg-white dark:bg-slate-900 text-slate-800 dark:text-white transition-colors duration-300">
       
       {/* 顶部导航栏 */}
       <div className="flex items-center justify-between px-4 py-3 flex-shrink-0 bg-slate-100 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-600">

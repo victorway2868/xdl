@@ -37,10 +37,8 @@ const App: React.FC = () => {
                 <Route path="tutorials" element={<TutorialsPage />} />
                 <Route path="plugins" element={<PluginsPage />} />
                 <Route path="devices" element={<DevicesPage />} />
+                <Route path="danmu" element={<DanmuPage />} />
               </Route>
-
-              {/* 弹幕功能路由 - 需要在ThemeProvider内部但不需要MainLayout */}
-              <Route path="/danmu" element={<DanmuPage />} />
             </Routes>
           </RouterComponent>
         </ConfigProvider>

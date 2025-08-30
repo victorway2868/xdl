@@ -410,7 +410,7 @@ const HomePage = () => {
                 {companionVersion}
               </span>
             </div>
-            <button onClick={() => navigate('/danmu')} className="btn-base btn-ghost text-xs px-2 py-1">打开弹幕</button>
+            <button onClick={() => navigate('/app/danmu')} className="btn-base btn-ghost text-xs px-2 py-1">打开弹幕</button>
           </div>
 
 
