@@ -79,6 +79,7 @@ export interface IpcApi {
   playAudioFile: (filePath: string) => Promise<boolean>; // 备用方案
   getAudioFileUrl: (filePath: string) => Promise<string | null>;
   checkSoundPackUpdates: () => Promise<{ files: Array<{ name: string; url: string }> } | null>;
+  copyAudioToCustomSounds: (sourcePath: string) => Promise<{ success: boolean; fileName?: string; error?: string }>;
 
   // Global Hotkey APIs
   registerGlobalHotkey: (hotkey: string, filePath: string) => Promise<boolean>;

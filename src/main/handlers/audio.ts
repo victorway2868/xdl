@@ -97,10 +97,72 @@ async function createSampleSoundPack(): Promise<void> {
   }
 }
 
+// Get CustomSounds directory path
+function getCustomSoundsDir(): string {
+  const soundEffectsDir = getSoundEffectsDir();
+  return path.join(soundEffectsDir, 'CustomSounds');
+}
+
+// Ensure CustomSounds directory exists
+function ensureCustomSoundsDir(): void {
+  const customSoundsDir = getCustomSoundsDir();
+  if (!fs.existsSync(customSoundsDir)) {
+    fs.mkdirSync(customSoundsDir, { recursive: true });
+    loggerService.addLog('info', `Created CustomSounds directory: ${customSoundsDir}`, 'main');
+  }
+}
+
+// Check if file is an audio file
+function isAudioFile(fileName: string): boolean {
+  const audioExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac'];
+  const ext = path.extname(fileName).toLowerCase();
+  return audioExtensions.includes(ext);
+}
+
+// Copy audio file to CustomSounds folder
+async function copyAudioFileToCustomSounds(sourcePath: string): Promise<{ success: boolean; fileName?: string; error?: string }> {
+  try {
+    ensureCustomSoundsDir();
+    const customSoundsDir = getCustomSoundsDir();
+    
+    // Get file name from source path
+    const fileName = path.basename(sourcePath);
+    
+    // Validate audio file format
+    if (!isAudioFile(fileName)) {
+      return { success: false, error: '不支持的音频文件格式。支持的格式：MP3, WAV, OGG, M4A, AAC' };
+    }
+    
+    // Check if file already exists and generate unique name if needed
+    let destinationPath = path.join(customSoundsDir, fileName);
+    let counter = 1;
+    const nameWithoutExt = path.parse(fileName).name;
+    const ext = path.parse(fileName).ext;
+    
+    while (fs.existsSync(destinationPath)) {
+      const newFileName = `${nameWithoutExt}_${counter}${ext}`;
+      destinationPath = path.join(customSoundsDir, newFileName);
+      counter++;
+    }
+    
+    // Copy file
+    fs.copyFileSync(sourcePath, destinationPath);
+    
+    const finalFileName = path.basename(destinationPath);
+    loggerService.addLog('info', `Audio file copied to CustomSounds: ${finalFileName}`, 'main');
+    
+    return { success: true, fileName: finalFileName };
+  } catch (error) {
+    loggerService.addLog('error', `Error copying audio file: ${error}`, 'main');
+    return { success: false, error: `复制文件失败: ${error}` };
+  }
+}
+
 // Get all audio files from sound effects directory
 async function getAudioFiles(): Promise<string[]> {
   try {
     ensureSoundEffectsDir();
+    ensureCustomSoundsDir(); // Ensure CustomSounds directory exists
     await createSampleSoundPack();
     const soundEffectsDir = getSoundEffectsDir();
     const audioFiles: string[] = [];
@@ -461,6 +523,16 @@ export function registerAudioHandlers(): void {
     } catch (error) {
       loggerService.addLog('error', `IPC check-sound-pack-updates error: ${error}`, 'main');
       return null;
+    }
+  });
+
+  // Copy audio file to CustomSounds folder
+  ipcMain.handle('copy-audio-to-custom-sounds', async (_, sourcePath: string) => {
+    try {
+      return await copyAudioFileToCustomSounds(sourcePath);
+    } catch (error) {
+      loggerService.addLog('error', `IPC copy-audio-to-custom-sounds error: ${error}`, 'main');
+      return { success: false, error: `复制文件失败: ${error}` };
     }
   });
 

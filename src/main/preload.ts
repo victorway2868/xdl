@@ -105,6 +105,7 @@ const electronAPI: IpcApi = {
   playAudioFile: (filePath: string) => ipcRenderer.invoke('play-audio-file', filePath), // 备用方案
   getAudioFileUrl: (filePath: string) => ipcRenderer.invoke('get-audio-file-url', filePath),
   checkSoundPackUpdates: () => ipcRenderer.invoke('check-sound-pack-updates'),
+  copyAudioToCustomSounds: (sourcePath: string) => ipcRenderer.invoke('copy-audio-to-custom-sounds', sourcePath),
 
   // Global Hotkey APIs
   registerGlobalHotkey: (hotkey: string, filePath: string) => ipcRenderer.invoke('register-global-hotkey', hotkey, filePath),

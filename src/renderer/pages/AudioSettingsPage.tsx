@@ -159,10 +159,18 @@ function AudioSettingsPage() {
             }
         };
 
+        // 监听音频文件更新事件
+        const handleAudioFilesUpdated = (event: CustomEvent) => {
+            const updatedFiles = event.detail;
+            setAvailableAudioFiles(updatedFiles);
+        };
+
         window.addEventListener('globalAudioStateChange', handleGlobalAudioStateChange as EventListener);
+        window.addEventListener('audioFilesUpdated', handleAudioFilesUpdated as EventListener);
 
         return () => {
             window.removeEventListener('globalAudioStateChange', handleGlobalAudioStateChange as EventListener);
+            window.removeEventListener('audioFilesUpdated', handleAudioFilesUpdated as EventListener);
         };
     }, []);
 
@@ -334,17 +342,161 @@ interface AudioPreviewModalProps {
 }
 
 const AudioPreviewModal: React.FC<AudioPreviewModalProps> = ({ isOpen, onClose, audioFiles, onSelect }) => {
+    const [isDragOver, setIsDragOver] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadStatus, setUploadStatus] = useState<string>('');
+
     if (!isOpen) return null;
+
+    // 验证音频文件格式
+    const isValidAudioFile = (file: File): boolean => {
+        const validTypes = ['audio/mp3', 'audio/wav', 'audio/ogg', 'audio/m4a', 'audio/aac', 'audio/mpeg'];
+        const validExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac'];
+        
+        return validTypes.includes(file.type) || 
+               validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+    };
+
+    // 处理文件上传
+    const handleFileUpload = async (files: FileList) => {
+        setIsUploading(true);
+        setUploadStatus('正在处理文件...');
+        
+        const audioFiles = Array.from(files).filter(isValidAudioFile);
+        
+        if (audioFiles.length === 0) {
+            setUploadStatus('未找到有效的音频文件');
+            setTimeout(() => {
+                setUploadStatus('');
+                setIsUploading(false);
+            }, 2000);
+            return;
+        }
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (const file of audioFiles) {
+            try {
+                const result = await window.electronAPI?.copyAudioToCustomSounds?.(file.path);
+                if (result?.success) {
+                    successCount++;
+                } else {
+                    errorCount++;
+                    console.error('Failed to copy file:', result?.error);
+                }
+            } catch (error) {
+                errorCount++;
+                console.error('Failed to upload file:', error);
+            }
+        }
+
+        if (successCount > 0) {
+            setUploadStatus(`成功添加 ${successCount} 个音频文件`);
+            // 刷新音频文件列表
+            setTimeout(async () => {
+                try {
+                    const updatedFiles = await window.electronAPI?.getAudioFiles?.() || [];
+                    window.dispatchEvent(new CustomEvent('audioFilesUpdated', { detail: updatedFiles }));
+                } catch (error) {
+                    console.error('Failed to refresh audio files:', error);
+                }
+            }, 500);
+        } else {
+            setUploadStatus(`添加失败${errorCount > 0 ? ` (${errorCount} 个文件)` : ''}`);
+        }
+
+        setTimeout(() => {
+            setUploadStatus('');
+            setIsUploading(false);
+        }, 3000);
+    };
+
+    // 拖拽事件处理
+    const handleDragEnter = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // 只有当离开整个拖拽区域时才设置为false
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+            setIsDragOver(false);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragOver(false);
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            handleFileUpload(files);
+        }
+    };
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-4 w-96 max-w-full max-h-[80vh] flex flex-col transition-colors">
-                <h3 className="text-gray-900 dark:text-white font-medium mb-3">选择音频文件</h3>
+            <div 
+                className={`bg-white dark:bg-gray-800 rounded-lg p-4 w-96 max-w-full max-h-[80vh] flex flex-col transition-colors ${
+                    isDragOver ? 'ring-2 ring-blue-500 bg-blue-50/50 dark:bg-blue-900/10' : ''
+                }`}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+            >
+                <h3 className="text-gray-900 dark:text-white font-medium mb-3">
+                    选择音频文件(支持拖拽音频文件到这里)
+                </h3>
+                
+                {/* 上传状态显示 */}
+                {(isUploading || uploadStatus) && (
+                    <div className="mb-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700">
+                        {isUploading && (
+                            <div className="text-blue-500 dark:text-blue-400 text-sm animate-pulse text-center">
+                                {uploadStatus}
+                            </div>
+                        )}
+                        
+                        {!isUploading && uploadStatus && (
+                            <div className={`text-sm text-center ${
+                                uploadStatus.includes('成功') 
+                                    ? 'text-green-600 dark:text-green-400' 
+                                    : 'text-red-600 dark:text-red-400'
+                            }`}>
+                                {uploadStatus}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* 拖拽悬停提示 */}
+                {isDragOver && (
+                    <div className="mb-3 p-3 border-2 border-blue-500 border-dashed rounded-lg bg-blue-50 dark:bg-blue-900/20 text-center">
+                        <div className="text-blue-600 dark:text-blue-400">
+                            <div className="text-xl mb-1">🎵</div>
+                            <p className="text-sm font-medium">释放文件以添加到音效库</p>
+                            <p className="text-xs">支持格式：MP3, WAV, OGG, M4A, AAC</p>
+                        </div>
+                    </div>
+                )}
+
+                {/* 音频文件列表 */}
                 <div className="flex-1 overflow-y-auto">
                     {audioFiles.length === 0 ? (
                         <div className="text-center text-gray-500 dark:text-gray-400 py-8">
                             <p>暂无可用音效文件</p>
-                            <p className="text-sm mt-2">请先更新音效包</p>
+                            <p className="text-sm mt-2">拖拽音频文件或更新音效包</p>
                         </div>
                     ) : (
                         audioFiles.map((file, index) => (
@@ -378,6 +530,7 @@ const AudioPreviewModal: React.FC<AudioPreviewModalProps> = ({ isOpen, onClose, 
                         ))
                     )}
                 </div>
+                
                 <div className="mt-4 flex justify-end">
                     <button
                         className="bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-white px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors"
