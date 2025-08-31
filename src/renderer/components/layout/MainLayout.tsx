@@ -17,7 +17,7 @@ interface SoundEffect {
 // 语音事件配置接口
 interface VoiceEventConfig {
   enabled: boolean;
-  prefix: string;
+  template: string;
 }
 
 const MainLayout: React.FC = () => {
@@ -33,20 +33,63 @@ const MainLayout: React.FC = () => {
   // 语音播报设置状态
   const [voiceSettings, setVoiceSettings] = useState(() => {
     const saved = localStorage.getItem('voiceSettings');
-    return saved ? JSON.parse(saved) : {
+    const defaultSettings = {
       enabled: false,
       voice: 0,
       rate: 1,
       pitch: 1,
       volume: 1,
       events: {
-        chat: { enabled: true, prefix: '聊天消息：' },
-        gift: { enabled: true, prefix: '感谢' },
-        follow: { enabled: true, prefix: '感谢' },
-        like: { enabled: true, prefix: '感谢点赞：' },
-        member: { enabled: true, prefix: '欢迎' }
+        chat: { enabled: true, template: '{usr}说' },
+        gift: { enabled: true, template: '感谢 {usr} 送出的' },
+        follow: { enabled: true, template: '感谢{usr}的关注' },
+        like: { enabled: true, template: '来自{usr}的赞赞' },
+        member: { enabled: true, template: '欢迎{usr}来到直播间' }
       }
     };
+
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // 兼容旧版本的prefix格式，转换为template格式
+        if (parsed.events) {
+          Object.keys(parsed.events).forEach(eventType => {
+            const event = parsed.events[eventType];
+            // 如果存在旧的prefix字段但没有template字段，进行转换
+            if (event.prefix !== undefined && event.template === undefined) {
+              // 将旧的prefix转换为新的template格式
+              switch (eventType) {
+                case 'chat':
+                  event.template = event.prefix || '{usr}说';
+                  break;
+                case 'gift':
+                  event.template = event.prefix || '感谢 {usr} 送出的';
+                  break;
+                case 'follow':
+                  event.template = event.prefix || '感谢{usr}的关注';
+                  break;
+                case 'like':
+                  event.template = event.prefix || '来自{usr}的赞赞';
+                  break;
+                case 'member':
+                  event.template = event.prefix || '欢迎{usr}来到直播间';
+                  break;
+              }
+              delete event.prefix; // 删除旧的prefix字段
+            }
+            // 如果template为空或undefined，使用默认值
+            if (!event.template) {
+              event.template = defaultSettings.events[eventType as keyof typeof defaultSettings.events]?.template || '';
+            }
+          });
+        }
+        return { ...defaultSettings, ...parsed };
+      } catch (e) {
+        console.warn('解析语音设置失败，使用默认设置:', e);
+        return defaultSettings;
+      }
+    }
+    return defaultSettings;
   });
 
   // 快捷键设置状态
@@ -61,6 +104,22 @@ const MainLayout: React.FC = () => {
   // 语音合成相关
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const speechSynthesis = window.speechSynthesis;
+
+  // 模板变量解析函数
+  const parseTemplate = useCallback((template: string, variables: Record<string, any>): string => {
+    if (!template || typeof template !== 'string') {
+      return '';
+    }
+    
+    let result = template;
+    Object.entries(variables).forEach(([key, value]) => {
+      const regex = new RegExp(`\\{${key}\\}`, 'g');
+      // 确保 value 不为 undefined 或 null
+      const safeValue = value != null ? String(value) : '';
+      result = result.replace(regex, safeValue);
+    });
+    return result;
+  }, []);
 
   // 初始化语音列表
   useEffect(() => {
@@ -138,30 +197,40 @@ const MainLayout: React.FC = () => {
     const latestMessage = messages[messages.length - 1];
     
     // 语音播报
-    if (voiceSettings.enabled) {
+    if (voiceSettings.enabled && latestMessage?.user?.name) {
       const eventConfig = voiceSettings.events[latestMessage.type as keyof typeof voiceSettings.events] as VoiceEventConfig;
-      if (eventConfig?.enabled) {
+      if (eventConfig?.enabled && eventConfig.template) {
         let textToSpeak = '';
         
         switch (latestMessage.type) {
-          case 'chat':
-            textToSpeak = `${eventConfig.prefix}${latestMessage.user.name}说：${latestMessage.content}`;
+          case 'chat': {
+            const templateText = parseTemplate(eventConfig.template, { usr: latestMessage.user.name });
+            const content = latestMessage.content || '';
+            textToSpeak = `${templateText}${content}`;
             break;
-          case 'gift':
-            textToSpeak = `${eventConfig.prefix}${latestMessage.user.name}送出了${latestMessage.gift.name}`;
+          }
+          case 'gift': {
+            const templateText = parseTemplate(eventConfig.template, { usr: latestMessage.user.name });
+            const giftCount = latestMessage.gift?.count || 1;
+            const giftName = latestMessage.gift?.name || '礼物';
+            textToSpeak = `${templateText}${giftCount}个${giftName}`;
             break;
-          case 'follow':
-            textToSpeak = `${eventConfig.prefix}${latestMessage.user.name}关注了直播间`;
+          }
+          case 'follow': {
+            textToSpeak = parseTemplate(eventConfig.template, { usr: latestMessage.user.name });
             break;
-          case 'like':
-            textToSpeak = `${eventConfig.prefix}${latestMessage.user.name}`;
+          }
+          case 'like': {
+            textToSpeak = parseTemplate(eventConfig.template, { usr: latestMessage.user.name });
             break;
-          case 'member':
-            textToSpeak = `${eventConfig.prefix}${latestMessage.user.name}进入了直播间`;
+          }
+          case 'member': {
+            textToSpeak = parseTemplate(eventConfig.template, { usr: latestMessage.user.name });
             break;
+          }
         }
         
-        if (textToSpeak) {
+        if (textToSpeak.trim()) {
           speakText(textToSpeak);
         }
       }
@@ -183,7 +252,7 @@ const MainLayout: React.FC = () => {
         triggerHotkeys(keywordTrigger.keys);
       }
     }
-  }, [messages, voiceSettings, hotkeySettings, speakText, triggerHotkeys]);
+  }, [messages, voiceSettings, hotkeySettings, speakText, triggerHotkeys, parseTemplate]);
 
   // 内容数据初始化 - 软件启动时执行一次
   useEffect(() => {

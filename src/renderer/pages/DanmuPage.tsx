@@ -25,20 +25,63 @@ const DanmuPage = () => {
   // 语音播报设置状态
   const [voiceSettings, setVoiceSettings] = useState(() => {
     const saved = localStorage.getItem('voiceSettings');
-    return saved ? JSON.parse(saved) : {
+    const defaultSettings = {
       enabled: false,
       voice: 0, // 声音选择索引
       rate: 1, // 语速 0.1-10
       pitch: 1, // 音调 0-2
       volume: 1, // 音量 0-1
       events: {
-        chat: { enabled: true, prefix: '聊天消息：' },
-        gift: { enabled: true, prefix: '感谢' },
-        follow: { enabled: true, prefix: '感谢' },
-        like: { enabled: true, prefix: '感谢点赞：' },
-        member: { enabled: true, prefix: '欢迎' }
+        chat: { enabled: true, template: '{usr}说' },
+        gift: { enabled: true, template: '感谢 {usr} 送出的' },
+        follow: { enabled: true, template: '感谢{usr}的关注' },
+        like: { enabled: true, template: '来自{usr}的赞赞' },
+        member: { enabled: true, template: '欢迎{usr}来到直播间' }
       }
     };
+
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // 兼容旧版本的prefix格式，转换为template格式
+        if (parsed.events) {
+          Object.keys(parsed.events).forEach(eventType => {
+            const event = parsed.events[eventType];
+            // 如果存在旧的prefix字段但没有template字段，进行转换
+            if (event.prefix !== undefined && event.template === undefined) {
+              // 将旧的prefix转换为新的template格式
+              switch (eventType) {
+                case 'chat':
+                  event.template = event.prefix || '{usr}说';
+                  break;
+                case 'gift':
+                  event.template = event.prefix || '感谢 {usr} 送出的';
+                  break;
+                case 'follow':
+                  event.template = event.prefix || '感谢{usr}的关注';
+                  break;
+                case 'like':
+                  event.template = event.prefix || '来自{usr}的赞赞';
+                  break;
+                case 'member':
+                  event.template = event.prefix || '欢迎{usr}来到直播间';
+                  break;
+              }
+              delete event.prefix; // 删除旧的prefix字段
+            }
+            // 如果template为空或undefined，使用默认值
+            if (!event.template) {
+              event.template = defaultSettings.events[eventType as keyof typeof defaultSettings.events]?.template || '';
+            }
+          });
+        }
+        return { ...defaultSettings, ...parsed };
+      } catch (e) {
+        console.warn('解析语音设置失败，使用默认设置:', e);
+        return defaultSettings;
+      }
+    }
+    return defaultSettings;
   });
 
   // 快捷键设置状态
@@ -57,7 +100,7 @@ const DanmuPage = () => {
   // 类型定义
   interface VoiceEventConfig {
     enabled: boolean;
-    prefix: string;
+    template: string;
   }
 
   // 消息过滤器状态
@@ -487,19 +530,37 @@ const DanmuPage = () => {
                                   />
                                 </div>
                                 {config.enabled && (
-                                  <input
-                                    type="text"
-                                    value={config.prefix}
-                                    onChange={(e) => saveVoiceSettings({
-                                      ...voiceSettings,
-                                      events: {
-                                        ...voiceSettings.events,
-                                        [eventType]: { ...config, prefix: e.target.value }
+                                  <div className="space-y-2">
+                                    <input
+                                      type="text"
+                                      value={config.template}
+                                      onChange={(e) => saveVoiceSettings({
+                                        ...voiceSettings,
+                                        events: {
+                                          ...voiceSettings.events,
+                                          [eventType]: { ...config, template: e.target.value }
+                                        }
+                                      })}
+                                      placeholder={
+                                        eventType === 'chat' ? '{usr}说' :
+                                        eventType === 'gift' ? '感谢 {usr} 送出的' :
+                                        eventType === 'follow' ? '感谢{usr}的关注' :
+                                        eventType === 'like' ? '来自{usr}的赞赞' :
+                                        '欢迎{usr}来到直播间'
                                       }
-                                    })}
-                                    placeholder="前缀词"
-                                    className="w-full px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 theme-card"
-                                  />
+                                      className="w-full px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 theme-card"
+                                    />
+                                    {eventType === 'chat' && (
+                                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                                        播报格式：模板内容 + 聊天内容
+                                      </div>
+                                    )}
+                                    {eventType === 'gift' && (
+                                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                                        播报格式：模板内容 + 数量 个 礼物名称
+                                      </div>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                             ))}
@@ -508,7 +569,28 @@ const DanmuPage = () => {
                         
                         <div className="flex justify-center">
                           <button
-                            onClick={() => speakText('这是语音播报测试')}
+                            onClick={() => {
+                              // 创建测试模板解析函数
+                              const parseTemplate = (template: string, variables: Record<string, any>): string => {
+                                if (!template || typeof template !== 'string') {
+                                  return '';
+                                }
+                                
+                                let result = template;
+                                Object.entries(variables).forEach(([key, value]) => {
+                                  const regex = new RegExp(`\\{${key}\\}`, 'g');
+                                  // 确保 value 不为 undefined 或 null
+                                  const safeValue = value != null ? String(value) : '';
+                                  result = result.replace(regex, safeValue);
+                                });
+                                return result;
+                              };
+                              
+                              // 测试聊天消息模板
+                              const chatTemplate = voiceSettings.events.chat?.template || '{usr}说';
+                              const testText = parseTemplate(chatTemplate, { usr: '测试用户' }) + '这是一条测试消息';
+                              speakText(testText);
+                            }}
                             className="btn-base btn-primary flex items-center"
                           >
                             <Volume2 size={18} className="mr-2" />
