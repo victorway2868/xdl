@@ -339,6 +339,15 @@ textarea {
   border-color: var(--border-secondary);
 }
 
+/* 弹窗遮罩样式 */
+.theme-modal-overlay {
+  background-color: rgba(0, 0, 0, 0.55);
+}
+
+.dark .theme-modal-overlay {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
 /* 注意：此处已有重复定义，移除避免冲突 */
 
 /* 注意：主题过渡动画已在文件开头统一定义，此处移除重复 */

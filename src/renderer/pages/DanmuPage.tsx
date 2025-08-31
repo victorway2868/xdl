@@ -1,19 +1,16 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Square, Wifi, WifiOff, Gift, Heart, Users, MessageCircle, ThumbsUp, Crown, Settings, X, Volume2, VolumeX, Keyboard, Plus, Trash2 } from 'lucide-react';
+import { Gift, Heart, Users, MessageCircle, ThumbsUp, Crown, Settings, X, Volume2, VolumeX, Keyboard, Plus, Trash2 } from 'lucide-react';
 
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState, AppDispatch } from '../store/store';
-import { disconnect, Message } from '../store/features/danmakuSlice';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store/store';
+import { Message } from '../store/features/danmakuSlice';
 
 
 import '../styles/themes.css';
 
 const DanmuPage = () => {
-  const dispatch: AppDispatch = useDispatch();
-
   // 从Redux store中获取状态
   const {
-    connectStatus,
     roomInfo,
     messages,
     audienceList,
@@ -22,7 +19,6 @@ const DanmuPage = () => {
 
   // 本地UI状态
   const [showSettings, setShowSettings] = useState(false);
-  const [activeSettingsTab, setActiveSettingsTab] = useState('voice'); // 'connection', 'voice', 'hotkey'
   const [hotkeyModalOpen, setHotkeyModalOpen] = useState(false);
   const [currentHotkeyEdit, setCurrentHotkeyEdit] = useState<{type: 'gift' | 'keyword', index: number} | null>(null);
 
@@ -148,10 +144,7 @@ const DanmuPage = () => {
     setCurrentHotkeyEdit(null);
   }, [currentHotkeyEdit, hotkeySettings, saveHotkeySettings]);
 
-  // 断开连接
-  const disconnectLive = useCallback(() => {
-    dispatch(disconnect());
-  }, [dispatch]);
+
 
 
 
@@ -188,16 +181,7 @@ const DanmuPage = () => {
 
 
 
-  // 获取连接状态显示
-  const getStatusDisplay = () => {
-    switch (connectStatus) {
-      case 0: return { text: '未连接', color: 'text-gray-400', icon: WifiOff };
-      case 1: return { text: '已连接', color: 'text-green-400', icon: Wifi };
-      case 2: return { text: '连接失败', color: 'text-red-400', icon: WifiOff };
-      case 3: return { text: '已断开', color: 'text-yellow-400', icon: WifiOff };
-      default: return { text: '未知', color: 'text-gray-400', icon: WifiOff };
-    }
-  };
+
 
   // 自动滚动到底部
   useEffect(() => {
@@ -215,14 +199,13 @@ const DanmuPage = () => {
 
 
 
-  const statusDisplay = getStatusDisplay();
-  const StatusIcon = statusDisplay.icon;
+
 
   return (
-    <div className="h-full flex flex-col overflow-hidden bg-white dark:bg-slate-900 text-slate-800 dark:text-white transition-colors duration-300">
+    <div className="h-full flex flex-col overflow-hidden theme-page transition-colors duration-300">
       
       {/* 顶部导航栏 */}
-      <div className="flex items-center justify-between px-4 py-3 flex-shrink-0 bg-slate-100 dark:bg-slate-800 border-b border-slate-300 dark:border-slate-600">
+      <div className="flex items-center justify-between px-4 py-3 flex-shrink-0 theme-card-secondary border-b">
         <div className="flex items-center">
           <div className="flex items-center space-x-4 text-sm">
             <label className="flex items-center cursor-pointer text-blue-400 hover:text-blue-300 transition-colors">
@@ -262,7 +245,7 @@ const DanmuPage = () => {
       {/* 主要内容区域 */}
       <div className="flex-1 grid grid-cols-12 gap-6 min-h-0 overflow-hidden p-6">
         <div className="col-span-3 flex flex-col space-y-4 h-full overflow-hidden">
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm p-4">
+          <div className="theme-card rounded-lg p-4">
             <div className="text-center mb-4">
               <div className="w-16 h-16 bg-slate-200 dark:bg-slate-600 rounded-full mx-auto mb-2 flex items-center justify-center border border-slate-300 dark:border-slate-500">
                 {roomInfo.avatar ? <img src={roomInfo.avatar} alt="头像" className="w-full h-full rounded-full" /> : <span className="text-slate-500 dark:text-slate-400">头像</span>}
@@ -278,9 +261,9 @@ const DanmuPage = () => {
               <div className="text-center"><div className="text-slate-600 dark:text-slate-300">点赞</div><div className="font-medium text-slate-800 dark:text-white">{roomInfo.likeCount}</div></div>
             </div>
           </div>
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="theme-card rounded-lg p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-medium flex items-center text-slate-800 dark:text-white"><Crown size={18} className="mr-2 text-purple-400" />观众榜</h3>
+              <h3 className="text-lg font-medium flex items-center"><Crown size={18} className="mr-2 text-purple-400" />观众榜</h3>
               <span className="text-sm text-slate-500 dark:text-slate-400">{audienceList.length} 人</span>
             </div>
             <div className="flex-1 overflow-y-auto space-y-1 min-h-0 custom-scrollbar">
@@ -295,9 +278,9 @@ const DanmuPage = () => {
         </div>
 
         <div className="col-span-6 flex flex-col h-full overflow-hidden">
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="theme-card rounded-lg p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="text-lg font-medium flex items-center text-slate-800 dark:text-white"><MessageCircle size={18} className="mr-2 text-blue-400" />弹幕消息</h3>
+              <h3 className="text-lg font-medium flex items-center"><MessageCircle size={18} className="mr-2 text-blue-400" />弹幕消息</h3>
               <div className="flex items-center space-x-4 text-sm">
                 <span className="text-blue-400">聊天: {messageStats.chatCount}</span>
                 <span className="text-pink-400">礼物: {messageStats.giftCount}</span>
@@ -338,8 +321,8 @@ const DanmuPage = () => {
         </div>
 
         <div className="col-span-3 flex flex-col h-full overflow-hidden">
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-sm p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
-            <div className="flex items-center mb-3"><h3 className="text-lg font-medium flex items-center text-slate-800 dark:text-white"><Users size={18} className="mr-2 text-green-400" />社交信息</h3></div>
+          <div className="theme-card rounded-lg p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
+            <div className="flex items-center mb-3"><h3 className="text-lg font-medium flex items-center"><Users size={18} className="mr-2 text-green-400" />社交信息</h3></div>
             <div ref={socialMessagesScrollRef} className="flex-1 overflow-y-auto space-y-1 min-h-0 custom-scrollbar">
                             {filteredSocialMessages.map((msg: Message) => (
                 <div key={msg.id} className="flex items-start space-x-1.5">
@@ -371,114 +354,53 @@ const DanmuPage = () => {
 
       {/* 设置弹窗 */}
       {showSettings && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg w-[800px] max-w-[90vw] max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
-              <h3 className="text-lg font-medium text-slate-800 dark:text-white">设置</h3>
-              <button onClick={() => setShowSettings(false)} className="text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-colors">
+        <div className="modal-overlay" style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)' }}>
+          <div className="modal-content" style={{ maxWidth: '900px', width: '95vw', maxHeight: '85vh', padding: '0', borderRadius: '12px' }}>
+            <div className="modal-header">
+              <h3 className="modal-title flex items-center">
+                <Settings size={24} className="mr-3" style={{color: 'var(--btn-primary-bg)'}} />
+                设置
+              </h3>
+              <button 
+                onClick={() => setShowSettings(false)} 
+                className="modal-close-btn"
+              >
                 <X size={20} />
               </button>
             </div>
             
-            <div className="flex h-[600px]">
-              {/* 侧边栏选项卡 */}
-              <div className="w-48 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 p-4">
-                <nav className="space-y-2">
-                  <button
-                    onClick={() => setActiveSettingsTab('connection')}
-                    className={`w-full text-left px-3 py-2 rounded-md transition-colors flex items-center ${
-                      activeSettingsTab === 'connection'
-                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <Wifi size={16} className="mr-2" />
-                    自动连接
-                  </button>
-                  <button
-                    onClick={() => setActiveSettingsTab('voice')}
-                    className={`w-full text-left px-3 py-2 rounded-md transition-colors flex items-center ${
-                      activeSettingsTab === 'voice'
-                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <Volume2 size={16} className="mr-2" />
-                    语音播报
-                  </button>
-                  <button
-                    onClick={() => setActiveSettingsTab('hotkey')}
-                    className={`w-full text-left px-3 py-2 rounded-md transition-colors flex items-center ${
-                      activeSettingsTab === 'hotkey'
-                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300'
-                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <Keyboard size={16} className="mr-2" />
-                    快捷键触控
-                  </button>
-                </nav>
-              </div>
+            <div className="h-[600px]">
+              {/* 内容区域 - 合并设置到一个页面 */}
               
-              {/* 内容区域 */}
-              <div className="flex-1 overflow-y-auto p-6">
-                {activeSettingsTab === 'connection' && (
-                  <div className="space-y-4">
-                    <div className="text-center py-8">
-                      <div className="mb-4">
-                        <Wifi size={48} className="mx-auto text-blue-500 dark:text-blue-400" />
-                      </div>
-                      <h3 className="text-lg font-medium text-slate-800 dark:text-white mb-2">自动弹幕连接</h3>
-                      <p className="text-slate-600 dark:text-slate-400 mb-4">弹幕系统已升级为自动连接模式</p>
-                      <div className={`inline-flex items-center px-3 py-2 rounded-md text-sm ${statusDisplay.color}`}>
-                        <StatusIcon size={16} className="mr-2" />
-                        {statusDisplay.text}
-                      </div>
-                      {connectStatus === 1 && (
-                        <div className="mt-4">
-                          <button onClick={disconnectLive} className="bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 text-white px-4 py-2 rounded-md transition-colors flex items-center justify-center mx-auto">
-                            <Square size={16} className="mr-2" />手动断开
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                      <h4 className="text-sm font-medium text-blue-800 dark:text-blue-300 mb-2">自动连接说明</h4>
-                      <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1">
-                        <li>• 开始直播时自动连接弹幕（延迟12秒）</li>
-                        <li>• 停止直播时自动断开弹幕</li>
-                        <li>• 使用您的抖音用户信息自动获取房间号</li>
-                      </ul>
-                    </div>
+                             <div className="p-6 overflow-y-auto h-full custom-scrollbar">
+                <div className="space-y-8">
+                  {/* 语音播报设置区域 */}
+                  <div className="theme-card rounded-lg p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center space-x-3">
+                        <Volume2 size={24} className="text-blue-500" />
+                        <h4 className="text-xl font-medium text-primary">语音播报设置</h4>
                   </div>
-                )}
-                
-                {activeSettingsTab === 'voice' && (
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-lg font-medium text-slate-800 dark:text-white">语音播报设置</h4>
-                      <div className="flex items-center space-x-2">
                         <button
                           onClick={() => saveVoiceSettings({ ...voiceSettings, enabled: !voiceSettings.enabled })}
-                          className={`p-2 rounded-md transition-colors ${
+                        className={`btn-base ${
                             voiceSettings.enabled
-                              ? 'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300'
-                              : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                              ? 'btn-primary'
+                              : 'btn-secondary'
                           }`}
                         >
                           {voiceSettings.enabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
                         </button>
-                      </div>
                     </div>
                     
                     {voiceSettings.enabled && (
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         <div>
-                          <label className="block text-sm font-medium mb-2 text-slate-800 dark:text-white">声音选择</label>
+                          <label className="block text-sm font-medium mb-3 text-primary">声音选择</label>
                           <select
                             value={voiceSettings.voice}
                             onChange={(e) => saveVoiceSettings({ ...voiceSettings, voice: parseInt(e.target.value) })}
-                            className="w-full bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-white px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 border border-slate-300 dark:border-slate-600"
+                            className="w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 theme-card"
                           >
                             {voices.map((voice, index) => (
                               <option key={index} value={index}>
@@ -488,9 +410,9 @@ const DanmuPage = () => {
                           </select>
                         </div>
                         
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-3 gap-6">
                           <div>
-                            <label className="block text-sm font-medium mb-2 text-slate-800 dark:text-white">语速: {voiceSettings.rate.toFixed(1)}</label>
+                            <label className="block text-sm font-medium mb-3 text-primary">语速: {voiceSettings.rate.toFixed(1)}</label>
                             <input
                               type="range"
                               min="0.1"
@@ -498,11 +420,14 @@ const DanmuPage = () => {
                               step="0.1"
                               value={voiceSettings.rate}
                               onChange={(e) => saveVoiceSettings({ ...voiceSettings, rate: parseFloat(e.target.value) })}
-                              className="w-full"
+                              className="w-full h-2 bg-slate-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer"
+                              style={{
+                                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(voiceSettings.rate - 0.1) / (2 - 0.1) * 100}%, #e2e8f0 ${(voiceSettings.rate - 0.1) / (2 - 0.1) * 100}%, #e2e8f0 100%)`
+                              }}
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium mb-2 text-slate-800 dark:text-white">音调: {voiceSettings.pitch.toFixed(1)}</label>
+                            <label className="block text-sm font-medium mb-3 text-primary">音调: {voiceSettings.pitch.toFixed(1)}</label>
                             <input
                               type="range"
                               min="0"
@@ -510,30 +435,38 @@ const DanmuPage = () => {
                               step="0.1"
                               value={voiceSettings.pitch}
                               onChange={(e) => saveVoiceSettings({ ...voiceSettings, pitch: parseFloat(e.target.value) })}
-                              className="w-full"
+                              className="w-full h-2 bg-slate-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer"
+                              style={{
+                                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${voiceSettings.pitch / 2 * 100}%, #e2e8f0 ${voiceSettings.pitch / 2 * 100}%, #e2e8f0 100%)`
+                              }}
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium mb-2 text-slate-800 dark:text-white">音量: {Math.round(voiceSettings.volume * 100)}%</label>
+                            <label className="block text-sm font-medium mb-3 text-primary">音量: {Math.round(voiceSettings.volume * 100)}%</label>
                             <input
                               type="range"
                               min="0"
                               max="1"
-                              step="0.1"
+                              step="0.01"
                               value={voiceSettings.volume}
                               onChange={(e) => saveVoiceSettings({ ...voiceSettings, volume: parseFloat(e.target.value) })}
-                              className="w-full"
+                              className="w-full h-2 bg-slate-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer"
+                              style={{
+                                background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${voiceSettings.volume * 100}%, #e2e8f0 ${voiceSettings.volume * 100}%, #e2e8f0 100%)`,
+                                WebkitAppearance: 'none',
+                                outline: 'none'
+                              }}
                             />
                           </div>
                         </div>
                         
                         <div>
-                          <h5 className="text-md font-medium mb-3 text-slate-800 dark:text-white">播报内容设置</h5>
-                          <div className="space-y-3">
+                          <h5 className="text-lg font-medium mb-4 text-primary">播报内容设置</h5>
+                          <div className="grid grid-cols-2 gap-4">
                             {(Object.entries(voiceSettings.events) as [string, VoiceEventConfig][]).map(([eventType, config]) => (
-                              <div key={eventType} className="bg-slate-50 dark:bg-slate-700 p-3 rounded-md">
-                                <div className="flex items-center justify-between mb-2">
-                                  <span className="text-sm font-medium text-slate-800 dark:text-white">
+                              <div key={eventType} className="theme-card-secondary p-4 rounded-lg">
+                                <div className="flex items-center justify-between mb-3">
+                                  <span className="text-sm font-medium text-primary">
                                     {eventType === 'chat' && '聊天消息'}
                                     {eventType === 'gift' && '礼物'}
                                     {eventType === 'follow' && '关注'}
@@ -550,7 +483,7 @@ const DanmuPage = () => {
                                         [eventType]: { ...config, enabled: e.target.checked }
                                       }
                                     })}
-                                    className="w-4 h-4 text-blue-600 bg-white dark:bg-slate-700 border-slate-300 dark:border-slate-600 rounded focus:ring-blue-500"
+                                    className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                                   />
                                 </div>
                                 {config.enabled && (
@@ -565,7 +498,7 @@ const DanmuPage = () => {
                                       }
                                     })}
                                     placeholder="前缀词"
-                                    className="w-full bg-white dark:bg-slate-600 text-slate-800 dark:text-white px-2 py-1 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 border border-slate-300 dark:border-slate-500"
+                                    className="w-full px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 theme-card"
                                   />
                                 )}
                               </div>
@@ -573,26 +506,39 @@ const DanmuPage = () => {
                           </div>
                         </div>
                         
-                        <div>
+                        <div className="flex justify-center">
                           <button
                             onClick={() => speakText('这是语音播报测试')}
-                            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md transition-colors"
+                            className="btn-base btn-primary flex items-center"
                           >
+                            <Volume2 size={18} className="mr-2" />
                             测试语音
                           </button>
                         </div>
                       </div>
                     )}
                   </div>
-                )}
-                
-                {activeSettingsTab === 'hotkey' && (
-                  <div className="space-y-6">
-                    <h4 className="text-lg font-medium text-slate-800 dark:text-white">快捷键触控设置</h4>
+                  
+                  {/* 分隔线 */}
+                  <div className="flex items-center my-8">
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-600 to-transparent"></div>
+                    <span className="px-4 text-sm rounded-full border theme-card text-secondary">
+                      ⚙️ 快捷键设置
+                    </span>
+                    <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300 dark:via-slate-600 to-transparent"></div>
+                  </div>
+                  
+                  {/* 快捷键触控设置区域 */}
+                  <div className="theme-card rounded-lg p-6">
+                    <div className="flex items-center space-x-3 mb-6">
+                      <Keyboard size={24} className="text-blue-500" />
+                      <h4 className="text-xl font-medium text-primary">快捷键触控设置</h4>
+                    </div>
                     
+                  <div className="space-y-6">
                     <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <h5 className="text-md font-medium text-slate-800 dark:text-white">礼物触发快捷键</h5>
+                        <div className="flex items-center justify-between mb-4">
+                          <h5 className="text-lg font-medium text-primary">礼物触发快捷键</h5>
                         <button
                           onClick={() => {
                             const newTrigger = { giftName: '', keys: [] };
@@ -601,16 +547,16 @@ const DanmuPage = () => {
                               giftTriggers: [...hotkeySettings.giftTriggers, newTrigger]
                             });
                           }}
-                          className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-md transition-colors flex items-center text-sm"
+                            className="btn-base btn-primary flex items-center text-sm"
                         >
-                          <Plus size={14} className="mr-1" />
+                            <Plus size={16} className="mr-2" />
                           添加
                         </button>
                       </div>
-                      <div className="space-y-2">
+                        <div className="space-y-3">
                         {hotkeySettings.giftTriggers.map((trigger: any, index: number) => (
-                          <div key={index} className="bg-slate-50 dark:bg-slate-700 p-3 rounded-md">
-                            <div className="flex items-center space-x-2">
+                            <div key={index} className="theme-card-secondary p-4 rounded-lg">
+                              <div className="flex items-center space-x-3">
                               <input
                                 type="text"
                                 value={trigger.giftName}
@@ -620,9 +566,9 @@ const DanmuPage = () => {
                                   saveHotkeySettings({ ...hotkeySettings, giftTriggers: newTriggers });
                                 }}
                                 placeholder="礼物名称"
-                                className="flex-1 bg-white dark:bg-slate-600 text-slate-800 dark:text-white px-2 py-1 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 border border-slate-300 dark:border-slate-500"
+                                  className="flex-1 px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 theme-card"
                               />
-                              <span className="text-slate-600 dark:text-slate-400 px-2">→</span>
+                              <span className="text-secondary px-2">→</span>
                               <input
                                 type="text"
                                 value={trigger.keys.join('+')}
@@ -632,16 +578,16 @@ const DanmuPage = () => {
                                   setHotkeyModalOpen(true);
                                 }}
                                 placeholder="点击录制快捷键"
-                                className="flex-1 bg-white dark:bg-slate-600 text-slate-800 dark:text-white px-2 py-1 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 border border-slate-300 dark:border-slate-500 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-500"
+                                  className="flex-1 px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 theme-card cursor-pointer transition-colors"
                               />
                               <button
                                 onClick={() => {
                                   const newTriggers = hotkeySettings.giftTriggers.filter((_: any, i: number) => i !== index);
                                   saveHotkeySettings({ ...hotkeySettings, giftTriggers: newTriggers });
                                 }}
-                                className="p-1 text-red-500 hover:text-red-700 transition-colors"
+                                  className="p-2 text-red-500 hover:text-red-700 rounded-md transition-colors btn-ghost"
                               >
-                                <Trash2 size={14} />
+                                  <Trash2 size={16} />
                               </button>
                             </div>
                           </div>
@@ -650,8 +596,8 @@ const DanmuPage = () => {
                     </div>
                     
                     <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <h5 className="text-md font-medium text-slate-800 dark:text-white">关键词触发快捷键</h5>
+                        <div className="flex items-center justify-between mb-4">
+                          <h5 className="text-lg font-medium text-primary">关键词触发快捷键</h5>
                         <button
                           onClick={() => {
                             const newTrigger = { keyword: '', keys: [] };
@@ -660,16 +606,16 @@ const DanmuPage = () => {
                               keywordTriggers: [...hotkeySettings.keywordTriggers, newTrigger]
                             });
                           }}
-                          className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white rounded-md transition-colors flex items-center text-sm"
+                            className="btn-base btn-primary flex items-center text-sm"
                         >
-                          <Plus size={14} className="mr-1" />
+                            <Plus size={16} className="mr-2" />
                           添加
                         </button>
                       </div>
-                      <div className="space-y-2">
+                        <div className="space-y-3">
                         {hotkeySettings.keywordTriggers.map((trigger: any, index: number) => (
-                          <div key={index} className="bg-slate-50 dark:bg-slate-700 p-3 rounded-md">
-                            <div className="flex items-center space-x-2">
+                            <div key={index} className="theme-card-secondary p-4 rounded-lg">
+                              <div className="flex items-center space-x-3">
                               <input
                                 type="text"
                                 value={trigger.keyword}
@@ -679,9 +625,9 @@ const DanmuPage = () => {
                                   saveHotkeySettings({ ...hotkeySettings, keywordTriggers: newTriggers });
                                 }}
                                 placeholder="关键词"
-                                className="flex-1 bg-white dark:bg-slate-600 text-slate-800 dark:text-white px-2 py-1 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 border border-slate-300 dark:border-slate-500"
+                                  className="flex-1 px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 theme-card"
                               />
-                              <span className="text-slate-600 dark:text-slate-400 px-2">→</span>
+                              <span className="text-secondary px-2">→</span>
                               <input
                                 type="text"
                                 value={trigger.keys.join('+')}
@@ -691,16 +637,16 @@ const DanmuPage = () => {
                                   setHotkeyModalOpen(true);
                                 }}
                                 placeholder="点击录制快捷键"
-                                className="flex-1 bg-white dark:bg-slate-600 text-slate-800 dark:text-white px-2 py-1 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 border border-slate-300 dark:border-slate-500 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-500"
+                                  className="flex-1 px-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 theme-card cursor-pointer transition-colors"
                               />
                               <button
                                 onClick={() => {
                                   const newTriggers = hotkeySettings.keywordTriggers.filter((_: any, i: number) => i !== index);
                                   saveHotkeySettings({ ...hotkeySettings, keywordTriggers: newTriggers });
                                 }}
-                                className="p-1 text-red-500 hover:text-red-700 transition-colors"
+                                  className="p-2 text-red-500 hover:text-red-700 rounded-md transition-colors btn-ghost"
                               >
-                                <Trash2 size={14} />
+                                  <Trash2 size={16} />
                               </button>
                             </div>
                           </div>
@@ -708,7 +654,8 @@ const DanmuPage = () => {
                       </div>
                     </div>
                   </div>
-                )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -823,17 +770,18 @@ const HotkeyRecordingModal: React.FC<HotkeyRecordingModalProps> = ({ isOpen, onC
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-lg p-4 w-96 max-w-full transition-colors border border-slate-200 dark:border-slate-700">
-        <h3 className="text-slate-900 dark:text-white font-medium mb-3">设置快捷键</h3>
+    <div className="modal-overlay">
+      <div className="theme-card rounded-lg p-4 w-96 max-w-full transition-colors">
+        <h3 className="modal-title">设置快捷键</h3>
         <div className="mb-3">
           <div className="mb-3">
-            <div className={`p-4 bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded border text-center transition-colors ${isRecording ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-slate-300 dark:border-slate-600'
+            <div className={`p-4 rounded border text-center transition-colors theme-card ${
+                isRecording ? 'border-blue-500' : ''
               }`}>
               {currentHotkey ? (
                 <div className="text-lg font-medium">{currentHotkey}</div>
               ) : (
-                <div className="text-slate-500 dark:text-slate-400">
+                <div className="text-secondary">
                   {isRecording ? "按下任意键盘组合键..." : "等待录制..."}
                 </div>
               )}
@@ -841,18 +789,18 @@ const HotkeyRecordingModal: React.FC<HotkeyRecordingModalProps> = ({ isOpen, onC
           </div>
 
           {isRecording && (
-            <div className="text-xs text-blue-500 dark:text-blue-400 mb-2 animate-pulse text-center">
+            <div className="text-xs text-blue-500 mb-2 animate-pulse text-center">
               🎯 正在录制快捷键，请按下键盘组合键...
             </div>
           )}
 
-          <div className="text-xs text-slate-500 dark:text-slate-400 text-center">
+          <div className="text-xs text-secondary text-center">
             <div>💡 支持：F1-F12, Ctrl+A, Alt+F1, Shift+Space, 小键盘 等</div>
           </div>
         </div>
         <div className="flex justify-end gap-2">
           <button
-            className="bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-white px-4 py-1 rounded hover:bg-slate-400 dark:hover:bg-slate-600 transition-colors"
+            className="btn-base btn-secondary"
             onClick={() => {
               resetState();
               onClose();
@@ -861,7 +809,7 @@ const HotkeyRecordingModal: React.FC<HotkeyRecordingModalProps> = ({ isOpen, onC
             取消
           </button>
           <button
-            className="bg-blue-600 text-white px-4 py-1 rounded disabled:bg-slate-400 dark:disabled:bg-slate-600 hover:bg-blue-700 transition-colors"
+            className="btn-base btn-primary"
             disabled={!currentHotkey.trim()}
             onClick={() => {
               onApply(currentHotkey.trim());

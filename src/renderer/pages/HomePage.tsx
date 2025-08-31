@@ -531,20 +531,33 @@ const HomePage = () => {
 
             ) : (
               <div className="pointer-events-auto w-full flex items-center gap-3">
-                <div className="flex-1 flex flex-col gap-1.5">
+                <div className="flex-1 flex flex-col gap-1.5 ml-3">
                   <div className="relative">
                     <input 
                       type="text" 
                       value={streamUrl} 
                       readOnly 
                       placeholder="推流地址" 
-                      className="w-full bg-slate-800/90 text-white px-3 pr-9 py-1.5 rounded-md border border-slate-600/50 text-sm outline-none" 
+                      className="w-full theme-input text-sm pr-9" 
                     />
                     <button 
                       onClick={() => copyToClipboard(streamUrl, 'url')} 
                       className={`absolute right-2.5 top-1/2 transform -translate-y-1/2 transition-colors ${
-                        copied === 'url' ? 'text-green-400' : 'text-slate-400 hover:text-slate-200'
+                        copied === 'url' ? 'status-success' : 'text-secondary hover:text-primary'
                       }`}
+                      style={{
+                        color: copied === 'url' ? '#10b981' : 'var(--text-secondary)'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (copied !== 'url') {
+                          e.currentTarget.style.color = 'var(--text-primary)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (copied !== 'url') {
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                        }
+                      }}
                       title="复制推流地址"
                     >
                       {copied === 'url' ? <Check size={14} /> : <Copy size={14} />}
@@ -556,13 +569,26 @@ const HomePage = () => {
                       value={streamKey ? '********' : ''} 
                       readOnly 
                       placeholder="推流密钥" 
-                      className="w-full bg-slate-800/90 text-white px-3 pr-9 py-1.5 rounded-md border border-slate-600/50 text-sm outline-none"
+                      className="w-full theme-input text-sm pr-9"
                     />
                     <button 
                       onClick={() => copyToClipboard(streamKey, 'key')} 
                       className={`absolute right-2.5 top-1/2 transform -translate-y-1/2 transition-colors ${
-                        copied === 'key' ? 'text-green-400' : 'text-slate-400 hover:text-slate-200'
+                        copied === 'key' ? 'status-success' : 'text-secondary hover:text-primary'
                       }`}
+                      style={{
+                        color: copied === 'key' ? '#10b981' : 'var(--text-secondary)'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (copied !== 'key') {
+                          e.currentTarget.style.color = 'var(--text-primary)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (copied !== 'key') {
+                          e.currentTarget.style.color = 'var(--text-secondary)';
+                        }
+                      }}
                       title="复制推流密钥"
                     >
                       {copied === 'key' ? <Check size={14} /> : <Copy size={14} />}
@@ -571,7 +597,7 @@ const HomePage = () => {
                 </div>
                 <button
                   onClick={handleStopStreaming}
-                  className="btn-stop-stream"
+                  className="btn-stop-stream mr-3"
                 >
                   停止直播
                 </button>
@@ -753,8 +779,8 @@ const HomePage = () => {
 
       {/* 手机开播提示图 - 弹窗方式显示 */}
       {showStatus4Image && (
-        <div className="fixed inset-0 bg-black/55 z-50 flex items-center justify-center" onClick={() => setShowStatus4Image(false)}>
-          <div className="bg-slate-900/95 border border-slate-400/20 rounded-xl p-4 w-full max-w-[540px] mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 theme-modal-overlay z-50 flex items-center justify-center" onClick={() => setShowStatus4Image(false)}>
+          <div className="theme-card rounded-xl p-4 w-full max-w-[540px] mx-4" onClick={(e) => e.stopPropagation()}>
             <img src="pngs/phonestatus4.png" alt="请在手机上点击开始直播" className="w-full h-auto block rounded-lg" />
             <div className="flex justify-end mt-3">
               <button onClick={() => setShowStatus4Image(false)} className="btn-base btn-ghost px-4 py-1.5">我知道了</button>
@@ -764,8 +790,8 @@ const HomePage = () => {
       )}
 
       {showStatus2Image && (
-        <div className="fixed inset-0 bg-black/55 z-50 flex items-center justify-center" onClick={() => setShowStatus2Image(false)}>
-          <div className="bg-slate-900/95 border border-slate-400/20 rounded-xl p-4 w-full max-w-[540px] mx-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 theme-modal-overlay z-50 flex items-center justify-center" onClick={() => setShowStatus2Image(false)}>
+          <div className="theme-card rounded-xl p-4 w-full max-w-[540px] mx-4" onClick={(e) => e.stopPropagation()}>
             <img src="pngs/phonestatus2.png" alt="请打开飞行模式或清退抖音App" className="w-full h-auto block rounded-lg" />
             <div className="flex justify-end mt-3">
               <button onClick={() => setShowStatus2Image(false)} className="btn-base btn-ghost px-4 py-1.5">我已完成</button>
