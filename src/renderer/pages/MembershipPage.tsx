@@ -15,9 +15,11 @@ const openUrl = (url: string) => {
 const MembershipPage: React.FC = () => {
   const officialSite = 'https://xiaodouli.openclouds.dpdns.org';
   const rechargeUrl = 'https://xiaodouli.openclouds.dpdns.org/#/pricing';
-  const supportUrl = 'https://xiaodouli.openclouds.dpdns.org/#/contact';
+  const qqGroupUrl = 'https://qm.qq.com/cgi-bin/qm/qr?k=WkSEvbmnenRe_sgwE_mti_Z1wtmBWb3E&jump_from=webapi&authKey=lKoLlcTJ9C0qX/5THp+m73Pbxv8Qvhwian42SC7Z3ZZmUWaqDAanCjBM9UauQ6IX';
 
   const [state, setState] = React.useState<any>(null);
+  const [showWeixin, setShowWeixin] = React.useState(false);
+  const [showQQ, setShowQQ] = React.useState(false);
   React.useEffect(() => {
     (async () => {
       try {
@@ -68,12 +70,7 @@ const MembershipPage: React.FC = () => {
             <div className="text-sm text-slate-500">账号</div>
             <div className="text-base font-medium">
               {loggedIn ? (
-                <>
-                  <ThemeText>{user?.name || user?.email || user?.sub}</ThemeText>
-                  {user?.sub && (
-                    <span className="ml-2 text-xs text-slate-500">(ID: {user.sub})</span>
-                  )}
-                </>
+                <ThemeText>{user?.email || user?.name || '未知'}</ThemeText>
               ) : (
                 <ThemeText variant="muted">未登录</ThemeText>
               )}
@@ -131,21 +128,74 @@ const MembershipPage: React.FC = () => {
         </ThemeCard>
 
         <ThemeCard className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm text-slate-500">客服联系</div>
-              <div className="text-base font-medium">在线客服 / 联系方式</div>
+          <div className="flex flex-col gap-3">
+            {/* 微信客服 */}
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-slate-500">微信客服(9:00~22:00)</div>
+              </div>
+              <ThemeButton
+                variant="secondary"
+                className="flex items-center gap-1"
+                onClick={() => setShowWeixin(true)}
+                title="联系微信客服"
+              >
+                <MessageCircle size={16} />
+                联系
+              </ThemeButton>
             </div>
-            <ThemeButton
-              variant="secondary"
-              className="flex items-center gap-1"
-              onClick={() => openUrl(supportUrl)}
-              title="联系官方客服"
-            >
-              <MessageCircle size={16} />
-              联系
-            </ThemeButton>
+
+            {/* QQ群 */}
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-slate-500">QQ群：671868886</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <ThemeButton
+                  variant="secondary"
+                  className="flex items-center gap-1"
+                  onClick={() => openUrl(qqGroupUrl)}
+                  title="前往加群"
+                >
+                  <ExternalLink size={16} />
+                  加群
+                </ThemeButton>
+                <ThemeButton
+                  variant="secondary"
+                  className="flex items-center gap-1"
+                  onClick={() => setShowQQ(true)}
+                  title="查看QQ群二维码"
+                >
+                  二维码
+                </ThemeButton>
+              </div>
+            </div>
           </div>
+
+      {/* 微信客服弹窗 */}
+      {showWeixin && (
+        <div className="fixed inset-0 theme-modal-overlay z-50 flex items-center justify-center" onClick={() => setShowWeixin(false)}>
+          <div className="theme-card rounded-xl p-4 w-full max-w-[540px] mx-4" onClick={(e) => e.stopPropagation()}>
+            <img src="images/weixin.png" alt="微信客服二维码" className="w-full h-auto block rounded-lg" />
+            <div className="flex justify-end mt-3">
+              <button onClick={() => setShowWeixin(false)} className="btn-base btn-ghost px-4 py-1.5">关闭</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QQ群二维码弹窗 */}
+      {showQQ && (
+        <div className="fixed inset-0 theme-modal-overlay z-50 flex items-center justify-center" onClick={() => setShowQQ(false)}>
+          <div className="theme-card rounded-xl p-4 w-full max-w-[540px] mx-4" onClick={(e) => e.stopPropagation()}>
+            <img src="images/qqunrcode-567.png" alt="QQ群二维码" className="w-full h-auto block rounded-lg" />
+            <div className="flex justify-end mt-3">
+              <button onClick={() => setShowQQ(false)} className="btn-base btn-ghost px-4 py-1.5">关闭</button>
+            </div>
+          </div>
+        </div>
+      )}
+
         </ThemeCard>
       </div>
     </div>
