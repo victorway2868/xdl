@@ -277,6 +277,16 @@ const HomePage = () => {
   };
 
   const handleStartStreaming = async () => {
+    // 会员校验
+    try {
+      const ok = await (await import('../utils/ensureMember')).ensureMemberOrPrompt();
+      if (!ok) {
+        return;
+      }
+    } catch (e) {
+      console.error('会员校验失败', e);
+      return;
+    }
     try {
       setIsLoading(true);
       setError(null);

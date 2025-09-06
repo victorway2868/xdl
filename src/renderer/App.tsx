@@ -14,6 +14,7 @@ import AudioSettingsPage from './pages/AudioSettingsPage';
 import TutorialsPage from './pages/TutorialsPage';
 import PluginsPage from './pages/PluginsPage';
 import DevicesPage from './pages/DevicesPage';
+import MembershipPage from './pages/MembershipPage';
 import './styles/App.css';
 
 // 在生产环境(file://)下使用 HashRouter，避免 BrowserRouter 在 file 协议下跳转到 /app 导致空白页
@@ -38,6 +39,7 @@ const App: React.FC = () => {
                 <Route path="plugins" element={<PluginsPage />} />
                 <Route path="devices" element={<DevicesPage />} />
                 <Route path="danmu" element={<DanmuPage />} />
+                <Route path="membership" element={<MembershipPage />} />
               </Route>
             </Routes>
           </RouterComponent>

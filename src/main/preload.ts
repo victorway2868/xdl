@@ -55,6 +55,16 @@ const electronAPI: IpcApi = {
   getDouyinUserStats: (options?: any) => ipcRenderer.invoke('get-douyin-user-stats', options),
   getDouyinUserInfo: () => ipcRenderer.invoke('get-douyin-user-info'),
 
+  // Authing APIs
+  getAuthingStatus: () => ipcRenderer.invoke('authing:get-status'),
+  startAuthingLogin: () => ipcRenderer.invoke('authing:start-login'),
+  logoutAuthing: () => ipcRenderer.invoke('authing:logout'),
+  onAuthingUpdated: (cb: (payload: any) => void) => {
+    const listener = (_event: any, payload: any) => cb(payload);
+    ipcRenderer.on('authing-updated', listener);
+    return () => ipcRenderer.removeListener('authing-updated', listener);
+  },
+
 
   // Streaming APIs (Companion route first, then API route)
   getDouyinCompanionInfo: () => ipcRenderer.invoke('get-douyin-companion-info'),

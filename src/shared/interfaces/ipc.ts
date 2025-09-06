@@ -41,6 +41,12 @@ export interface IpcApi {
   getDouyinUserStats: (options?: any) => Promise<any>;
   getDouyinUserInfo: () => Promise<any>;
 
+  // Authing APIs
+  getAuthingStatus: () => Promise<any>;
+  startAuthingLogin: () => Promise<any>;
+  logoutAuthing: () => Promise<any>;
+  onAuthingUpdated: (cb: (payload: any) => void) => () => void;
+
   // Streaming (Companion route first)
   getDouyinCompanionInfo: () => Promise<{ streamUrl?: string; streamKey?: string; error?: string; status?: number }>;
 

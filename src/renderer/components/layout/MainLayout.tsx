@@ -5,6 +5,7 @@ import TitleBar from './TitleBar';
 import { RootState } from '../../store/store';
 import { fetchContentData } from '../../store/features/contentSlice';
 import { Message } from '../../store/features/danmakuSlice';
+import useAuthingInit from '../../hooks/useAuthingInit';
 
 interface SoundEffect {
   id: string;
@@ -402,6 +403,9 @@ const MainLayout: React.FC = () => {
       window.electronAPI?.updateGlobalHotkeys?.(soundEffects);
     }
   }, [soundEffects]);
+
+  // 初始化 Authing（启动阶段仅自动获取一次 + 订阅广播）
+  useAuthingInit();
 
   // 组件卸载时清理
   useEffect(() => {

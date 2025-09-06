@@ -136,6 +136,14 @@ function ObsConfigPage() {
   };
 
   const handleConfigureOBS = async () => {
+    // 会员校验
+    try {
+      const ok = await (await import('../utils/ensureMember')).ensureMemberOrPrompt();
+      if (!ok) return;
+    } catch (e) {
+      console.error('会员校验失败', e);
+      return;
+    }
     if (!selectedDevice) {
       alert('请先选择一个设备');
       return;

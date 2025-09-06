@@ -4,6 +4,7 @@ import { registerSettingsHandlers } from './settings';
 import { registerPluginsHandlers } from './plugins';
 import { registerWindowHandlers } from './window';
 import { registerAuthHandlers } from './auth';
+import { registerAuthingHandlers } from './authing';
 import { loggerService } from '../services/logger';
 import { registerStreamingHandlers } from './streaming';
 import { registerObsConfigHandlers } from './obsConfig';
@@ -16,6 +17,7 @@ export function registerAllHandlers(): void {
     registerSettingsHandlers();
     registerPluginsHandlers();
     registerAuthHandlers();
+    registerAuthingHandlers();
     registerStreamingHandlers();
     registerWindowHandlers();
     registerObsConfigHandlers();
