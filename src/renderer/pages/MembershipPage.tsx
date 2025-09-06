@@ -1,5 +1,5 @@
 import React from 'react';
-import { Crown, User, ExternalLink, MessageCircle, CreditCard } from 'lucide-react';
+import { Crown, ExternalLink, MessageCircle, CreditCard } from 'lucide-react';
 import '../styles/themes.css';
 import { ThemeCard, ThemeButton, ThemeText } from '../components/common/ThemeComponents';
 
@@ -63,14 +63,14 @@ const MembershipPage: React.FC = () => {
       {/* 账号信息 */}
       <ThemeCard className="p-4 mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-slate-500/20 flex items-center justify-center">
-            <User size={18} className="text-slate-400" />
+          <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-500/20">
+            <img src="icons/icon-256x256.png" alt="账户头像" className="w-full h-full object-cover" />
           </div>
           <div>
             <div className="text-sm text-slate-500">账号</div>
             <div className="text-base font-medium">
               {loggedIn ? (
-                <ThemeText>{user?.email || user?.name || '未知'}</ThemeText>
+                <ThemeText>{user?.email || '未知'}</ThemeText>
               ) : (
                 <ThemeText variant="muted">未登录</ThemeText>
               )}

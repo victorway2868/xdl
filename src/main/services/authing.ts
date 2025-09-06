@@ -191,6 +191,10 @@ async function fetchUserInfoOnce(): Promise<AuthingUserSnapshot> {
       const website: string | undefined = data.website;
       const name: string | undefined = data.name;
 
+
+      // Debug log for diagnosing email presence from Authing userinfo (no token printed)
+      console.log('[Authing][userinfo] sub=%s email=%s name=%s nicknameRaw=%s website=%s', sub, email, name, nicknameRaw, website);
+
       const parsed = parseMembershipFromNickname(nicknameRaw);
       const snap: AuthingUserSnapshot = {
         loggedIn,
@@ -283,7 +287,7 @@ export async function startLoginInteractive(): Promise<void> {
   authUrl.searchParams.set('response_type', 'code');
   authUrl.searchParams.set('client_id', CLIENT_ID);
   authUrl.searchParams.set('redirect_uri', redirectUri);
-  authUrl.searchParams.set('scope', 'openid profile offline_access');
+  authUrl.searchParams.set('scope', 'openid profile email offline_access');
   authUrl.searchParams.set('code_challenge', codeChallenge);
   authUrl.searchParams.set('code_challenge_method', 'S256');
   authUrl.searchParams.set('state', state);
