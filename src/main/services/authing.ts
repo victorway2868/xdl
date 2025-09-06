@@ -13,6 +13,7 @@ const AUTHING_ISSUER = `${AUTHING_URL}/oidc`;
 const AUTH_ENDPOINT = `${AUTHING_ISSUER}/auth`;
 const TOKEN_ENDPOINT = `${AUTHING_ISSUER}/token`;
 const USERINFO_ENDPOINT = `${AUTHING_ISSUER}/me`;
+const END_SESSION_ENDPOINT = `${AUTHING_ISSUER}/session/end`;
 
 
 // Client/App configuration - App ID provided by user
@@ -48,6 +49,7 @@ export interface AuthingUserSnapshot {
 
 // In-memory state (not persisted across runs)
 let memoryAccessToken: { token: string; expiresAt: number } | null = null;
+let memoryIdToken: string | null = null;
 let memorySnapshot: AuthingUserSnapshot | null = null;
 let hasAutoFetchedThisRun = false;
 let inFlightPromise: Promise<AuthingUserSnapshot> | null = null;
@@ -140,6 +142,9 @@ async function refreshAccessTokenIfNeeded(): Promise<boolean> {
     const at = data.access_token as string;
     const expiresIn = Number(data.expires_in || 3600);
     memoryAccessToken = { token: at, expiresAt: Date.now() + expiresIn * 1000 };
+    if (data.id_token) {
+      memoryIdToken = data.id_token as string;
+    }
     if (data.refresh_token && data.refresh_token !== refresh) {
       await setStoredRefreshToken(data.refresh_token);
     }
@@ -301,6 +306,7 @@ export async function startLoginInteractive(): Promise<void> {
   const at = data.access_token as string;
   const expiresIn = Number(data.expires_in || 3600);
   memoryAccessToken = { token: at, expiresAt: Date.now() + expiresIn * 1000 };
+  if (data.id_token) memoryIdToken = data.id_token as string;
   if (data.refresh_token) await setStoredRefreshToken(data.refresh_token);
 
   // Fetch userinfo once and broadcast
@@ -310,10 +316,70 @@ export async function startLoginInteractive(): Promise<void> {
 }
 
 export async function logout(): Promise<void> {
+  // Preserve last id_token for RP-initiated logout
+  const idTokenForLogout = memoryIdToken;
+
+  // Local cleanup first
   await setStoredRefreshToken(null);
   memoryAccessToken = null;
-  memorySnapshot = { loggedIn: false, isMember: false, user: null };
-  await saveOfflineSnapshot(memorySnapshot);
-  sendToRenderer('authing-updated', memorySnapshot);
+  const snap: AuthingUserSnapshot = { loggedIn: false, isMember: false, user: null };
+  memorySnapshot = snap;
+  await saveOfflineSnapshot(snap);
+  sendToRenderer('authing-updated', snap);
+
+  // Try to end SSO session at Authing via End Session Endpoint
+  try {
+    // Find an available loopback port (reuse the same candidate list)
+    let selectedPort: number | null = null;
+    for (const p of LOOPBACK_PORTS) {
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const srv = http.createServer((_req, res) => { res.statusCode = 404; res.end(); });
+          srv.once('error', reject);
+          srv.listen(p, '127.0.0.1', () => srv.close(() => resolve()));
+        });
+        selectedPort = p; break;
+      } catch {}
+    }
+    if (!selectedPort) throw new Error('本地登出回调端口不可用');
+
+    const state = genRandom(16);
+    const postLogout = `http://127.0.0.1:${selectedPort}/logout-callback`;
+
+    const donePromise = new Promise<void>((resolve, reject) => {
+      const server = http.createServer((req, res) => {
+        try {
+          const u = new URL(req.url || '', `http://127.0.0.1:${selectedPort}`);
+          if (u.pathname !== '/logout-callback') { res.statusCode = 404; return res.end('Not Found'); }
+          const st = u.searchParams.get('state');
+          if (!st || st !== state) { res.statusCode = 400; return res.end('Invalid State'); }
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          res.end('<html><body>您已安全退出，可以关闭此页面并返回应用。</body></html>');
+          server.close();
+          resolve();
+        } catch (e) {
+          try { server.close(); } catch {}
+          reject(e as any);
+        }
+      });
+      server.listen(selectedPort!, '127.0.0.1');
+    });
+
+    const endUrl = new URL(END_SESSION_ENDPOINT);
+    endUrl.searchParams.set('post_logout_redirect_uri', postLogout);
+    if (idTokenForLogout) endUrl.searchParams.set('id_token_hint', idTokenForLogout);
+    endUrl.searchParams.set('state', state);
+
+    await shell.openExternal(endUrl.toString());
+    // Wait for callback, but don't hang forever (15s timeout)
+    await Promise.race([
+      donePromise,
+      new Promise<void>((resolve) => setTimeout(resolve, 15000)),
+    ]);
+  } catch {
+    // swallow; local logout already done
+  } finally {
+    memoryIdToken = null;
+  }
 }
 
