@@ -11,6 +11,7 @@ import { ensureAndConnectToOBS, getObsInstance, startOBSProcess } from '@main/mo
 import { closeOBS } from '@main/utils/close-obs-direct';
 import { getStatus, getIdTokenForMain } from '@main/services/authing';
 
+
 // OBS Studio路径配置
 const getObsStudioPaths = () => {
     const appDataPath = process.env.APPDATA || (process.platform === 'darwin'
@@ -172,7 +173,7 @@ async function updateIniFile(iniPath: string, profileName: string, sceneCollecti
 }
 
 /**
- * 向 Worker 获取预签名URL
+ * 向 Worker 获取预签名URL（兼容新旧返回结构）
  */
 async function getPresignedUrlFromWorker(workerUrl: string, filename: string, payload: {
   accuserId: string;
@@ -181,7 +182,7 @@ async function getPresignedUrlFromWorker(workerUrl: string, filename: string, pa
   accmiddleName?: string;
   accfamilyName?: string;
   accjwt: string;
-}): Promise<{ presignedUrl: string; objectKey?: string; publicUrl?: string; expiresIn?: number; }>{
+}): Promise<{ uploadUrl?: string; deleteUrl?: string | null; uploadKey?: string; deleteKey?: string | null; expiresIn?: number; presignedUrl?: string; objectKey?: string; publicUrl?: string; }>{
   const res = await fetch(workerUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -190,7 +191,8 @@ async function getPresignedUrlFromWorker(workerUrl: string, filename: string, pa
   if (!(res as any).ok) throw new Error(`Worker 请求失败: ${(res as any).status} ${(res as any).statusText}`);
   const data = await (res as any).json();
   if (!data?.success) throw new Error(`Worker 返回错误: ${data?.error || 'unknown'}`);
-  return data.data || data;
+  const body = data.data || data;
+  return body;
 }
 
 /**
@@ -204,6 +206,73 @@ async function uploadWithPresignedUrl(url: string, filePath: string): Promise<vo
     throw new Error(`上传失败: ${(res as any).status} ${(res as any).statusText} ${txt || ''}`);
   }
 }
+/**
+ * 使用预签名URL删除（DELETE）旧对象（失败不抛错，仅记录日志）
+ */
+async function deleteWithPresignedUrl(url: string): Promise<void> {
+  try {
+    const res = await fetch(url as any, { method: 'DELETE' } as any);
+    if (!(res as any).ok && (res as any).status !== 204) {
+      const txt = await (res as any).text().catch(() => '');
+      console.warn(`deleteoldfile失败: ${(res as any).status} ${(res as any).statusText} ${txt || ''}`);
+    }
+  } catch (e) {
+    console.warn('deleteoldfile异常:', e);
+  }
+}
+
+/**
+ * 按 oldworker.js 的方法更新 Authing 字段
+ */
+async function updateAuthingProfileClient(params: {
+  accuserId: string;
+  filename: string;
+  accgivenName?: string;
+  accfamilyName?: string;
+  accmiddleName?: string;
+  accwebsite?: string;
+  accjwt: string;
+}): Promise<boolean> {
+  try {
+    const { accuserId, filename, accgivenName, accfamilyName, accmiddleName, accwebsite, accjwt } = params;
+    const filenameWithoutExt = filename.replace(/\.[^/.]+$/, '');
+
+    const requestBody: any = {
+      userId: accuserId,
+      name: 'E-mail',
+      givenName: accfamilyName || accgivenName,
+      familyName: accmiddleName || '',
+      middleName: filenameWithoutExt,
+    };
+    if (accwebsite && accwebsite.length >= 10) {
+      requestBody.website = accwebsite;
+    }
+
+    const headers: Record<string, string> = {
+      Accept: 'application/json, text/plain, */*',
+      'Content-Type': 'application/json',
+      authorization: accjwt,
+    };
+    const userpoolId = process.env.AUTHING_USERPOOL_ID || '68b8b039eba2f6cdd3c6bd06';
+    headers['x-authing-userpool-id'] = userpoolId;
+
+    const resp = await fetch('https://api.authing.cn/api/v2/users/' + accuserId, {
+      method: 'POST',
+      headers: headers as any,
+      body: JSON.stringify(requestBody),
+    } as any);
+
+    if (!(resp as any).ok) {
+      console.warn('更新失败:', (resp as any).status, (resp as any).statusText);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.warn('更新异常:', e);
+    return false;
+  }
+}
+
 
 /**
  * 备份OBS配置（改为上传到R2，不落桌面；校验20MB上限；上传成功后触发getStatus）
@@ -279,7 +348,7 @@ export async function backupObsConfiguration(): Promise<{
           return { success: false, message: '未登录或凭证失效，无法上传备份' };
         }
 
-        // 调用 Worker 获取预签名URL并上传
+        // 调用 Worker 获取签名（nowworker.js 返回 uploadUrl/deleteUrl）并上传
         const workerUrl = 'https://cloud.agiopen.qzz.io/';
         console.log('[备份] 请求预签名URL:', uploadFilename);
         const urlData = await getPresignedUrlFromWorker(workerUrl, uploadFilename, {
@@ -290,9 +359,35 @@ export async function backupObsConfiguration(): Promise<{
           accfamilyName: (user as any).family_name,
           accjwt: idToken,
         });
-        console.log('[备份] 开始上传到R2');
-        await uploadWithPresignedUrl(urlData.presignedUrl, tempZipPath);
-        console.log('[备份] 上传成功');
+
+        const putUrl = (urlData as any).uploadUrl || (urlData as any).presignedUrl;
+        if (!putUrl) throw new Error('w网络错误，无法获取上传URL');
+
+        await uploadWithPresignedUrl(putUrl, tempZipPath);
+        console.log('upload done');
+
+        // 使用 deleteUrl 删除旧文件（如果返回）
+        if ((urlData as any).deleteUrl) {
+          await deleteWithPresignedUrl((urlData as any).deleteUrl!);
+          console.log('delete old file done');
+        }
+
+        // 参照 oldworker.js 的方法更新 Authing 字段（不阻塞主流程）
+        try {
+            const r2domain = (urlData as any).r2domain;
+        
+          await updateAuthingProfileClient({
+            accuserId: user.sub,
+            filename: uploadFilename,
+            accgivenName: (user as any).given_name,
+            accfamilyName: (user as any).family_name,
+            accmiddleName: (user as any).middle_name,
+            accwebsite: r2domain,
+            accjwt: idToken,
+          });
+        } catch (e) {
+          console.warn('更新出现异常:', e);
+        }
 
         // 上传完成后清理本地临时文件，调用 getStatus(true) 才发广播给渲染层刷新 authing 状态
         await fs.remove(tempZipPath).catch(() => {});
