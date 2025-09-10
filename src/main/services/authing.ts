@@ -154,7 +154,7 @@ function openEmbeddedAuthWindow(url: string, title: string, clearData = false): 
 }
 
 
-// Parse nickname like "m2025092916r2025080903" → first 10 digits → 2025092916 (Beijing time)
+// Parse nickname: split by 'l', take the first part as hex, convert to decimal date "YYYYMMDDHH" (Beijing time)
 function parseMembershipFromNickname(nickname?: string): {
   raw: string | null; ms: number | null; textCN: string | null; isMember: boolean;
 } {
@@ -162,21 +162,26 @@ function parseMembershipFromNickname(nickname?: string): {
   let ms: number | null = null;
   let textCN: string | null = null;
   let isMember = false;
-  if (nickname) {
-    const m = nickname.match(/(\d{10})/);
-    if (m) {
-      raw = m[1];
-      const year = Number(raw.slice(0, 4));
-      const month = Number(raw.slice(4, 6));
-      const day = Number(raw.slice(6, 8));
-      const hour = Number(raw.slice(8, 10));
-      // Beijing time (UTC+8) → convert to UTC ms for comparison
-      const utcMs = Date.UTC(year, month - 1, day, hour - 8, 0, 0, 0);
-      ms = utcMs;
-      textCN = `${year}年${String(month).padStart(2, '0')}月${String(day).padStart(2, '0')}日${String(hour).padStart(2, '0')}时`;
-      isMember = Date.now() < (utcMs ?? 0);
+  try {
+    if (nickname) {
+      const hexPart = (nickname.split('l')[0] || '').trim();
+      if (hexPart && /^[0-9a-fA-F]+$/.test(hexPart)) {
+        const decStr = BigInt('0x' + hexPart).toString(10);
+        raw = decStr; // expected to be 10 digits like 2029100410
+        if (decStr.length === 10) {
+          const year = Number(decStr.slice(0, 4));
+          const month = Number(decStr.slice(4, 6));
+          const day = Number(decStr.slice(6, 8));
+          const hour = Number(decStr.slice(8, 10));
+          // Beijing time (UTC+8) → convert to UTC ms for comparison
+          const utcMs = Date.UTC(year, month - 1, day, hour - 8, 0, 0, 0);
+          ms = utcMs;
+          textCN = `${year}年${String(month).padStart(2, '0')}月${String(day).padStart(2, '0')}日${String(hour).padStart(2, '0')}时`;
+          isMember = Date.now() < (utcMs ?? 0);
+        }
+      }
     }
-  }
+  } catch {}
   return { raw, ms, textCN, isMember };
 }
 
