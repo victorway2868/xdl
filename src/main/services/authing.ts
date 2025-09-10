@@ -73,6 +73,87 @@ function sendToRenderer(channel: string, payload: any) {
   try { win?.webContents.send(channel, payload); } catch {}
 }
 
+// Open Authing URL in an embedded BrowserWindow instead of external browser
+function openEmbeddedAuthWindow(url: string, title: string, clearData = false): BrowserWindow {
+  const parent = BrowserWindow.getAllWindows().find(w => !w.isDestroyed());
+  const win = new BrowserWindow({
+    width: 460,
+    height: 520,
+    title,
+    parent: parent,
+    modal: !!parent,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      // 如果需要清除数据，使用独立的会话
+      ...(clearData ? {
+        partition: `auth-session-${Date.now()}` // 使用临时会话分区
+      } : {})
+    },
+  });
+  try { win.setMenuBarVisibility(false); } catch {}
+
+  // 如果需要清除数据，在加载页面前清除所有存储数据
+  if (clearData) {
+    win.webContents.once('dom-ready', async () => {
+      try {
+        // 清除所有存储数据
+        await win.webContents.session.clearStorageData({
+          storages: ['cookies', 'localstorage', 'indexdb', 'websql', 'cachestorage', 'serviceworkers']
+        });
+
+        // 清除所有 cookies
+        const cookies = await win.webContents.session.cookies.get({});
+        for (const cookie of cookies) {
+          await win.webContents.session.cookies.remove(
+            `${cookie.secure ? 'https' : 'http'}://${cookie.domain}${cookie.path}`,
+            cookie.name
+          );
+        }
+      } catch (e) {
+        console.log('[Authing] 清除登录数据时出错:', e);
+      }
+    });
+  }
+
+  // Ensure any window.open opens inside this window for http/https; other protocols go external
+  try {
+    win.webContents.setWindowOpenHandler(({ url: targetUrl }) => {
+      try {
+        if (/^https?:\/\//i.test(targetUrl)) {
+          win.loadURL(targetUrl);
+        } else {
+          shell.openExternal(targetUrl);
+        }
+      } catch {}
+      return { action: 'deny' };
+    });
+  } catch {}
+
+  // 禁止滚动条滚动
+  win.webContents.once('dom-ready', () => {
+    try {
+      win.webContents.insertCSS(`
+        body, html {
+          overflow: hidden !important;
+        }
+        ::-webkit-scrollbar {
+          display: none !important;
+        }
+      `);
+    } catch {}
+  });
+
+  win.loadURL(url);
+  win.show();
+  return win;
+}
+
+
 // Parse nickname like "m2025092916r2025080903" → first 10 digits → 2025092916 (Beijing time)
 function parseMembershipFromNickname(nickname?: string): {
   raw: string | null; ms: number | null; textCN: string | null; isMember: boolean;
@@ -164,7 +245,6 @@ async function fetchUserInfoOnce(): Promise<AuthingUserSnapshot> {
   if (inFlightPromise) return inFlightPromise;
   inFlightPromise = (async () => {
     let loggedIn = false;
-    let isStale = false;
     let snapshot: AuthingUserSnapshot | null = null;
 
     const ok = await refreshAccessTokenIfNeeded();
@@ -173,7 +253,6 @@ async function fetchUserInfoOnce(): Promise<AuthingUserSnapshot> {
       const offline = await loadOfflineSnapshot();
       if (offline) {
         snapshot = { ...offline, isStale: true };
-        isStale = true;
       } else {
         snapshot = { loggedIn: false, isMember: false, user: null };
       }
@@ -308,8 +387,14 @@ export async function startLoginInteractive(): Promise<void> {
   authUrl.searchParams.set('state', state);
   authUrl.searchParams.set('nonce', nonce);
 
-  await shell.openExternal(authUrl.toString());
-  const code = await codePromise; // wait for callback
+  const authUrlStr = authUrl.toString();
+  const loginWin = openEmbeddedAuthWindow(authUrlStr, '登录', true); // 清除用户数据
+  let code: string;
+  try {
+    code = await codePromise; // wait for callback
+  } finally {
+    try { if (!loginWin.isDestroyed()) loginWin.close(); } catch {}
+  }
 
   // Exchange token
   const form = new URLSearchParams();
@@ -338,15 +423,16 @@ export async function logout(): Promise<void> {
   // Preserve last id_token for RP-initiated logout
   const idTokenForLogout = memoryIdToken;
 
-  // Local cleanup first
+  // Local cleanup first - 清除所有登录数据
   await setStoredRefreshToken(null);
   memoryAccessToken = null;
+  memoryIdToken = null;
   const snap: AuthingUserSnapshot = { loggedIn: false, isMember: false, user: null };
   memorySnapshot = snap;
   await saveOfflineSnapshot(snap);
   sendToRenderer('authing-updated', snap);
 
-  // Try to end SSO session at Authing via End Session Endpoint
+  // 隐形退出 - 在后台静默处理 SSO 会话结束，不显示窗口
   try {
     // Find an available loopback port (reuse the same candidate list)
     let selectedPort: number | null = null;
@@ -360,7 +446,10 @@ export async function logout(): Promise<void> {
         selectedPort = p; break;
       } catch {}
     }
-    if (!selectedPort) throw new Error('本地登出回调端口不可用');
+    if (!selectedPort) {
+      // 如果端口不可用，直接返回，本地清理已完成
+      return;
+    }
 
     const state = genRandom(16);
     const postLogout = `http://127.0.0.1:${selectedPort}/logout-callback`;
@@ -373,7 +462,7 @@ export async function logout(): Promise<void> {
           const st = u.searchParams.get('state');
           if (!st || st !== state) { res.statusCode = 400; return res.end('Invalid State'); }
           res.setHeader('Content-Type', 'text/html; charset=utf-8');
-          res.end('<html><body>您已安全退出，可以关闭此页面并返回应用。</body></html>');
+          res.end('<html><body>您已安全退出。</body></html>');
           server.close();
           resolve();
         } catch (e) {
@@ -389,16 +478,34 @@ export async function logout(): Promise<void> {
     if (idTokenForLogout) endUrl.searchParams.set('id_token_hint', idTokenForLogout);
     endUrl.searchParams.set('state', state);
 
-    await shell.openExternal(endUrl.toString());
-    // Wait for callback, but don't hang forever (15s timeout)
-    await Promise.race([
-      donePromise,
-      new Promise<void>((resolve) => setTimeout(resolve, 15000)),
-    ]);
+    // 隐形处理退出 - 创建隐藏的窗口来处理退出流程
+    const endUrlStr = endUrl.toString();
+    const parent = BrowserWindow.getAllWindows().find(w => !w.isDestroyed());
+    const logoutWin = new BrowserWindow({
+      width: 1,
+      height: 1,
+      show: false, // 不显示窗口
+      parent: parent,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        sandbox: true,
+      },
+    });
+
+    try {
+      logoutWin.loadURL(endUrlStr);
+
+      // 等待回调或超时（缩短到5秒）
+      await Promise.race([
+        donePromise,
+        new Promise<void>((resolve) => setTimeout(resolve, 5000)),
+      ]);
+    } finally {
+      try { if (!logoutWin.isDestroyed()) logoutWin.close(); } catch {}
+    }
   } catch {
-    // swallow; local logout already done
-  } finally {
-    memoryIdToken = null;
+    // 忽略所有错误，本地清理已完成
   }
 }
 
