@@ -392,7 +392,7 @@ function ObsConfigPage() {
                   onChange={(e) => setSelectedBackup(e.target.value)}
                   className="w-full theme-select text-xs"
                 >
-                  <option value="">选择恢复项（given/family/middle）</option>
+                  <option value="">已备份机型</option>
                   {restoreSlots.map((slot, index) => (
                     <option key={index} value={slot}>
                       {slot}
