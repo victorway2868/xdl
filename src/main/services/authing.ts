@@ -43,6 +43,9 @@ export interface AuthingUserSnapshot {
     nicknameRaw?: string;
     website?: string;
     name?: string;
+    given_name?: string;
+    middle_name?: string;
+    family_name?: string;
   } | null;
   lastSyncAt?: number;
 }
@@ -51,7 +54,6 @@ export interface AuthingUserSnapshot {
 let memoryAccessToken: { token: string; expiresAt: number } | null = null;
 let memoryIdToken: string | null = null;
 let memorySnapshot: AuthingUserSnapshot | null = null;
-let hasAutoFetchedThisRun = false;
 let inFlightPromise: Promise<AuthingUserSnapshot> | null = null;
 
 function b64url(input: Buffer) {
@@ -190,7 +192,9 @@ async function fetchUserInfoOnce(): Promise<AuthingUserSnapshot> {
       const nicknameRaw: string | undefined = data.nickname;
       const website: string | undefined = data.website;
       const name: string | undefined = data.name;
-
+      const given_name: string | undefined = data.given_name;
+      const middle_name: string | undefined = data.middle_name;
+      const family_name: string | undefined = data.family_name;
 
       // Debug log for diagnosing email presence from Authing userinfo (no token printed)
       console.log('[Authing][userinfo] sub=%s email=%s name=%s nicknameRaw=%s website=%s', sub, email, name, nicknameRaw, website);
@@ -202,7 +206,7 @@ async function fetchUserInfoOnce(): Promise<AuthingUserSnapshot> {
         expiryTextCN: parsed.textCN,
         membershipExpiryRaw: parsed.raw,
         membershipExpiryDate: parsed.ms,
-        user: { sub, email, nicknameRaw, website, name },
+        user: { sub, email, nicknameRaw, website, name, given_name, middle_name, family_name },
         lastSyncAt: Date.now(),
       };
       memorySnapshot = snap;
@@ -225,16 +229,27 @@ async function fetchUserInfoOnce(): Promise<AuthingUserSnapshot> {
   try { return await inFlightPromise; } finally { inFlightPromise = null; }
 }
 
-export async function getStatus(autoFetchOnce = true): Promise<AuthingUserSnapshot> {
-  if (autoFetchOnce && !hasAutoFetchedThisRun) {
-    hasAutoFetchedThisRun = true;
-    return await fetchUserInfoOnce();
+export async function getStatus(forceFetch = true): Promise<AuthingUserSnapshot> {
+  if (forceFetch) {
+    const snap = await fetchUserInfoOnce();
+    memorySnapshot = snap;
+    sendToRenderer('authing-updated', snap);
+    return snap;
   }
-  if (memorySnapshot) return memorySnapshot;
-  // No cached snapshot; try offline cache without network
-  const offline = await loadOfflineSnapshot();
-  if (offline) return { ...offline, isStale: true };
-  return { loggedIn: false, isMember: false, user: null };
+  let snap: AuthingUserSnapshot;
+  if (memorySnapshot) {
+    snap = memorySnapshot;
+  } else {
+    const offline = await loadOfflineSnapshot();
+    snap = offline ? { ...offline, isStale: true } : { loggedIn: false, isMember: false, user: null };
+  }
+  sendToRenderer('authing-updated', snap);
+  return snap;
+}
+
+// Expose id_token to other main-process modules (not bridged to renderer)
+export function getIdTokenForMain(): string | null {
+  return memoryIdToken;
 }
 
 export async function startLoginInteractive(): Promise<void> {

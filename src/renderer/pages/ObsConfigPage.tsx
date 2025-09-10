@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 // import { useNavigate } from 'react-router-dom'; // 暂时未使用
 import { Settings } from 'lucide-react';
 import '../styles/themes.css';
 import { tabletModels, phoneModels, Device } from '@renderer/data/deviceModels';
 import { SystemInfo } from '@main/utils/hardwareInfo';
+import { useSelector } from 'react-redux';
+import { RootState } from '@renderer/store/store';
 
 // Helper to calculate aspect ratio from a "WxH" string
 const getAspectRatioFromResolution = (resolution: string): string => {
@@ -43,10 +45,14 @@ function ObsConfigPage() {
   // Backup and restore state
   const [backupStatus, setBackupStatus] = useState<'idle' | 'backing-up' | 'success' | 'error'>('idle');
   const [restoreStatus, setRestoreStatus] = useState<'idle' | 'restoring' | 'success' | 'error'>('idle');
-  const [availableBackups, setAvailableBackups] = useState<any[]>([]);
   const [selectedBackup, setSelectedBackup] = useState<string>('');
   const [backupMessage, setBackupMessage] = useState<string>('');
   const [restoreMessage, setRestoreMessage] = useState<string>('');
+
+  // Authing Redux
+  const authUser = (useSelector((s: RootState) => s.authing.user) || undefined) as any;
+  const restoreSlots = [authUser?.given_name, authUser?.family_name, authUser?.middle_name].filter(Boolean) as string[];
+
   const [restoreSteps, setRestoreSteps] = useState<any[]>([]);
 
   // Hardware info state
@@ -65,20 +71,8 @@ function ObsConfigPage() {
       }
     };
     fetchHardwareInfo();
-    loadAvailableBackups();
   }, []);
 
-  // Load available backups
-  const loadAvailableBackups = async () => {
-    try {
-      const result = await window.electronAPI.getAvailableBackups();
-      if (result.success) {
-        setAvailableBackups(result.backups);
-      }
-    } catch (error) {
-      console.error('Failed to load backups:', error);
-    }
-  };
 
   // Effect to update the selected device whenever the device type or selections change
   useEffect(() => {
@@ -179,7 +173,6 @@ function ObsConfigPage() {
       if (result.success) {
         setBackupStatus('success');
         setBackupMessage(result.message);
-        await loadAvailableBackups(); // 刷新备份列表
       } else {
         setBackupStatus('error');
         setBackupMessage(result.message);
@@ -191,20 +184,24 @@ function ObsConfigPage() {
   };
 
   const handleRestoreConfig = async () => {
-    if (!selectedBackup && availableBackups.length === 0) {
-      alert('没有可用的备份文件');
+    // 使用 Redux 中的三个名称作为“备份列表”
+    const slots = restoreSlots;
+    if (slots.length === 0 || !authUser?.website || !authUser?.sub) {
+      alert('没有可用的恢复选项或用户信息缺失');
       return;
     }
+    const slotName = selectedBackup || slots[0]; // 若未选择，默认第一个
 
     setRestoreStatus('restoring');
     setRestoreMessage('');
     setRestoreSteps([]);
 
     try {
-      const result = await window.electronAPI.restoreObsConfig(selectedBackup || undefined);
-      
+      const website = String(authUser.website);
+      const base = website.endsWith('/') ? website.slice(0, -1) : website;
+      const url = `${base}/obsbak/${authUser.sub}/${encodeURIComponent(slotName)}.zip`;
+      const result = await window.electronAPI.restoreObsConfigFromUrl(url);
       setRestoreSteps(result.steps || []);
-      
       if (result.success) {
         setRestoreStatus('success');
         setRestoreMessage(result.message);
@@ -369,12 +366,12 @@ function ObsConfigPage() {
         <div className="theme-divider"></div>
         <div>
           <h3 className="text-lg font-semibold mb-4 theme-text-primary">配置备份与恢复</h3>
-          
+
           {/* 备份区域 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <button 
-                onClick={handleBackupConfig} 
+              <button
+                onClick={handleBackupConfig}
                 disabled={backupStatus === 'backing-up'}
                 className="w-full px-4 py-2 theme-btn-secondary rounded-md disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
@@ -390,23 +387,21 @@ function ObsConfigPage() {
             {/* 恢复区域 */}
             <div>
               <div className="space-y-2">
-                {availableBackups.length > 0 && (
-                  <select 
-                    value={selectedBackup} 
-                    onChange={(e) => setSelectedBackup(e.target.value)}
-                    className="w-full theme-select text-xs"
-                  >
-                    <option value="">选择备份文件</option>
-                    {availableBackups.map((backup, index) => (
-                      <option key={index} value={backup.path}>
-                        {backup.name} ({(backup.size / 1024 / 1024).toFixed(1)}MB)
-                      </option>
-                    ))}
-                  </select>
-                )}
-                <button 
-                  onClick={handleRestoreConfig} 
-                  disabled={restoreStatus === 'restoring' || availableBackups.length === 0}
+                <select
+                  value={selectedBackup}
+                  onChange={(e) => setSelectedBackup(e.target.value)}
+                  className="w-full theme-select text-xs"
+                >
+                  <option value="">选择恢复项（given/family/middle）</option>
+                  {restoreSlots.map((slot, index) => (
+                    <option key={index} value={slot}>
+                      {slot}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleRestoreConfig}
+                  disabled={restoreStatus === 'restoring' || restoreSlots.length === 0}
                   className="w-full px-4 py-2 theme-btn-secondary rounded-md disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                 >
                   {restoreStatus === 'restoring' ? '恢复中...' : '恢复配置'}
@@ -434,9 +429,6 @@ function ObsConfigPage() {
                     </div>
                   ))}
                 </div>
-              )}
-              {availableBackups.length === 0 && (
-                <p className="text-xs theme-text-muted mt-2">未找到备份文件</p>
               )}
             </div>
           </div>

@@ -9,6 +9,7 @@ import archiver from 'archiver';
 import extract from 'extract-zip';
 import { ensureAndConnectToOBS, getObsInstance, startOBSProcess } from '@main/modules/obsWebSocket';
 import { closeOBS } from '@main/utils/close-obs-direct';
+import { getStatus, getIdTokenForMain } from '@main/services/authing';
 
 // OBS Studio路径配置
 const getObsStudioPaths = () => {
@@ -82,34 +83,7 @@ async function extractZipArchive(zipPath: string, outputDir: string): Promise<vo
     await extract(zipPath, { dir: outputDir });
 }
 
-/**
- * 查找桌面上的备份文件
- */
-async function findBackupFiles(): Promise<string[]> {
-    const desktopPath = path.join(os.homedir(), 'Desktop');
-
-    try {
-        const files = await fs.readdir(desktopPath);
-        const backupFiles = files
-            .filter(file => file.startsWith('obsbackup_') && file.endsWith('.zip'))
-            .map(file => path.join(desktopPath, file));
-
-        // 按修改时间排序（最新的在前）
-        const filesWithStats = await Promise.all(
-            backupFiles.map(async (file) => {
-                const stats = await fs.stat(file);
-                return { file, mtime: stats.mtime };
-            })
-        );
-
-        return filesWithStats
-            .sort((a, b) => b.mtime.getTime() - a.mtime.getTime())
-            .map(item => item.file);
-    } catch (error) {
-        console.error('查找备份文件失败:', error);
-        return [];
-    }
-}
+// 本地备份扫描逻辑已废弃（改为R2云端备份与恢复）
 
 /**
  * 递归查找场景数据中的媒体文件路径
@@ -198,7 +172,41 @@ async function updateIniFile(iniPath: string, profileName: string, sceneCollecti
 }
 
 /**
- * 备份OBS配置
+ * 向 Worker 获取预签名URL
+ */
+async function getPresignedUrlFromWorker(workerUrl: string, filename: string, payload: {
+  accuserId: string;
+  accwebsite?: string;
+  accgivenName?: string;
+  accmiddleName?: string;
+  accfamilyName?: string;
+  accjwt: string;
+}): Promise<{ presignedUrl: string; objectKey?: string; publicUrl?: string; expiresIn?: number; }>{
+  const res = await fetch(workerUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename, ...payload })
+  } as any);
+  if (!(res as any).ok) throw new Error(`Worker 请求失败: ${(res as any).status} ${(res as any).statusText}`);
+  const data = await (res as any).json();
+  if (!data?.success) throw new Error(`Worker 返回错误: ${data?.error || 'unknown'}`);
+  return data.data || data;
+}
+
+/**
+ * 使用预签名URL上传文件
+ */
+async function uploadWithPresignedUrl(url: string, filePath: string): Promise<void> {
+  const content = await fs.readFile(filePath);
+  const res = await fetch(url, { method: 'PUT', body: content, headers: { 'Content-Type': 'application/octet-stream' } } as any);
+  if (!(res as any).ok) {
+    const txt = await (res as any).text().catch(() => '');
+    throw new Error(`上传失败: ${(res as any).status} ${(res as any).statusText} ${txt || ''}`);
+  }
+}
+
+/**
+ * 备份OBS配置（改为上传到R2，不落桌面；校验20MB上限；上传成功后触发getStatus）
  */
 export async function backupObsConfiguration(): Promise<{
     success: boolean;
@@ -206,80 +214,94 @@ export async function backupObsConfiguration(): Promise<{
     backupPath?: string;
 }> {
     try {
-        // 连接到OBS
+        // 连接到OBS（不再校验会员，仅确保可读取配置）
         await ensureAndConnectToOBS();
         const obs = getObsInstance();
-        if (!obs) {
-            throw new Error('OBS WebSocket 未连接');
-        }
+        if (!obs) throw new Error('OBS WebSocket 未连接');
 
-        // 获取当前配置信息
         const { currentProfileName } = await obs.call('GetProfileList');
         const { currentSceneCollectionName } = await obs.call('GetSceneCollectionList');
 
-        console.log(`当前配置文件: ${currentProfileName}`);
-        console.log(`当前场景集合: ${currentSceneCollectionName}`);
-
         const paths = getObsStudioPaths();
 
-        // 创建备份文件夹
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').slice(0, 19);
-        const backupFolderName = `obsbackup_${timestamp}`;
-        const tempBackupPath = path.join(os.tmpdir(), backupFolderName);
-        const finalBackupPath = path.join(os.homedir(), 'Desktop', `${backupFolderName}.zip`);
+        // 临时目录打包
+        const now = new Date();
+        const pad = (n: number) => String(n).padStart(2, '0');
+        const timestamp = `${String(now.getFullYear()).slice(2)}${pad(now.getMonth() + 1)}${pad(now.getDate())}${pad(now.getHours())}${pad(now.getMinutes())}`; // YYMMDDHHmm
+        const backupTempName = `obsbackup_tmp_${Date.now()}`; // 仅用于临时目录名
+        const uploadFilename = `${currentProfileName}_${timestamp}.zip`;
+        const tempBackupPath = path.join(os.tmpdir(), backupTempName);
+        const tempZipPath = path.join(os.tmpdir(), uploadFilename);
 
         await fs.ensureDir(path.join(tempBackupPath, 'basic', 'profiles'));
         await fs.ensureDir(path.join(tempBackupPath, 'basic', 'scenes'));
 
-        // 复制配置文件
         const profilePath = path.join(paths.profilesPath, currentProfileName);
         const sceneFilePath = path.join(paths.scenesPath, `${currentSceneCollectionName}.json`);
+        if (!(await fs.pathExists(profilePath))) throw new Error(`配置文件不存在: ${currentProfileName}`);
+        if (!(await fs.pathExists(sceneFilePath))) throw new Error(`场景集合不存在: ${currentSceneCollectionName}`);
 
-        if (!(await fs.pathExists(profilePath))) {
-            throw new Error(`配置文件不存在: ${currentProfileName}`);
-        }
-        if (!(await fs.pathExists(sceneFilePath))) {
-            throw new Error(`场景集合不存在: ${currentSceneCollectionName}`);
-        }
-
-        // 复制配置文件和场景文件
         await fs.copy(profilePath, path.join(tempBackupPath, 'basic', 'profiles', currentProfileName));
         await fs.copy(sceneFilePath, path.join(tempBackupPath, 'basic', 'scenes', `${currentSceneCollectionName}.json`));
 
-        // 复制媒体文件
         const sceneData = await fs.readJson(sceneFilePath);
         const mediaFiles = findMediaFilePaths(sceneData);
-
         for (const mediaFile of mediaFiles) {
-            try {
-                const fileName = path.basename(mediaFile);
-                await fs.copy(mediaFile, path.join(tempBackupPath, fileName));
-                console.log(`已复制媒体文件: ${fileName}`);
-            } catch (error) {
-                console.warn(`复制媒体文件失败 ${mediaFile}:`, error);
-            }
+          try {
+            const fileName = path.basename(mediaFile);
+            await fs.copy(mediaFile, path.join(tempBackupPath, fileName));
+            console.log(`[备份] 已复制媒体文件: ${fileName}`);
+          } catch {}
         }
 
-        // 创建ZIP文件
-        await createZipArchive(tempBackupPath, finalBackupPath);
-
-        // 清理临时文件夹
+        console.log(`[备份] 开始压缩临时目录: ${tempBackupPath}`);
+        await createZipArchive(tempBackupPath, tempZipPath);
+        console.log(`[备份] ZIP已生成: ${tempZipPath}`);
         await fs.remove(tempBackupPath);
 
-        console.log(`备份完成: ${finalBackupPath}`);
+        // 尺寸校验（20MB）
+        const stat = await fs.stat(tempZipPath);
+        console.log(`[备份] ZIP大小: ${(stat.size/1024/1024).toFixed(2)} MB`);
+        const maxBytes = 20 * 1024 * 1024;
+        if (stat.size > maxBytes) {
+          await fs.remove(tempZipPath).catch(() => {});
+          console.warn(`[备份] 备份文件超出限制 (${(stat.size/1024/1024).toFixed(2)} MB > 20 MB)`);
+          return { success: false, message: `备份文件过大，已达到 ${(stat.size/1024/1024).toFixed(1)}MB（上限20MB）` };
+        }
 
-        return {
-            success: true,
-            message: `备份成功创建: ${path.basename(finalBackupPath)}`,
-            backupPath: finalBackupPath
-        };
+        // （仅主进程）使用 getStatus(false) 从本地内存/离线快照拿用户字段（sub、website、given_name、middle_name、family_name），用 getIdTokenForMain() 取 id_token
+        const status = await getStatus(false); // 不强制网络刷新（只读本地缓存）
+        const user = status?.user;
+        const idToken = getIdTokenForMain();
+        if (!user?.sub || !idToken) {
+          await fs.remove(tempZipPath).catch(() => {});
+          console.warn('[备份] 未登录或凭证失效，无法上传备份');
+          return { success: false, message: '未登录或凭证失效，无法上传备份' };
+        }
+
+        // 调用 Worker 获取预签名URL并上传
+        const workerUrl = 'https://cloud.agiopen.qzz.io/';
+        console.log('[备份] 请求预签名URL:', uploadFilename);
+        const urlData = await getPresignedUrlFromWorker(workerUrl, uploadFilename, {
+          accuserId: user.sub,
+          accwebsite: user.website,
+          accgivenName: (user as any).given_name,
+          accmiddleName: (user as any).middle_name,
+          accfamilyName: (user as any).family_name,
+          accjwt: idToken,
+        });
+        console.log('[备份] 开始上传到R2');
+        await uploadWithPresignedUrl(urlData.presignedUrl, tempZipPath);
+        console.log('[备份] 上传成功');
+
+        // 上传完成后清理本地临时文件，调用 getStatus(true) 才发广播给渲染层刷新 authing 状态
+        await fs.remove(tempZipPath).catch(() => {});
+        await getStatus(true);
+
+        return { success: true, message: `云端备份成功` };
 
     } catch (error: any) {
-        console.error('备份失败:', error);
-        return {
-            success: false,
-            message: `备份失败: ${error.message || String(error)}`
-        };
+        return { success: false, message: `备份失败: ${error?.message || String(error)}` };
     }
 }
 
@@ -296,18 +318,13 @@ export async function restoreObsConfiguration(backupFilePath?: string): Promise<
     const steps: Array<{ name: string; success: boolean; message?: string }> = [];
 
     try {
-        // Step 1: 查找备份文件
-        steps.push({ name: 'Finding backup file', success: true, message: '正在查找备份文件...' });
+        // Step 1: 校验备份文件路径
+        steps.push({ name: 'Finding backup file', success: true, message: '正在校验备份文件路径...' });
 
-        let zipPath = backupFilePath;
+        const zipPath = backupFilePath;
         if (!zipPath) {
-            const backupFiles = await findBackupFiles();
-            if (backupFiles.length === 0) {
-                throw new Error('未找到备份文件');
-            }
-            zipPath = backupFiles[0]; // 使用最新的备份
+            throw new Error('未提供备份文件路径');
         }
-
         if (!(await fs.pathExists(zipPath))) {
             throw new Error(`备份文件不存在: ${zipPath}`);
         }
@@ -420,6 +437,8 @@ export async function restoreObsConfiguration(backupFilePath?: string): Promise<
 
             const startResult = await startOBSProcess();
             if (!startResult.success) {
+
+
                 steps[steps.length - 1] = { name: 'Restarting OBS', success: false, message: `重启OBS失败: ${startResult.message}` };
                 // 即使重启失败，恢复操作本身是成功的
                 console.warn('OBS重启失败，但配置恢复成功');
@@ -458,42 +477,28 @@ export async function restoreObsConfiguration(backupFilePath?: string): Promise<
     }
 }
 
+// 本地备份列表功能已移除（改为云端恢复）
+
 /**
- * 获取可用的备份文件列表
+ * 从 URL 下载 zip 到临时目录并调用现有恢复逻辑
  */
-export async function getAvailableBackups(): Promise<{
-    success: boolean;
-    backups: Array<{
-        path: string;
-        name: string;
-        size: number;
-        createdAt: Date;
-    }>;
+export async function restoreObsConfigurationFromUrl(downloadUrl: string): Promise<{
+  success: boolean;
+  message: string;
+  profileName?: string;
+  sceneCollectionName?: string;
+  steps?: Array<{ name: string; success: boolean; message?: string }>;
 }> {
-    try {
-        const backupFiles = await findBackupFiles();
-
-        const backups = await Promise.all(
-            backupFiles.map(async (filePath) => {
-                const stats = await fs.stat(filePath);
-                return {
-                    path: filePath,
-                    name: path.basename(filePath),
-                    size: stats.size,
-                    createdAt: stats.mtime
-                };
-            })
-        );
-
-        return {
-            success: true,
-            backups
-        };
-    } catch (error: any) {
-        console.error('获取备份列表失败:', error);
-        return {
-            success: false,
-            backups: []
-        };
-    }
+  const tmpZip = path.join(os.tmpdir(), `obs-restore-${Date.now()}.zip`);
+  try {
+    const res = await fetch(downloadUrl as any);
+    if (!(res as any).ok) throw new Error(`下载失败: ${(res as any).status} ${(res as any).statusText}`);
+    const arrayBuf = await (res as any).arrayBuffer();
+    await fs.writeFile(tmpZip, Buffer.from(arrayBuf));
+    return await restoreObsConfiguration(tmpZip);
+  } catch (e: any) {
+    return { success: false, message: e?.message || String(e) };
+  } finally {
+    try { await fs.remove(tmpZip); } catch {}
+  }
 }

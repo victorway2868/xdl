@@ -103,7 +103,7 @@ const electronAPI: IpcApi = {
   // OBS Backup & Restore APIs
   backupObsConfig: () => ipcRenderer.invoke('backup-obs-config'),
   restoreObsConfig: (backupFilePath?: string) => ipcRenderer.invoke('restore-obs-config', backupFilePath),
-  getAvailableBackups: () => ipcRenderer.invoke('get-available-backups'),
+  restoreObsConfigFromUrl: (url: string) => ipcRenderer.invoke('restore-obs-config-from-url', url),
 
   // System Info
   getSystemInfo: () => ipcRenderer.invoke('get-system-info'),

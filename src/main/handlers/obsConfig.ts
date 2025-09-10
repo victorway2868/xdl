@@ -5,7 +5,7 @@ import { configureSourceTransform } from '@main/modules/obsconfig/sourceTransfor
 import { configureEncoder } from '@main/modules/obsconfig/encoderConfig';
 import { addOrEnsureVideoCaptureDevice } from '@main/modules/obsconfig/videoCaptureDevice';
 import { createDisplayCaptureSource } from '@main/modules/obsconfig/displayCapture';
-import { backupObsConfiguration, restoreObsConfiguration, getAvailableBackups } from '@main/modules/obsconfig/backupRestore';
+import { backupObsConfiguration, restoreObsConfiguration, restoreObsConfigurationFromUrl } from '@main/modules/obsconfig/backupRestore';
 import { enableDefaultAudioSources } from '@main/modules/obsconfig/enableAudioSources';
 import { ensureObsEnabledAndMaybeRestart, startOBSProcess } from '@main/modules/obsWebSocket';
 import { closeOBS } from '@main/utils/close-obs-direct';
@@ -121,9 +121,11 @@ export function registerObsConfigHandlers() {
     try { return await restoreObsConfiguration(backupFilePath); } catch (e: any) { return { success: false, message: e?.message || String(e) }; }
   });
 
-  // 获取可用备份列表
-  ipcMain.handle('get-available-backups', async () => {
-    try { return await getAvailableBackups(); } catch (e: any) { return { success: false, backups: [], message: e?.message || String(e) }; }
+  // 通过URL恢复OBS配置
+  ipcMain.handle('restore-obs-config-from-url', async (_e, url: string) => {
+    try { return await restoreObsConfigurationFromUrl(url); } catch (e: any) { return { success: false, message: e?.message || String(e) }; }
   });
+
 }
+
 

@@ -73,7 +73,7 @@ export interface IpcApi {
   // OBS Backup & Restore
   backupObsConfig: () => Promise<{ success: boolean; message: string; backupPath?: string }>;
   restoreObsConfig: (backupFilePath?: string) => Promise<{ success: boolean; message: string; profileName?: string; sceneCollectionName?: string; steps?: Array<{ name: string; success: boolean; message?: string }> }>;
-  getAvailableBackups: () => Promise<{ success: boolean; backups: Array<{ path: string; name: string; size: number; createdAt: Date }> }>;
+  restoreObsConfigFromUrl: (url: string) => Promise<{ success: boolean; message: string; profileName?: string; sceneCollectionName?: string; steps?: Array<{ name: string; success: boolean; message?: string }> }>;
 
   // System Info
   getSystemInfo: () => Promise<any>;
