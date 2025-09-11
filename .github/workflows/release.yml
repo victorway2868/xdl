@@ -25,8 +25,17 @@ jobs:
           node-version: '20'
           cache: 'npm'
           
-      - name: Install dependencies
+      - name: Install dependencies (Windows)
+        if: matrix.os == 'windows-latest'
         run: npm ci
+
+      - name: Workaround npm optional deps bug (macOS clean install)
+        if: matrix.os == 'macos-latest'
+        run: |
+          rm -rf node_modules package-lock.json
+          npm cache clean --force
+          npm i -g npm@10
+          npm install
         
       - name: Build application (Windows)
         if: matrix.os == 'windows-latest'
