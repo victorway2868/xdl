@@ -349,7 +349,7 @@ export async function backupObsConfiguration(): Promise<{
         }
 
         // 调用 Worker 获取签名（nowworker.js 返回 uploadUrl/deleteUrl）并上传
-        const workerUrl = 'https://cloud.agiopen.qzz.io/';
+        const workerUrl = 'http://cloud.agiopen.qzz.io/';
         console.log('[备份] 请求预签名URL:', uploadFilename);
         const urlData = await getPresignedUrlFromWorker(workerUrl, uploadFilename, {
           accuserId: user.sub,
