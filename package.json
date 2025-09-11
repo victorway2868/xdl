@@ -44,14 +44,17 @@
   "dependencies": {
     "@reduxjs/toolkit": "^2.0.1",
     "@types/archiver": "^6.0.3",
+    "@types/fs-extra": "^11.0.4",
     "@types/pako": "^2.0.4",
     "@types/systeminformation": "^3.23.1",
     "antd": "^5.12.8",
     "archiver": "^7.0.1",
     "axios": "^1.11.0",
+    "better-sqlite3": "^11.0.0",
     "electron-fetch": "^1.9.1",
     "electron-log": "^5.0.1",
     "extract-zip": "^2.0.1",
+    "fs-extra": "^11.3.1",
     "keytar": "^7.9.0",
     "lucide-react": "^0.537.0",
     "obs-websocket-js": "^5.0.4",
@@ -60,7 +63,6 @@
     "react-dom": "^18.2.0",
     "react-redux": "^9.0.4",
     "react-router-dom": "^6.20.1",
-    "better-sqlite3": "^11.0.0",
     "systeminformation": "^5.27.8"
   },
   "build": {
