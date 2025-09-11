@@ -447,14 +447,14 @@ const HomePage = () => {
     }
   };
 
-  const handleWebLogin = async () => {
-    await dispatch(loginWithDouyinWeb());
+  const handleWebLogin = () => {
     setShowLoginModal(false);
+    dispatch(loginWithDouyinWeb());
   };
 
-  const handleCompanionLogin = async () => {
-    await dispatch(loginWithDouyinCompanion());
+  const handleCompanionLogin = () => {
     setShowLoginModal(false);
+    dispatch(loginWithDouyinCompanion());
   };
 
   const handleContentAction = (item: ContentItem) => {

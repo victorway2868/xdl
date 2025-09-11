@@ -7,12 +7,12 @@ import { getPath, PathType } from '../utils/pathManager';
 export interface CookieItem { name: string; value: string; domain?: string; path?: string }
 export interface CookieResult { success: boolean; cookies?: CookieItem[]; cookieString?: string; error?: string }
 
-async function loadSqlite() {
+async function loadBetterSqlite() {
   try {
-    const mod = await import('sqlite3');
-    return (mod as any).default.verbose();
+    const mod = await import('better-sqlite3');
+    return (mod as any).default || (mod as any);
   } catch (e) {
-    throw new Error('缺少 sqlite3 依赖，请先运行: npm install sqlite3');
+    throw new Error('缺少 better-sqlite3 依赖，请先运行: npm install better-sqlite3');
   }
 }
 
@@ -100,14 +100,11 @@ export async function getDouyinCompanionCookies(): Promise<CookieResult> {
     copyLockedFile(sourceDb, tempDb);
     const masterKey = decryptMasterKey(localState, path.join(tempDir, 'master_key.bin'));
 
-    const sqlite3 = await loadSqlite();
-    const db = new sqlite3.Database(tempDb, sqlite3.OPEN_READONLY);
-
-    const rows: any[] = await new Promise((resolve, reject) => {
-      db.all("SELECT name, encrypted_value, host_key, path FROM cookies WHERE host_key LIKE '%.douyin.com'", [], (err: any, r: any[]) => {
-        if (err) reject(err); else resolve(r);
-      });
-    }).finally(() => db.close());
+    const BetterSqlite3 = await loadBetterSqlite();
+    const db = new BetterSqlite3(tempDb, { readonly: true, fileMustExist: true });
+    const stmt = db.prepare("SELECT name, encrypted_value, host_key, path FROM cookies WHERE host_key LIKE '%.douyin.com'");
+    const rows: any[] = stmt.all();
+    db.close();
 
     const cookies: CookieItem[] = [];
     for (const row of rows) {

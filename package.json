@@ -60,7 +60,7 @@
     "react-dom": "^18.2.0",
     "react-redux": "^9.0.4",
     "react-router-dom": "^6.20.1",
-    "sqlite3": "^5.1.7",
+    "better-sqlite3": "^11.0.0",
     "systeminformation": "^5.27.8"
   },
   "build": {
