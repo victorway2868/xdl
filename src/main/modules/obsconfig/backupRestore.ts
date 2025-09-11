@@ -364,7 +364,7 @@ export async function backupObsConfiguration(): Promise<{
     if (!s3uploadResult.success) {
       await fs.remove(tempZipPath).catch(() => {});
       console.error('[备份] 上传失败:', s3uploadResult.message);
-      return { success: false, message: `云端上传失败: ${s3uploadResult.message}` };
+      return { success: false, message: `云端上传失败: 网络错误代码0001` };
     }
     
     console.log('[备份] 上传成功:', s3uploadResult.message);
@@ -406,7 +406,7 @@ export async function backupObsConfiguration(): Promise<{
       } else {
         console.error('[备份] 用户资料更新失败');
         await fs.remove(tempZipPath).catch(() => {});
-        return { success: false, message: '用户资料更新失败，备份未完成' };
+        return { success: false, message: '云端上传失败: 网络错误代码0002' };
       }
     } catch (e) {
       console.error('[备份] 更新用户资料异常:', e);
@@ -432,7 +432,7 @@ export async function backupObsConfiguration(): Promise<{
     return { success: true, message: `云端备份成功` };
 
   } catch (error: any) {
-    return { success: false, message: `备份失败: ${error?.message || String(error)}` };
+    return { success: false, message: `云端上传失败: 网络连接错误，请检查网络后重试！` };
   }
 }
 
