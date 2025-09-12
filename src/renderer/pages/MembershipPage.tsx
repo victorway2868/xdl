@@ -176,7 +176,7 @@ const MembershipPage: React.FC = () => {
       {showWeixin && (
         <div className="fixed inset-0 theme-modal-overlay z-50 flex items-center justify-center" onClick={() => setShowWeixin(false)}>
           <div className="theme-card rounded-xl p-4 w-full max-w-[540px] mx-4" onClick={(e) => e.stopPropagation()}>
-            <img src="images/weixin.png" alt="微信客服二维码" className="w-full h-auto block rounded-lg" />
+            <img src="pngs/weixin.png" alt="微信客服二维码" className="w-full h-auto block rounded-lg" />
             <div className="flex justify-end mt-3">
               <button onClick={() => setShowWeixin(false)} className="btn-base btn-ghost px-4 py-1.5">关闭</button>
             </div>
@@ -188,7 +188,7 @@ const MembershipPage: React.FC = () => {
       {showQQ && (
         <div className="fixed inset-0 theme-modal-overlay z-50 flex items-center justify-center" onClick={() => setShowQQ(false)}>
           <div className="theme-card rounded-xl p-4 w-full max-w-[540px] mx-4" onClick={(e) => e.stopPropagation()}>
-            <img src="images/qqunrcode-567.png" alt="QQ群二维码" className="w-full h-auto block rounded-lg" />
+            <img src="pngs/qqunrcode.png" alt="QQ群二维码" className="w-full h-auto block rounded-lg" />
             <div className="flex justify-end mt-3">
               <button onClick={() => setShowQQ(false)} className="btn-base btn-ghost px-4 py-1.5">关闭</button>
             </div>

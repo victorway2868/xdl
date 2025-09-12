@@ -73,23 +73,16 @@
     "asar": true,
     "extraResources": [
       {
-        "from": "public/icons",
-        "to": "assets/icons"
-      },
-      {
-        "from": "public/fonts",
-        "to": "public/fonts"
-      },
-      {
-        "from": "public/images",
-        "to": "public/images"
+        "from": "public",
+        "to": "public",
+        "filter": ["**/*"]
       }
     ],
     "directories": {
       "output": "dist"
     },
     "win": {
-      "icon": "public/icons/icon-256x256.png",
+      "icon": "public/icons/icon.icns",
       "target": [
         {
           "target": "nsis",

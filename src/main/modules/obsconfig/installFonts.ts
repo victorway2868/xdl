@@ -18,11 +18,12 @@ export function getFontPath(): string {
   const fontFileName = 'CangErShuYuanTiW04-2.ttf';
   if (app.isPackaged) {
     const candidates = [
-      path.join(path.dirname(app.getPath('exe')), 'resources', 'app', 'public', 'fonts', fontFileName),
-      path.join(path.dirname(app.getPath('exe')), 'resources', 'public', 'fonts', fontFileName),
-      path.join(app.getAppPath(), 'public', 'fonts', fontFileName),
-      path.join(process.resourcesPath, 'public', 'fonts', fontFileName),
-      path.join(process.resourcesPath, 'assets', 'fonts', fontFileName),
+      path.join(path.dirname(app.getPath('exe')), 'resources', 'app', 'appassets', 'fonts', fontFileName),
+      path.join(path.dirname(app.getPath('exe')), 'resources', 'appassets', 'fonts', fontFileName),
+      path.join(app.getAppPath(), 'appassets', 'fonts', fontFileName),
+      path.join(app.getAppPath(), 'fonts', fontFileName),
+      path.join(process.resourcesPath, 'appassets', 'fonts', fontFileName),
+      path.join(process.resourcesPath, 'fonts', fontFileName),
     ];
     for (const p of candidates) {
       if (safeExists(p)) return p;
@@ -30,7 +31,7 @@ export function getFontPath(): string {
     // fallback to first for error message
     return candidates[0];
   } else {
-    return path.join(app.getAppPath(), 'public', 'fonts', fontFileName);
+    return path.join(app.getAppPath(), 'appassets', 'fonts', fontFileName);
   }
 }
 
@@ -49,6 +50,7 @@ export async function installFonts(): Promise<{ success: boolean; message?: stri
   }
 
   const fontFile = getFontPath();
+  console.log('fontFile', fontFile);
   if (!safeExists(fontFile)) {
     return { success: false, error: `字体文件不存在: ${fontFile}` };
   }

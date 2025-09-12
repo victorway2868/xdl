@@ -4,6 +4,7 @@
  */
 import os from 'os';
 import path from 'path';
+import fs from 'fs';
 import { app } from 'electron';
 import { ensureAndConnectToOBS, getObsInstance } from '@main/modules/obsWebSocket';
 
@@ -237,17 +238,28 @@ function ensureEven(v: number) { return v % 2 === 0 ? v : v + 1; }
  * @returns {string} LUT文件的绝对路径，失败则返回空字符串
  */
 function getLUTFilePath(): string {
-  try {
-    if (app.isPackaged) {
-      // 生产环境：electron-vite 会将 public 目录内容复制到 out/.../resources 目录
-      return path.join(process.resourcesPath, 'images', 'original.cube');
-    } else {
-      // 开发环境：public 目录在项目根目录
-      return path.join(app.getAppPath(), 'public', 'images', 'original.cube');
+
+  const lutFileName = 'original.cube';
+  if (app.isPackaged) {
+    const candidates = [
+      path.join(path.dirname(app.getPath('exe')), 'resources', 'app', 'public', 'images', lutFileName),
+      path.join(path.dirname(app.getPath('exe')), 'resources', 'public', 'images', lutFileName),
+      path.join(app.getAppPath(), 'public', 'images', lutFileName),
+      path.join(app.getAppPath(), 'images', lutFileName),
+      path.join(process.resourcesPath, 'public', 'images', lutFileName),
+      path.join(process.resourcesPath, 'images', lutFileName),
+    ];
+    for (const p of candidates) {
+      try { if (fs.existsSync(p)) return p; } catch {}
     }
-  } catch {
-    return ''; // 返回空字符串以便后续逻辑处理
+    // llback to first for error message
+    return candidates[0];
+  } else {
+    return path.join(app.getAppPath(), 'public', 'images', lutFileName);
   }
+
+
+
 }
 
 /**

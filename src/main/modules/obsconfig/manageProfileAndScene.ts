@@ -48,10 +48,10 @@ async function setProfileParameters(obs: any, params: Array<{ parameterCategory:
 function resolveImagePath(): string | null {
   const fname = 'winer.gif';
   const candidates = [
-    path.join(app.getAppPath(), 'public', 'images', fname),
-    path.join(process.resourcesPath || '', 'public', 'images', fname),
     path.join(path.dirname(app.getPath('exe')), 'resources', 'public', 'images', fname),
     path.join(path.dirname(app.getPath('exe')), 'resources', 'app', 'public', 'images', fname),
+    path.join(app.getAppPath(), 'public', 'images', fname),
+    path.join(process.resourcesPath || '', 'public', 'images', fname),
   ];
   for (const p of candidates) {
     try { if (fs.existsSync(p)) return p; } catch {}

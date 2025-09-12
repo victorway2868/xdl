@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Settings, Lock, Unlock } from 'lucide-react';
+import { Plus, Settings, Lock, Unlock, Loader2 } from 'lucide-react';
 import '../styles/themes.css';
 
 interface SoundEffect {
@@ -23,6 +23,7 @@ function AudioSettingsPage() {
     const [draggedEffect, setDraggedEffect] = useState<SoundEffect | null>(null);
     const [availableAudioFiles, setAvailableAudioFiles] = useState<string[]>([]);
     const [playingEffect, setPlayingEffect] = useState<string | null>(null);
+    const [isUpdating, setIsUpdating] = useState(false);
 
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -75,9 +76,59 @@ function AudioSettingsPage() {
         }
 
         // Load available audio files
-        loadAvailableAudioFiles();
+        loadAvailableAudioFiles().then(async (loadedFiles) => {
+            try {
+                // After loading files, decide whether to check server updates
+                const hasLocalAudio = Array.isArray(loadedFiles) && loadedFiles.length > 0;
+                const LAST_CHECK_KEY = 'soundPackLastCheckedAt';
+                const lastCheckedAt = Number(localStorage.getItem(LAST_CHECK_KEY) || 0);
+                const now = Date.now();
+                const twelveHoursMs = 12 * 60 * 60 * 1000;
 
-        // Note: Auto-update checking removed as per user request
+                // If no local files, check immediately. If has files, only check every 12h
+                if (!hasLocalAudio || (now - lastCheckedAt) > twelveHoursMs) {
+                    const packs = await window.electronAPI?.checkSoundPackUpdates?.();
+                    if (packs && Array.isArray(packs.files) && packs.files.length > 0) {
+                        // Download any packs that aren't present
+                        const localPacks = await window.electronAPI?.getLocalSoundPacks?.();
+                        const missingPacks = packs.files.filter((file: any) => {
+                            const packName = (file?.name || '').trim();
+                            const packUrl = (file?.url || '').trim();
+                            if (!packName || !packUrl) return false;
+                            return !(Array.isArray(localPacks) && localPacks.includes(packName));
+                        });
+
+                        if (missingPacks.length > 0) {
+                            setIsUpdating(true);
+                            try {
+                                for (const file of missingPacks) {
+                                    const packName = (file.name || '').trim();
+                                    const packUrl = (file.url || '').trim();
+                                    try {
+                                        await window.electronAPI?.downloadSoundPack?.(packName, packUrl);
+                                    } catch {}
+                                }
+                            } finally {
+                                // Refresh audio list after potential downloads
+                                const updatedFilesList = await window.electronAPI?.getAudioFiles?.() || [];
+                                window.dispatchEvent(new CustomEvent('audioFilesUpdated', { detail: updatedFilesList }));
+                                setIsUpdating(false);
+                            }
+                        }
+                        // Refresh audio list after potential downloads
+                        else {
+                            const updatedFilesList = await window.electronAPI?.getAudioFiles?.() || [];
+                            window.dispatchEvent(new CustomEvent('audioFilesUpdated', { detail: updatedFilesList }));
+                        }
+                    }
+                    localStorage.setItem(LAST_CHECK_KEY, String(now));
+                }
+            } catch (err) {
+                console.error('Sound pack update check failed:', err);
+            }
+        });
+
+        // Note: Auto-update checking behavior adjusted: conditional and timed
     }, []);
 
     // Save sound effects when they change
@@ -96,13 +147,15 @@ function AudioSettingsPage() {
 
     // 注意：全局快捷键监听现在由 MainLayout 处理，这里只处理页面内的音效播放
 
-    const loadAvailableAudioFiles = async () => {
+    const loadAvailableAudioFiles = async (): Promise<string[]> => {
         try {
             // Get audio files from local sound effects folder
             const files = await window.electronAPI?.getAudioFiles?.() || [];
             setAvailableAudioFiles(files);
+            return files;
         } catch (error) {
             console.error('Failed to load audio files:', error);
+            return [];
         }
     };
 
@@ -253,6 +306,15 @@ function AudioSettingsPage() {
                         </h1>
                     </div>
                 </div>
+                {/* Center updating indicator */}
+                <div className="flex-1 flex items-center justify-center select-none">
+                    {isUpdating && (
+                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-200">
+                            <Loader2 size={16} className="animate-spin" />
+                            <span>正在更新音效...</span>
+                        </div>
+                    )}
+                </div>
                 
                 {/* Lock Toggle Button - moved to header */}
                 <button
@@ -345,6 +407,34 @@ const AudioPreviewModal: React.FC<AudioPreviewModalProps> = ({ isOpen, onClose, 
     const [isDragOver, setIsDragOver] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadStatus, setUploadStatus] = useState<string>('');
+    
+    // Ensure OS-level drag events allow dropping files (avoid forbidden cursor in prod)
+    useEffect(() => {
+        if (!isOpen) return;
+        const preventDefaultDrag = (e: DragEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            try {
+                if (e.dataTransfer) {
+                    e.dataTransfer.dropEffect = 'copy';
+                }
+            } catch {}
+        };
+        const handleWindowDrop = (e: DragEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+        };
+        window.addEventListener('dragover', preventDefaultDrag);
+        window.addEventListener('drop', handleWindowDrop);
+        document.addEventListener('dragover', preventDefaultDrag);
+        document.addEventListener('drop', handleWindowDrop);
+        return () => {
+            window.removeEventListener('dragover', preventDefaultDrag);
+            window.removeEventListener('drop', handleWindowDrop);
+            document.removeEventListener('dragover', preventDefaultDrag);
+            document.removeEventListener('drop', handleWindowDrop);
+        };
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -431,6 +521,9 @@ const AudioPreviewModal: React.FC<AudioPreviewModalProps> = ({ isOpen, onClose, 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
+        try {
+            e.dataTransfer.dropEffect = 'copy';
+        } catch {}
     };
 
     const handleDrop = (e: React.DragEvent) => {
