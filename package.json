@@ -1,6 +1,6 @@
 {
   "name": "xiaodouli",
-  "version": "1.6.8",
+  "version": "1.6.9",
   "description": "小斗笠直播助手",
   "main": ".vite/build/main.js",
   "scripts": {
