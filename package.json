@@ -1,6 +1,6 @@
 {
   "name": "xiaodouli",
-  "version": "1.6.9",
+  "version": "1.7.0",
   "description": "小斗笠直播助手",
   "main": ".vite/build/main.js",
   "scripts": {
@@ -82,7 +82,7 @@
       "output": "dist"
     },
     "win": {
-      "icon": "public/icons/icon-128x128.ico",
+      "icon": "public/icons/icon-256x256.png",
       "target": [
         {
           "target": "nsis",
@@ -103,7 +103,7 @@
     },
     "mac": {
       "target": "dmg",
-      "icon": "public/icons/icon-128x128.ico"
+      "icon": "public/icons/icon-256x256.png"
     },
     "dmg": {
       "contents": [

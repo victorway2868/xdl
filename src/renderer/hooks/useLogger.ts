@@ -4,7 +4,7 @@ import { useCallback } from 'react';
 export const useLogger = () => {
   const log = useCallback(async (level: string, message: string, metadata?: Record<string, any>) => {
     try {
-      await window.electronAPI.log(level, message, metadata);
+      await window.electronAPI.log({ level, message, metadata });
     } catch (error) {
       console.error('Failed to log message:', error);
     }

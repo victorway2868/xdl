@@ -6,6 +6,10 @@ on:
       - 'v*.*.*'  # 触发条件：推送版本标签，如 v1.0.0
   workflow_dispatch:  # 允许手动触发
 
+# git tag v1.0.0 本地打标签
+# git push origin v1.0.0 触发自动actions构建各个平台版本
+
+
 jobs:
   build-and-release:
     runs-on: ${{ matrix.os }}

@@ -6,6 +6,7 @@ import { tabletModels, phoneModels, Device } from '@renderer/data/deviceModels';
 import { SystemInfo } from '@main/utils/hardwareInfo';
 import { useSelector } from 'react-redux';
 import { RootState } from '@renderer/store/store';
+import { useLogger } from '@renderer/hooks/useLogger';
 
 // Helper to calculate aspect ratio from a "WxH" string
 const getAspectRatioFromResolution = (resolution: string): string => {
@@ -24,6 +25,7 @@ const getAspectRatioFromResolution = (resolution: string): string => {
 
 
 function ObsConfigPage() {
+  const { info, warn, error } = useLogger();
   // const navigate = useNavigate(); // 暂时未使用
   const [deviceType, setDeviceType] = useState<'tablet' | 'phone' | 'computer' | 'custom'>('tablet');
   const [selectedDevice, setSelectedDevice] = useState<Device | null>(null);
@@ -69,12 +71,13 @@ function ObsConfigPage() {
 
   // Effect to fetch hardware info on component mount
   useEffect(() => {
+    info('ObsConfigPage mounted', { page: 'ObsConfigPage' });
     const fetchHardwareInfo = async () => {
       try {
         const info = await window.electronAPI.getSystemInfo();
         setHardwareInfo(info);
       } catch (error) {
-        console.error('Failed to fetch hardware info:', error);
+        warn('Fetch hardware info failed', { error: String(error) });
       }
     };
     fetchHardwareInfo();
@@ -137,12 +140,13 @@ function ObsConfigPage() {
   };
 
   const handleConfigureOBS = async () => {
+    info('OBS one-click configure requested', { device: selectedDevice?.name, resolution: selectedDevice?.resolution });
     // 会员校验
     try {
       const ok = await (await import('../utils/ensureMember')).ensureMemberOrPrompt();
       if (!ok) return;
     } catch (e) {
-      console.error('会员校验失败', e);
+      error('Membership check exception', { error: String(e) });
       return;
     }
     if (!selectedDevice) {
@@ -162,22 +166,26 @@ function ObsConfigPage() {
       setConfigSteps(result.steps || []);
       if (result.success) {
         setConfigStatus('success');
+        info('OBS one-click configure succeeded');
       } else {
         setConfigStatus('error');
+        warn('OBS one-click configure failed', { message: result.message });
       }
     } catch (error: any) {
       setConfigStatus('error');
       setConfigSteps(prev => [...prev, { name: 'Fatal Error', success: false, message: error.message }]);
+      error('OBS one-click configure exception', { error: String(error) });
     }
   };
 
   const handleBackupConfig = async () => {
+    info('OBS backup requested');
     // 会员校验（与“一键配置OBS”一致）
     try {
       const ok = await (await import('../utils/ensureMember')).ensureMemberOrPrompt();
       if (!ok) return;
     } catch (e) {
-      console.error('会员校验失败', e);
+      error('Membership check exception', { error: String(e) });
       return;
     }
 
@@ -189,23 +197,27 @@ function ObsConfigPage() {
       if (result.success) {
         setBackupStatus('success');
         setBackupMessage(result.message);
+        info('OBS backup succeeded');
       } else {
         setBackupStatus('error');
         setBackupMessage(result.message);
+        warn('OBS backup failed', { message: result.message });
       }
     } catch (error: any) {
       setBackupStatus('error');
       setBackupMessage(`备份失败: ${error.message}`);
+      error('OBS backup exception', { error: String(error) });
     }
   };
 
   const handleRestoreConfig = async () => {
+    info('OBS restore requested');
     // 会员校验（与“一键配置OBS”一致）
     try {
       const ok = await (await import('../utils/ensureMember')).ensureMemberOrPrompt();
       if (!ok) return;
     } catch (e) {
-      console.error('会员校验失败', e);
+      error('Membership check exception', { error: String(e) });
       return;
     }
 
@@ -230,13 +242,16 @@ function ObsConfigPage() {
       if (result.success) {
         setRestoreStatus('success');
         setRestoreMessage(result.message);
+        info('OBS restore succeeded', { slot: 'masked' });
       } else {
         setRestoreStatus('error');
         setRestoreMessage(result.message);
+        warn('OBS restore failed', { message: result.message });
       }
     } catch (error: any) {
       setRestoreStatus('error');
       setRestoreMessage(`恢复失败: ${error.message}`);
+      error('OBS restore exception', { error: String(error) });
     }
   };
 

@@ -133,6 +133,7 @@ const createWindow = (): void => {
       const loadWithRetries = (retries = 20) => {
         mainWindow.loadURL(DEV_SERVER_URL).catch(err => {
           console.error('Failed to load dev server URL, retrying...', err);
+          try { loggerService.addLog('error', 'Failed to load dev server URL, retrying', 'main', { error: String(err), retriesLeft: retries }); } catch {}
           if (retries > 0) {
             setTimeout(() => loadWithRetries(retries - 1), 1000); // wait 1s before retrying
           }
@@ -141,24 +142,46 @@ const createWindow = (): void => {
       loadWithRetries(); // 实际调用函数
     } else {
       // In production, load the built renderer index.html (renderer name is 'main_window' per forge.config)
-      mainWindow.loadFile(path.join(__dirname, '../renderer/main_window/index.html'));
+      mainWindow.loadFile(path.join(__dirname, '../renderer/main_window/index.html')).catch(err => {
+        try { loggerService.addLog('error', 'Failed to load renderer index.html', 'main', { error: String(err) }); } catch {}
+      });
     }
 
     // 窗口准备好后显示
     mainWindow.once('ready-to-show', () => {
       console.log('Window ready, showing...');
       mainWindow.show();
+      try { loggerService.addLog('info', 'Main window shown', 'main'); } catch {}
     });
 
     // 窗口关闭时清理
     mainWindow.on('closed', () => {
       console.log('Main window closed');
+      try { loggerService.addLog('info', 'Main window closed', 'main'); } catch {}
     });
 
     console.log('Main window created successfully');
+    try { loggerService.addLog('info', 'Main window created successfully', 'main'); } catch {}
+
+    // 监控渲染进程异常和加载失败
+    try {
+      mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
+        loggerService.addLog('error', 'Renderer failed to load', 'main', { errorCode, errorDescription, url: validatedURL });
+      });
+      mainWindow.webContents.on('did-crash', () => {
+        loggerService.addLog('error', 'Renderer process crashed', 'main');
+      });
+      (mainWindow.webContents as any).on('render-process-gone', (_event: any, details: any) => {
+        loggerService.addLog('error', 'Renderer process gone', 'main', { reason: details?.reason, exitCode: details?.exitCode });
+      });
+      mainWindow.on('unresponsive', () => {
+        loggerService.addLog('warn', 'Main window unresponsive', 'main');
+      });
+    } catch {}
 
   } catch (error) {
     console.error('Error creating window:', error);
+    try { loggerService.addLog('error', 'Error creating main window', 'main', { error: String(error) }); } catch {}
   }
 };
 
@@ -201,6 +224,8 @@ app.whenReady().then(() => {
       createWindow();
     }
   });
+}).catch(err => {
+  try { loggerService.addLog('error', 'app.whenReady rejected', 'main', { error: String(err) }); } catch {}
 });
 
 // 所有窗口关闭时退出应用
@@ -211,5 +236,12 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+
+// 监控子进程异常（如 GPU 进程）
+try {
+  (app as any).on('child-process-gone', (_event: any, details: any) => {
+    try { loggerService.addLog('error', 'Child process gone', 'main', { type: details?.type, reason: details?.reason, exitCode: details?.exitCode }); } catch {}
+  });
+} catch {}
 
 console.log('Main process setup complete');

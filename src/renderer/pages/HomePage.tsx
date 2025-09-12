@@ -12,10 +12,12 @@ import ContentCard from '../components/common/ContentCard';
 import ContentModal from '../components/common/ContentModal';
 import VideoModal from '../components/common/VideoModal';
 import { ContentItem } from '../store/features/contentSlice';
+import { useLogger } from '../hooks/useLogger';
 
 const HomePage = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
+  const { info, warn, error: logError, debug } = useLogger();
 
   // Global state from Redux
   const { checks } = useSelector((state: RootState) => state.software);
@@ -25,14 +27,13 @@ const HomePage = () => {
 
   // 页面加载时记录数据来源
   useEffect(() => {
-    console.log('🏡 [HomePage] 页面加载');
+    info('HomePage mounted', { page: 'HomePage' });
     if (contentData) {
-      console.log('📊 [HomePage] 从Redux状态获取数据');
-      console.log('📋 [HomePage] 可用数据分类:', Object.keys(contentData));
+      debug('HomePage content available', { keys: Object.keys(contentData || {}) });
     } else if (contentLoading) {
-      console.log('⏳ [HomePage] 数据正在加载中...');
+      debug('HomePage content loading');
     } else {
-      console.log('❌ [HomePage] 没有可用数据');
+      warn('HomePage no content data');
     }
   }, [contentData, contentLoading]);
 
@@ -95,14 +96,14 @@ const HomePage = () => {
   // 监听认证/状态通知（可选增强）
   useEffect(() => {
     const offAuth = window.electronAPI.onAuthNotification?.((p: any) => {
-      if (p?.message) console.warn(p.message);
+      if (p?.message) warn('Auth notification', { message: p.message });
       if (p?.url) {
         window.electronAPI.openAuthUrl({ url: p.url });
         setError('需要进行直播安全认证，请在浏览器完成后返回应用继续。');
       }
     });
     const offStatus = window.electronAPI.onStatusNotification?.((p: any) => {
-      if (p?.message) console.log('状态通知:', p.message);
+      if (p?.message) debug('Status notification', { message: p.message });
     });
     return () => {
       try { offAuth && offAuth(); } catch {}
@@ -213,25 +214,25 @@ const HomePage = () => {
         // 延迟15秒后自动连接弹幕
         setTimeout(() => {
           if (douyinUserInfo?.liveid && douyinUserInfo.liveid !== '未知') {
-            console.log('Auto connecting danmaku with liveid (API route):', douyinUserInfo.liveid);
+            info('Danmaku auto-connect scheduled', { liveid: 'masked' });
             dispatch(autoConnect({ liveid: douyinUserInfo.liveid }));
           } else {
-            console.warn('Cannot auto connect danmaku: liveid not available');
+            warn('Danmaku auto-connect skipped: liveid not available');
           }
         }, 15000);
         // 配置 OBS
         try {
           const setRes = await window.electronAPI.setOBSStreamSettings(res.streamUrl, res.streamKey);
           if (!setRes?.success) {
-            console.warn('OBS 参数设置失败:', setRes?.message);
+            logError('OBS set stream settings failed', { message: setRes?.message });
           } else {
             const startRes = await window.electronAPI.startOBSStreaming();
             if (!startRes?.success) {
-              console.warn('OBS 启动推流失败:', startRes?.message);
+              logError('OBS start streaming failed', { message: startRes?.message });
             }
           }
         } catch (e) {
-          console.warn('OBS 配置/启动异常:', e);
+          logError('OBS configure/start exception', { error: String(e) });
         }
         // 维持心跳
         if (res?.room_id && res?.stream_id) {
@@ -248,7 +249,7 @@ const HomePage = () => {
         setShowStatus4Image(true);
       }
     } catch (e) {
-      console.warn('轮询异常:', e);
+      logError('Polling exception', { error: String(e) });
     } finally {
       inFlight.current = false;
       if (pollingRunning.current) {
@@ -277,14 +278,16 @@ const HomePage = () => {
   };
 
   const handleStartStreaming = async () => {
+    info('Start streaming clicked', { platform, method: streamMethod });
     // 会员校验
     try {
       const ok = await (await import('../utils/ensureMember')).ensureMemberOrPrompt();
       if (!ok) {
+        warn('Start streaming blocked: membership check failed');
         return;
       }
     } catch (e) {
-      console.error('会员校验失败', e);
+      logError('Membership check exception', { error: String(e) });
       return;
     }
     try {
@@ -293,6 +296,7 @@ const HomePage = () => {
 
       if (platform !== '抖音') {
         setError('当前仅支持抖音平台');
+        warn('Start streaming aborted: unsupported platform', { platform });
         setIsLoading(false);
         return;
       }
@@ -302,11 +306,13 @@ const HomePage = () => {
         const info = await window.electronAPI.getDouyinCompanionInfo();
         if (!info || info.error) {
           setError(info?.error || '获取推流信息失败');
+          logError('Companion info fetch failed', { message: info?.error });
           setIsLoading(false);
           return;
         }
         if (!info.streamUrl || !info.streamKey) {
           setError('未获取到有效的推流地址，请确认直播伴侣已开播且状态为2');
+          warn('Companion info missing stream url/key');
           setIsLoading(false);
           return;
         }
@@ -337,6 +343,7 @@ const HomePage = () => {
         const setRes = await window.electronAPI.setOBSStreamSettings(info.streamUrl, info.streamKey);
         if (!setRes?.success) {
           setError(`OBS 参数设置失败: ${setRes?.message || '未知错误'}`);
+          logError('OBS set settings failed after companion', { message: setRes?.message });
           // 此时 UI 已显示推流码，仅在错误区域提示 OBS 问题
           setIsLoading(false);
           return; // 流程中断，但 UI 保持显示推流码
@@ -346,6 +353,7 @@ const HomePage = () => {
         const startRes = await window.electronAPI.startOBSStreaming();
         if (!startRes?.success) {
           setError(`OBS 启动推流失败: ${startRes?.message || '未知错误'}`);
+          logError('OBS start streaming failed after companion', { message: startRes?.message });
           setIsLoading(false);
           return;
         }
@@ -365,11 +373,13 @@ const HomePage = () => {
       startPolling();
     } catch (e: any) {
       setError(e?.message || String(e));
+      logError('Start streaming handler exception', { error: String(e) });
       setIsLoading(false);
     }
   };
 
   const handleStopStreaming = async () => {
+    info('Stop streaming clicked');
     try {
       setIsLoading(true);
       setError(null);
@@ -385,10 +395,10 @@ const HomePage = () => {
         try {
           const hkRes = await window.electronAPI.endLiveHotkey();
           if (!hkRes?.success) {
-            console.warn('结束直播热键发送失败: ', hkRes?.message);
+            warn('End live hotkey failed', { message: hkRes?.message });
           }
         } catch (e) {
-          console.warn('结束直播热键调用异常: ', e);
+          logError('End live hotkey exception', { error: String(e) });
         }
       } else {
         // API 路线：停止心跳
@@ -399,10 +409,10 @@ const HomePage = () => {
       const res = await window.electronAPI.stopOBSStreaming();
       if (!res?.success) {
         // 即使失败也重置 UI 状态
-        console.warn('停止 OBS 推流失败: ', res?.message);
+        warn('Stop OBS streaming failed', { message: res?.message });
       }
     } catch (e) {
-      console.warn('停止 OBS 推流异常: ', e);
+      logError('Stop streaming handler exception', { error: String(e) });
     } finally {
       setTimeout(() => {
         setIsStreaming(false);
@@ -416,6 +426,7 @@ const HomePage = () => {
           streamKey: '', 
           isStreaming: false 
         });
+        info('Streaming stopped and UI reset');
       }, 800);
     }
   };
@@ -431,6 +442,7 @@ const HomePage = () => {
 
 
   const handleLoginClick = () => {
+    info('Login button clicked', { isLoggedIn });
     if (isLoggedIn) {
       dispatch(logout());
       // 清除流媒体状态
@@ -448,11 +460,13 @@ const HomePage = () => {
   };
 
   const handleWebLogin = () => {
+    info('Web login requested');
     setShowLoginModal(false);
     dispatch(loginWithDouyinWeb());
   };
 
   const handleCompanionLogin = () => {
+    info('Companion login requested');
     setShowLoginModal(false);
     dispatch(loginWithDouyinCompanion());
   };

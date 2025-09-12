@@ -26,9 +26,10 @@ export class LoggerService {
   private maxLogs = 1000;
   
   constructor() {
-    // 配置 electron-log
-    log.transports.file.level = 'info';
-    log.transports.console.level = 'debug';
+    // 配置 electron-log（按环境调整级别）
+    const isDev = process.env.NODE_ENV !== 'production';
+    log.transports.file.level = isDev ? 'debug' : 'info';
+    log.transports.console.level = isDev ? 'debug' : 'warn';
     log.transports.file.maxSize = 5 * 1024 * 1024; // 5MB
     
     // 拦截日志输出，保存到内存中
