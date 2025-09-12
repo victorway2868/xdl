@@ -1,5 +1,5 @@
 import React from 'react';
-import { Crown, ExternalLink, MessageCircle, CreditCard } from 'lucide-react';
+import { Crown, ExternalLink, MessageCircle, CreditCard, User } from 'lucide-react';
 import '../styles/themes.css';
 import { ThemeCard, ThemeButton, ThemeText } from '../components/common/ThemeComponents';
 
@@ -63,8 +63,12 @@ const MembershipPage: React.FC = () => {
       {/* 账号信息 */}
       <ThemeCard className="p-4 mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-500/20">
-            <img src="icons/icon-256x256.png" alt="账户头像" className="w-full h-full object-cover" />
+          <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-500/20 flex items-center justify-center">
+            {loggedIn ? (
+              <img src="icons/icon-128x128.ico" alt="账户头像" className="w-full h-full object-cover" />
+            ) : (
+              <User size={20} className="text-slate-400" />
+            )}
           </div>
           <div>
             <div className="text-sm text-slate-500">账号</div>
