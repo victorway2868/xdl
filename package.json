@@ -1,13 +1,14 @@
 {
   "name": "xiaodouli",
-  "version": "1.6.4",
+  "version": "1.6.5",
   "description": "小斗笠直播助手",
   "main": ".vite/build/main.js",
   "scripts": {
-    "start": "npm run build:all && electron .",
+    "check:runtime": "node scripts/check-runtime-deps.mjs",
+    "start": "npm run check:runtime && npm run build:all && electron .",
     "build:all": "vite build -c vite.renderer.config.mts && vite build -c vite.main.config.mts && vite build -c vite.preload.config.mts",
-    "build:win": "npm run build:all && electron-builder --win nsis --publish never",
-    "build:mac": "npm run build:all && electron-builder --mac dmg --publish never",
+    "build:win": "npm run check:runtime && npm run build:all && electron-builder --win nsis --publish never",
+    "build:mac": "npm run check:runtime && npm run build:all && electron-builder --mac dmg --publish never",
     "lint": "eslint --ext .ts,.tsx ."
   },
   "keywords": [
@@ -20,8 +21,6 @@
   "author": "Xiaodouli",
   "license": "MIT",
   "devDependencies": {
-    "@aws-sdk/client-s3": "^3.583.0",
-    "@aws-sdk/lib-storage": "^3.583.0",
     "@tailwindcss/postcss": "^4.1.11",
     "@types/jest": "^30.0.0",
     "@types/react": "^18.2.45",
@@ -42,6 +41,8 @@
     "vite": "^5.0.10"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.583.0",
+    "@aws-sdk/lib-storage": "^3.583.0",
     "@reduxjs/toolkit": "^2.0.1",
     "@types/archiver": "^6.0.3",
     "@types/fs-extra": "^11.0.4",
