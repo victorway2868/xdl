@@ -58,6 +58,13 @@ function ObsConfigPage() {
   // Hardware info state
   const [hardwareInfo, setHardwareInfo] = useState<SystemInfo | null>(null);
 
+  // Shared busy state: any task running disables all action buttons
+  const isBusy = useMemo(() => (
+    configStatus === 'configuring' ||
+    backupStatus === 'backing-up' ||
+    restoreStatus === 'restoring'
+  ), [configStatus, backupStatus, restoreStatus]);
+
   // --- Effects ---
 
   // Effect to fetch hardware info on component mount
@@ -165,6 +172,15 @@ function ObsConfigPage() {
   };
 
   const handleBackupConfig = async () => {
+    // 会员校验（与“一键配置OBS”一致）
+    try {
+      const ok = await (await import('../utils/ensureMember')).ensureMemberOrPrompt();
+      if (!ok) return;
+    } catch (e) {
+      console.error('会员校验失败', e);
+      return;
+    }
+
     setBackupStatus('backing-up');
     setBackupMessage('');
 
@@ -184,6 +200,15 @@ function ObsConfigPage() {
   };
 
   const handleRestoreConfig = async () => {
+    // 会员校验（与“一键配置OBS”一致）
+    try {
+      const ok = await (await import('../utils/ensureMember')).ensureMemberOrPrompt();
+      if (!ok) return;
+    } catch (e) {
+      console.error('会员校验失败', e);
+      return;
+    }
+
     // 使用 Redux 中的三个名称作为“备份列表”
     const slots = restoreSlots;
     if (slots.length === 0 || !authUser?.website || !authUser?.sub) {
@@ -341,9 +366,19 @@ function ObsConfigPage() {
         {/* 一键配置 */}
         <div>
           <h3 className="text-lg font-semibold mb-4 theme-text-primary">配置操作</h3>
-          <button onClick={handleConfigureOBS} disabled={!selectedDevice || configStatus === 'configuring'} className="w-full px-6 py-3 theme-btn-primary rounded-md disabled:opacity-50 disabled:cursor-not-allowed">
-            {configStatus === 'configuring' ? '配置中...' : '一键配置OBS'}
-          </button>
+          {(() => {
+            const configDisabled = !selectedDevice || isBusy;
+            return (
+              <button
+                onClick={handleConfigureOBS}
+                disabled={configDisabled}
+                className={`w-full px-6 py-3 theme-btn-primary rounded-md disabled:opacity-50 ${configDisabled ? 'cursor-not-allowed' : ''}`}
+                style={{ cursor: configDisabled ? 'not-allowed' : 'pointer' }}
+              >
+                {configStatus === 'configuring' ? '配置中...' : '一键配置OBS'}
+              </button>
+            );
+          })()}
           {configSteps.length > 0 && (
             <div className="mt-4 theme-card-secondary rounded-md p-4 space-y-2">
               <h4 className="text-sm font-medium theme-text-secondary mb-2">配置日志:</h4>
@@ -370,13 +405,19 @@ function ObsConfigPage() {
           {/* 备份区域 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <button
-                onClick={handleBackupConfig}
-                disabled={backupStatus === 'backing-up'}
-                className="w-full px-4 py-2 theme-btn-secondary rounded-md disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-              >
-                {backupStatus === 'backing-up' ? '备份中...' : '备份当前配置'}
-              </button>
+              {(() => {
+                const backupDisabled = isBusy;
+                return (
+                  <button
+                    onClick={handleBackupConfig}
+                    disabled={backupDisabled}
+                    className={`w-full px-4 py-2 theme-btn-secondary rounded-md disabled:opacity-50 text-sm ${backupDisabled ? 'cursor-not-allowed' : ''}`}
+                    style={{ cursor: backupDisabled ? 'not-allowed' : 'pointer' }}
+                  >
+                    {backupStatus === 'backing-up' ? '备份中...' : '备份当前配置'}
+                  </button>
+                );
+              })()}
               {backupMessage && (
                 <p className={`text-xs mt-2 ${backupStatus === 'success' ? 'text-green-400' : 'text-red-400'}`}>
                   {backupMessage}
@@ -399,13 +440,19 @@ function ObsConfigPage() {
                     </option>
                   ))}
                 </select>
-                <button
-                  onClick={handleRestoreConfig}
-                  disabled={restoreStatus === 'restoring' || restoreSlots.length === 0}
-                  className="w-full px-4 py-2 theme-btn-secondary rounded-md disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                >
-                  {restoreStatus === 'restoring' ? '恢复中...' : '恢复配置'}
-                </button>
+                {(() => {
+                  const restoreDisabled = isBusy || restoreSlots.length === 0;
+                  return (
+                    <button
+                      onClick={handleRestoreConfig}
+                      disabled={restoreDisabled}
+                      className={`w-full px-4 py-2 theme-btn-secondary rounded-md disabled:opacity-50 text-sm ${restoreDisabled ? 'cursor-not-allowed' : ''}`}
+                      style={{ cursor: restoreDisabled ? 'not-allowed' : 'pointer' }}
+                    >
+                      {restoreStatus === 'restoring' ? '恢复中...' : '恢复配置'}
+                    </button>
+                  );
+                })()}
               </div>
               {restoreMessage && (
                 <p className={`text-xs mt-2 ${restoreStatus === 'success' ? 'text-green-400' : 'text-red-400'}`}>

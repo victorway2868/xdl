@@ -1,4 +1,4 @@
-import { app, BrowserWindow, crashReporter, ipcMain, session } from 'electron';
+import { app, BrowserWindow, crashReporter, ipcMain } from 'electron';
 import { loggerService } from './services/logger';
 import { AutoUpdater } from './updater';
 import { updaterConfig } from './config/updater.config';
@@ -15,12 +15,13 @@ process.on('uncaughtException', (error) => {
 let globalUpdater: AutoUpdater | null = null;
 
 // IPC通信，用于获取软件版本
-ipcMain.handle('get-software-version', async (event, softwareName) => {
+ipcMain.handle('get-software-version', async (_event, softwareName) => {
   try {
     const version = await getSoftwareVersion(softwareName);
     return version;
   } catch (error) {
-    loggerService.addLog('error', `Failed to get software version for ${softwareName}: ${error.message}`, 'main');
+    const message = error instanceof Error ? error.message : String(error);
+    loggerService.addLog('error', `Failed to get software version for ${softwareName}: ${message}`, 'main');
     return null;
   }
 });
@@ -35,8 +36,9 @@ ipcMain.handle('check-for-updates', async () => {
     const result = await globalUpdater.manualCheckForUpdates();
     return { success: result, message: result ? 'Update check completed' : 'Update check failed' };
   } catch (error) {
-    loggerService.addLog('error', `Manual update check failed: ${error.message}`, 'main');
-    return { success: false, message: error.message };
+    const message = error instanceof Error ? error.message : String(error);
+    loggerService.addLog('error', `Manual update check failed: ${message}`, 'main');
+    return { success: false, message };
   }
 });
 
@@ -70,7 +72,7 @@ crashReporter.start({
 });
 
 // 监听渲染器进程的日志
-ipcMain.on('log', (event, entry: Omit<LogEntry, 'source'>) => {
+ipcMain.on('log', (_event, entry: Omit<LogEntry, 'source'>) => {
   loggerService.addLog(entry.level, entry.message, 'renderer', entry.metadata);
 });
 
@@ -120,8 +122,10 @@ const createWindow = (): void => {
     });
 
     // and load the index.html of the app.
-    // Vite DEV server URL
-    mainWindow.webContents.openDevTools();
+    // 仅开发环境打开 DevTools
+    if (!app.isPackaged) {
+      mainWindow.webContents.openDevTools({ mode: 'right' });
+    }
 
     const DEV_SERVER_URL = (typeof MAIN_WINDOW_VITE_DEV_SERVER_URL !== 'undefined' && MAIN_WINDOW_VITE_DEV_SERVER_URL) || '';
     if (DEV_SERVER_URL) {
