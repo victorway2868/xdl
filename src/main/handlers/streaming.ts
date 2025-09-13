@@ -39,7 +39,7 @@ async function readCompanionRoomStore(): Promise<{ streamUrl?: string; streamKey
     else if (json.roomStore && typeof json.roomStore.status === 'number') status = json.roomStore.status;
 
     if (status !== 2) {
-      return { error: `直播间未准备好，当前状态: ${status}`, status: status ?? undefined };
+      return { error: `开播失败，请重新开播!`, status: status ?? undefined };
     }
 
     // find rtmp_push_url

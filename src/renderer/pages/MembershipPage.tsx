@@ -13,7 +13,7 @@ const openUrl = (url: string) => {
 };
 
 const MembershipPage: React.FC = () => {
-  const officialSite = 'https://xiaodouli.openclouds.dpdns.org';
+  const officialSite = 'https://streamassist.xiaodouli.dpdns.org/';
   const rechargeUrl = 'https://xiaodouli.openclouds.dpdns.org/#/pricing';
   const qqGroupUrl = 'https://qm.qq.com/cgi-bin/qm/qr?k=WkSEvbmnenRe_sgwE_mti_Z1wtmBWb3E&jump_from=webapi&authKey=lKoLlcTJ9C0qX/5THp+m73Pbxv8Qvhwian42SC7Z3ZZmUWaqDAanCjBM9UauQ6IX';
 
