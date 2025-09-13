@@ -25,7 +25,7 @@ const getArg = (name) => {
 };
 
 let installerPath, platform, version, sha512, fileName;
-const R2_DOMAIN = 'https://xiaodouli.openclouds.dpdns.org';
+const R2_DOMAIN = 'xiaodouli.openclouds.dpdns.org';
 try {
   installerPath = getArg('installerPath');
   platform = getArg('platform');
