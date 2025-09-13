@@ -219,7 +219,7 @@ const HomePage = () => {
           } else {
             warn('Danmaku auto-connect skipped: liveid not available');
           }
-        }, 15000);
+        }, 20000);
         // 配置 OBS
         try {
           const setRes = await window.electronAPI.setOBSStreamSettings(res.streamUrl, res.streamKey);
@@ -335,7 +335,7 @@ const HomePage = () => {
           } else {
             console.warn('Cannot auto connect danmaku: liveid not available');
           }
-        }, 15000);
+        }, 20000);
         // ----------------------------------------
 
         // 后续步骤继续在后台执行

@@ -103,7 +103,7 @@
     },
     "mac": {
       "target": "dmg",
-      "icon": "public/icons/icon-256x256.png"
+      "icon": "public/icons/icons"
     },
     "dmg": {
       "contents": [

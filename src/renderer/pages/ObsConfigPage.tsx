@@ -40,9 +40,9 @@ function ObsConfigPage() {
   const [customResolution, setCustomResolution] = useState('1920x1080');
   const [customName, setCustomName] = useState('自定义设备');
 
-  // OBS configuration process state
+  // OBS configuration process state (UI只显示成功/失败，不显示步骤)
   const [configStatus, setConfigStatus] = useState<'idle' | 'configuring' | 'success' | 'error'>('idle');
-  const [configSteps, setConfigSteps] = useState<any[]>([]);
+  const [configResultMessage, setConfigResultMessage] = useState<string>('');
 
   // Backup and restore state
   const [backupStatus, setBackupStatus] = useState<'idle' | 'backing-up' | 'success' | 'error'>('idle');
@@ -55,7 +55,7 @@ function ObsConfigPage() {
   const authUser = (useSelector((s: RootState) => s.authing.user) || undefined) as any;
   const restoreSlots = [authUser?.given_name, authUser?.family_name, authUser?.middle_name].filter(Boolean) as string[];
 
-  const [restoreSteps, setRestoreSteps] = useState<any[]>([]);
+  // 不再在UI显示恢复步骤
 
   // Hardware info state
   const [hardwareInfo, setHardwareInfo] = useState<SystemInfo | null>(null);
@@ -155,25 +155,25 @@ function ObsConfigPage() {
     }
 
     setConfigStatus('configuring');
-    setConfigSteps([]);
+    setConfigResultMessage('');
 
     try {
       const result = await window.electronAPI.oneClickConfigureObs({
         deviceName: selectedDevice.name,
         resolution: selectedDevice.resolution.replace(/\s/g, ''),
       });
-
-      setConfigSteps(result.steps || []);
       if (result.success) {
         setConfigStatus('success');
+        setConfigResultMessage(result.message || '配置成功');
         info('OBS one-click configure succeeded');
       } else {
         setConfigStatus('error');
+        setConfigResultMessage(result.message || '配置失败');
         warn('OBS one-click configure failed', { message: result.message });
       }
     } catch (error: any) {
       setConfigStatus('error');
-      setConfigSteps(prev => [...prev, { name: 'Fatal Error', success: false, message: error.message }]);
+      setConfigResultMessage(`发生异常: ${error.message}`);
       error('OBS one-click configure exception', { error: String(error) });
     }
   };
@@ -231,14 +231,12 @@ function ObsConfigPage() {
 
     setRestoreStatus('restoring');
     setRestoreMessage('');
-    setRestoreSteps([]);
 
     try {
       const website = String(authUser.website);
       const base = website.endsWith('/') ? website.slice(0, -1) : website;
       const url = `${base}/obsbak/${authUser.sub}/${encodeURIComponent(slotName)}.zip`;
       const result = await window.electronAPI.restoreObsConfigFromUrl(url);
-      setRestoreSteps(result.steps || []);
       if (result.success) {
         setRestoreStatus('success');
         setRestoreMessage(result.message);
@@ -394,20 +392,9 @@ function ObsConfigPage() {
               </button>
             );
           })()}
-          {configSteps.length > 0 && (
-            <div className="mt-4 theme-card-secondary rounded-md p-4 space-y-2">
-              <h4 className="text-sm font-medium theme-text-secondary mb-2">配置日志:</h4>
-              {configSteps.map((step, index) => (
-                <div key={index} className="flex items-start text-xs">
-                  <span className={`mr-2 ${step.success ? 'text-green-400' : 'text-red-400'}`}>{step.success ? '✔' : '✖'}</span>
-                  <div className="flex-1">
-                    <span className={`font-semibold ${step.success ? 'text-green-400' : 'text-red-400'}`}>{step.name}</span>
-                    {step.message && <p className="theme-text-muted mt-0.5">{step.message}</p>}
-                  </div>
-                </div>
-              ))}
-              {configStatus === 'success' && <p className='text-green-400 text-sm mt-2'>✓ 配置成功完成！</p>}
-              {configStatus === 'error' && <p className='text-red-400 text-sm mt-2'>✗ 配置中遇到错误。</p>}
+          {(configStatus === 'success' || configStatus === 'error') && (
+            <div className="mt-4 theme-card-secondary rounded-md p-4">
+              <p className={`${configStatus === 'success' ? 'text-green-400' : 'text-red-400'} text-sm`}>{configResultMessage}</p>
             </div>
           )}
         </div>
@@ -474,24 +461,7 @@ function ObsConfigPage() {
                   {restoreMessage}
                 </p>
               )}
-              {restoreSteps.length > 0 && (
-                <div className="mt-2 theme-card-secondary rounded-md p-2 space-y-1">
-                  <h5 className="text-xs font-medium theme-text-secondary mb-1">恢复步骤:</h5>
-                  {restoreSteps.map((step, index) => (
-                    <div key={index} className="flex items-start text-xs">
-                      <span className={`mr-1 ${step.success ? 'text-green-400' : 'text-red-400'}`}>
-                        {step.success ? '✔' : '✖'}
-                      </span>
-                      <div className="flex-1">
-                        <span className={`font-medium ${step.success ? 'text-green-400' : 'text-red-400'}`}>
-                          {step.name}
-                        </span>
-                        {step.message && <p className="theme-text-muted mt-0.5">{step.message}</p>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              {/* 恢复步骤不再在UI显示，日志已写入后台 */}
             </div>
           </div>
         </div>

@@ -9,6 +9,8 @@ import { backupObsConfiguration, restoreObsConfiguration, restoreObsConfiguratio
 import { enableDefaultAudioSources } from '@main/modules/obsconfig/enableAudioSources';
 import { ensureObsEnabledAndMaybeRestart, startOBSProcess } from '@main/modules/obsWebSocket';
 import { closeOBS } from '@main/utils/close-obs-direct';
+import { getSystemInfo } from '@main/utils/hardwareInfo';
+import { loggerService } from '@main/services/logger';
 
 export function registerObsConfigHandlers() {
   // 安装字体
@@ -32,16 +34,19 @@ export function registerObsConfigHandlers() {
       // Step 1: 字体
       const fontRes = await installFonts();
       steps.push({ name: 'Install fonts', success: !!fontRes.success, message: fontRes.message || (fontRes as any).error });
+      try { loggerService.addLog('info', 'OBS one-click: Install fonts', 'main', { success: !!fontRes.success, message: fontRes.message || (fontRes as any).error }); } catch {}
       if (!fontRes.success) return { success: false, message: 'Font install failed', steps };
 
       // Step 2: 确保 WebSocket 启用/启动 OBS
       const ensure = await ensureObsEnabledAndMaybeRestart();
       steps.push({ name: 'Ensure OBS WebSocket', success: ensure.ok, message: ensure.msg });
+      try { loggerService.addLog('info', 'OBS one-click: Ensure OBS WebSocket', 'main', { success: ensure.ok, message: ensure.msg }); } catch {}
       if (!ensure.ok) return { success: false, message: ensure.msg, steps };
 
       // Step 3: 配置 Profile/Scene
       const prof = await manageProfileAndSceneCollection(options);
       steps.push({ name: 'Configure profile/scene', success: !!prof.success, message: prof.message });
+      try { loggerService.addLog('info', 'OBS one-click: Configure profile/scene', 'main', { success: !!prof.success, message: prof.message }); } catch {}
       if (!prof.success) return { success: false, message: prof.message, steps };
 
 
@@ -51,52 +56,70 @@ export function registerObsConfigHandlers() {
         // PC端游使用显示器采集
         captureResult = await createDisplayCaptureSource({ sourceName: '显示器采集' });
         steps.push({ name: 'Configure display capture', success: !!captureResult.success, message: captureResult.message || `monitor=${captureResult.monitorName}` });
+        try { loggerService.addLog('info', 'OBS one-click: Configure display capture', 'main', { success: !!captureResult.success, message: captureResult.message || `monitor=${captureResult.monitorName}` }); } catch {}
       } else {
         // 其他设备使用视频采集设备
         captureResult = await addOrEnsureVideoCaptureDevice({ preferredResolution: options.resolution, applyFilters: true });
         steps.push({ name: 'Configure video capture device', success: !!captureResult.success, message: captureResult.message || `resolution=${captureResult.resolution}` });
+        try { loggerService.addLog('info', 'OBS one-click: Configure video capture device', 'main', { success: !!captureResult.success, message: captureResult.message || `resolution=${captureResult.resolution}` }); } catch {}
       }
       if (!captureResult.success) return { success: false, message: captureResult.message || '采集源配置失败', steps };
 
       // Step 5: 启用音频源（桌面音频/麦克风 + 噪声抑制）
       const audio = await enableDefaultAudioSources();
       steps.push({ name: 'Enable audio sources', success: !!audio.success, message: audio.message });
+      try { loggerService.addLog('info', 'OBS one-click: Enable audio sources', 'main', { success: !!audio.success, message: audio.message }); } catch {}
       if (!audio.success) return { success: false, message: audio.message, steps };
 
       // Step 6: 源位置/说明栏
       const pos = await configureSourceTransform();
       steps.push({ name: 'Configure source transform', success: !!pos.success, message: pos.message });
+      try { loggerService.addLog('info', 'OBS one-click: Configure source transform', 'main', { success: !!pos.success, message: pos.message }); } catch {}
       if (!pos.success) return { success: false, message: pos.message, steps };
 
       // Step 7: 关闭 OBS 以写入编码器配置
       steps.push({ name: 'Closing OBS', success: true, message: '正在关闭 OBS 以应用离线配置...' });
+      try { loggerService.addLog('info', 'OBS one-click: Closing OBS', 'main', { message: '正在关闭 OBS 以应用离线配置...' }); } catch {}
       const closeResult = await closeOBS();
       if (closeResult.status === 'failed') {
         const errMsg = (closeResult as any).error ? `关闭 OBS 失败: ${(closeResult as any).error}` : '关闭 OBS 失败';
         steps[steps.length - 1] = { name: 'Closing OBS', success: false, message: errMsg };
+        try { loggerService.addLog('error', 'OBS one-click: Closing OBS failed', 'main', { message: errMsg }); } catch {}
         return { success: false, message: errMsg, steps };
       }
       steps[steps.length - 1].message = 'OBS 已关闭';
+      try { loggerService.addLog('info', 'OBS one-click: OBS closed', 'main'); } catch {}
       await new Promise(r => setTimeout(r, 2000)); // 等待进程完全退出
 
-      // Step 8: 写入编码器配置
+      // Step 8: 写入编码器配置（基于硬件检测优先，其次回退 x264）
       steps.push({ name: 'Configure encoder', success: true, message: '正在写入编码器配置...' });
-      const enc = await configureEncoder(pos.Encodername || 'obs_x264', pos.profileName);
-      steps[steps.length - 1] = { name: 'Configure encoder', success: !!enc.success, message: enc.message };
+      let chosenEncoder = 'obs_x264';
+      try {
+        const sys = await getSystemInfo();
+        if (sys?.encoder) chosenEncoder = sys.encoder;
+      } catch {}
+      const enc = await configureEncoder(chosenEncoder, pos.profileName);
+      steps[steps.length - 1] = { name: 'Configure encoder', success: !!enc.success, message: `${enc.message} (encoder=${chosenEncoder})` };
+      // try { loggerService.addLog('info', 'OBS one-click: Configure encoder', 'main', { success: !!enc.success, encoder: chosenEncoder, message: enc.message }); } catch {}
+      try { loggerService.addLog('info', 'OBS one-click: Configure encoder', 'main', { 'OBS参数配置完成': !!enc.success }); } catch {}
       if (!enc.success) return { success: false, message: enc.message, steps };
 
       // Step 9: 重启 OBS
       steps.push({ name: 'Restarting OBS', success: true, message: '正在重启 OBS...' });
+      try { loggerService.addLog('info', 'OBS one-click: Restarting OBS', 'main'); } catch {}
       const startResult = await startOBSProcess();
       if (!startResult.success) {
         steps[steps.length - 1] = { name: 'Restarting OBS', success: false, message: `重启 OBS 失败: ${startResult.message}` };
+        try { loggerService.addLog('error', 'OBS one-click: Restart OBS failed', 'main', { message: startResult.message }); } catch {}
         return { success: false, message: '重启 OBS 失败', steps };
       }
       steps[steps.length - 1].message = 'OBS 已重启，配置完成';
+      try { loggerService.addLog('info', 'OBS one-click: Completed', 'main'); } catch {}
 
       return { success: true, message: 'One-click OBS configuration completed', steps };
     } catch (e: any) {
       steps.push({ name: 'Error', success: false, message: e?.message || String(e) });
+      try { loggerService.addLog('error', 'OBS one-click: Error', 'main', { error: e?.message || String(e) }); } catch {}
       return { success: false, message: e?.message || String(e), steps };
     }
   });

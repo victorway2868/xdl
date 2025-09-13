@@ -26,8 +26,10 @@ const LOOPBACK_PORTS = [16266, 26266, 36266, 46266, 56266];
 const KEYTAR_SERVICE = 'xiaodouli-authing';
 const KEYTAR_ACCOUNT_REFRESH = 'refresh_token';
 
-// Offline profile cache file
-const PROFILE_FILE = path.join(app.getPath('userData'), 'authing_profile.json');
+// Offline profile cache file (encrypted). Use a generic filename without "authing".
+const PROFILE_FILE = path.join(app.getPath('userData'), 'profile.cache');
+// Keytar account for profile encryption key
+const KEYTAR_ACCOUNT_PROFILE_KEY = 'profile_key';
 
 // Types
 export interface AuthingUserSnapshot {
@@ -187,8 +189,9 @@ function parseMembershipFromNickname(nickname?: string): {
 
 async function loadOfflineSnapshot(): Promise<AuthingUserSnapshot | null> {
   try {
-    const txt = await fs.readFile(PROFILE_FILE, 'utf8');
-    const parsed = JSON.parse(txt) as AuthingUserSnapshot;
+    const encTxt = await fs.readFile(PROFILE_FILE, 'utf8');
+    const decrypted = await decryptProfile(encTxt);
+    const parsed = JSON.parse(decrypted) as AuthingUserSnapshot;
     return parsed || null;
   } catch {
     return null;
@@ -198,7 +201,9 @@ async function loadOfflineSnapshot(): Promise<AuthingUserSnapshot | null> {
 async function saveOfflineSnapshot(s: AuthingUserSnapshot) {
   try {
     await fs.mkdir(path.dirname(PROFILE_FILE), { recursive: true });
-    await fs.writeFile(PROFILE_FILE, JSON.stringify(s, null, 2), 'utf8');
+    const txt = JSON.stringify(s, null, 2);
+    const enc = await encryptProfile(txt);
+    await fs.writeFile(PROFILE_FILE, enc, 'utf8');
   } catch {}
 }
 
@@ -512,5 +517,43 @@ export async function logout(): Promise<void> {
   } catch {
     // 忽略所有错误，本地清理已完成
   }
+}
+
+async function getOrCreateProfileKey(): Promise<Buffer> {
+  try {
+    const existing = await keytar.getPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT_PROFILE_KEY);
+    if (existing) return Buffer.from(existing, 'base64');
+  } catch {}
+  const key = crypto.randomBytes(32); // AES-256-GCM key
+  try { await keytar.setPassword(KEYTAR_SERVICE, KEYTAR_ACCOUNT_PROFILE_KEY, key.toString('base64')); } catch {}
+  return key;
+}
+
+async function encryptProfile(plaintext: string): Promise<string> {
+  const key = await getOrCreateProfileKey();
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const ciphertext = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  const envelope = {
+    v: 1,
+    iv: iv.toString('base64'),
+    tag: tag.toString('base64'),
+    data: ciphertext.toString('base64'),
+  } as const;
+  return JSON.stringify(envelope);
+}
+
+async function decryptProfile(encryptedText: string): Promise<string> {
+  const env = JSON.parse(encryptedText) as { v: number; iv: string; tag: string; data: string };
+  if (!env || env.v !== 1) throw new Error('Unsupported profile format');
+  const key = await getOrCreateProfileKey();
+  const iv = Buffer.from(env.iv, 'base64');
+  const tag = Buffer.from(env.tag, 'base64');
+  const data = Buffer.from(env.data, 'base64');
+  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(tag);
+  const plain = Buffer.concat([decipher.update(data), decipher.final()]).toString('utf8');
+  return plain;
 }
 

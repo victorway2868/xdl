@@ -11,6 +11,7 @@ import { ensureAndConnectToOBS, getObsInstance, startOBSProcess } from '@main/mo
 import { closeOBS } from '@main/utils/close-obs-direct';
 import { getStatus, getIdTokenForMain } from '@main/services/authing';
 import { s3Action, createS3Client } from '@main/utils/s3client';
+import { loggerService } from '@main/services/logger';
 
 
 // OBS Studio路径配置
@@ -451,6 +452,7 @@ export async function restoreObsConfiguration(backupFilePath?: string): Promise<
   try {
     // Step 1: 校验备份文件路径
     steps.push({ name: 'Finding backup file', success: true, message: '正在校验备份文件路径...' });
+    try { loggerService.addLog('info', 'OBS restore: Finding backup file', 'main'); } catch {}
 
     const zipPath = backupFilePath;
     if (!zipPath) {
@@ -465,21 +467,25 @@ export async function restoreObsConfiguration(backupFilePath?: string): Promise<
 
     // Step 2: 关闭OBS
     steps.push({ name: 'Closing OBS', success: true, message: '正在关闭OBS...' });
+    try { loggerService.addLog('info', 'OBS restore: Closing OBS', 'main'); } catch {}
 
     const closeResult = await closeOBS();
     if (closeResult.status === 'failed') {
       const errMsg = (closeResult as any).error ? `关闭OBS失败: ${(closeResult as any).error}` : '关闭OBS失败';
       steps[steps.length - 1] = { name: 'Closing OBS', success: false, message: errMsg };
+      try { loggerService.addLog('error', 'OBS restore: Closing OBS failed', 'main', { message: errMsg }); } catch {}
       throw new Error(errMsg);
     }
 
     steps[steps.length - 1] = { name: 'Closing OBS', success: true, message: 'OBS已关闭' };
+    try { loggerService.addLog('info', 'OBS restore: OBS closed', 'main'); } catch {}
 
     // 等待OBS完全关闭
     await new Promise(resolve => setTimeout(resolve, 3000));
 
     // Step 3: 解压备份文件
     steps.push({ name: 'Extracting backup', success: true, message: '正在解压备份文件...' });
+    try { loggerService.addLog('info', 'OBS restore: Extracting backup', 'main'); } catch {}
 
     const tempDir = path.join(os.tmpdir(), `obs-restore-${Date.now()}`);
 
@@ -490,6 +496,7 @@ export async function restoreObsConfiguration(backupFilePath?: string): Promise<
 
       // Step 4: 验证备份结构
       steps.push({ name: 'Validating backup', success: true, message: '正在验证备份结构...' });
+      try { loggerService.addLog('info', 'OBS restore: Validating backup', 'main'); } catch {}
 
       const backupProfilesPath = path.join(tempDir, 'basic', 'profiles');
       const backupScenesPath = path.join(tempDir, 'basic', 'scenes');
@@ -530,6 +537,7 @@ export async function restoreObsConfiguration(backupFilePath?: string): Promise<
 
       // Step 5: 恢复配置文件
       steps.push({ name: 'Restoring configuration', success: true, message: '正在恢复配置文件...' });
+      try { loggerService.addLog('info', 'OBS restore: Restoring configuration', 'main'); } catch {}
 
       const paths = getObsStudioPaths();
 
@@ -557,6 +565,7 @@ export async function restoreObsConfiguration(backupFilePath?: string): Promise<
 
       // Step 6: 更新配置文件
       steps.push({ name: 'Updating configuration', success: true, message: '正在更新配置文件...' });
+      try { loggerService.addLog('info', 'OBS restore: Updating configuration', 'main'); } catch {}
 
       await updateIniFile(paths.globalIniPath, profileName, sceneCollectionName);
       await updateIniFile(paths.userIniPath, profileName, sceneCollectionName);
@@ -565,16 +574,19 @@ export async function restoreObsConfiguration(backupFilePath?: string): Promise<
 
       // Step 7: 重启OBS
       steps.push({ name: 'Restarting OBS', success: true, message: '正在重启OBS...' });
+      try { loggerService.addLog('info', 'OBS restore: Restarting OBS', 'main'); } catch {}
 
       const startResult = await startOBSProcess();
       if (!startResult.success) {
 
 
         steps[steps.length - 1] = { name: 'Restarting OBS', success: false, message: `重启OBS失败: ${startResult.message}` };
+        try { loggerService.addLog('error', 'OBS restore: Restart OBS failed', 'main', { message: startResult.message }); } catch {}
         // 即使重启失败，恢复操作本身是成功的
         console.warn('OBS重启失败，但配置恢复成功');
       } else {
         steps[steps.length - 1] = { name: 'Restarting OBS', success: true, message: 'OBS已重启，恢复完成' };
+        try { loggerService.addLog('info', 'OBS restore: Completed', 'main'); } catch {}
       }
 
       console.log('恢复完成');
@@ -598,6 +610,7 @@ export async function restoreObsConfiguration(backupFilePath?: string): Promise<
 
   } catch (error: any) {
     console.error('恢复失败:', error);
+    try { loggerService.addLog('error', 'OBS restore: Error', 'main', { error: error?.message || String(error) }); } catch {}
     steps.push({ name: 'Error', success: false, message: error.message || String(error) });
 
     return {
